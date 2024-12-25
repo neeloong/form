@@ -1,6 +1,6 @@
-import { entityMap } from './entities.js';
+import { entityMap } from './entities.mjs';
 
-var tagNamePattern = /^(?<tagName>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
+var tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
 var attrPattern = /^(?<decorator>:|@|!)?(?<name>[\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
 
 function isSpace(c) {
@@ -14,18 +14,18 @@ function isIdCode(c) {
  * 
  * @param {string} source 
  * @param {number} elStartEnd 
- * @param {string} tagName 
+ * @param {string} name 
  * @param {*} closeMap 
  * @returns 
  */
-function fixSelfClosed(source, elStartEnd, tagName, closeMap) {
-	let pos = closeMap[tagName];
+function fixSelfClosed(source, elStartEnd, name, closeMap) {
+	let pos = closeMap[name];
 	if (pos == null) {
-		pos = source.lastIndexOf('</' + tagName + '>');
+		pos = source.lastIndexOf('</' + name + '>');
 		if (pos < elStartEnd) {
-			pos = source.lastIndexOf('</' + tagName);
+			pos = source.lastIndexOf('</' + name);
 		}
-		closeMap[tagName] = pos;
+		closeMap[name] = pos;
 	}
 	return pos < elStartEnd;
 }
@@ -33,42 +33,30 @@ function fixSelfClosed(source, elStartEnd, tagName, closeMap) {
 /**
  * 
  * @param {string} source 
- * @returns {(Node | string)[]}
+ * @returns {(LayoutNode | string)[]}
  */
 function parse(source) {
-	/** @type {(Node | string)[]} */
+	/** @type {(LayoutNode | string)[]} */
 	const list = []
 
 	const doc = {
-		/** @param {Node | string} newChild */
-		appendChild(newChild){ list.push(newChild); }
+		/** @param {LayoutNode | string} newChild */
+		add(newChild){ list.push(newChild); }
 	}
-	/** @type {(Node | null)[]} */
+	/** @type {(LayoutNode | null)[]} */
 	const stack = [];
-	/** @type {Node?} */
-	let currentElement = null;
-	/** @type {typeof doc | Node} */
+	/** @type {LayoutNode?} */
+	let currentNode = null;
+	/** @type {typeof doc | LayoutNode} */
 	let current = doc;
-	/**
-	 * @param {string} tagName 
-	 */
-	function startElement(tagName) {
-		const tagRes = tagNamePattern.exec(tagName)?.groups;
-		if (!tagRes) { throw new Error('invalid tagName:' + tagName); }
-		stack.push(currentElement);
-		currentElement = new Node(tagRes.tagName, tagRes.is);
-		current.appendChild(currentElement);
-		current = currentElement;
-		return currentElement;
-	}
 	function endElement() {
-		currentElement = stack.pop() || null;
-		current = currentElement || doc;
+		currentNode = stack.pop() || null;
+		current = currentNode || doc;
 	}
 	function characters(chars) {
 		chars = chars.replace(/^[\n\t]+|[\n\t]+$/g, '');
 		if (!chars) { return; }
-		current.appendChild(chars);
+		current.add(chars);
 	}
 
 	function error(error) {
@@ -114,22 +102,23 @@ function parse(source) {
 		}
 		if (source.charAt(tagStart + 1) === '/') {
 			end = source.indexOf('>', tagStart + 3);
-			let tagName = source.substring(tagStart + 2, end);
+			let name = source.substring(tagStart + 2, end);
 			if (end < 0) {
-				tagName = source.substring(tagStart + 2).replace(/[\s<].*/, '');
-				error("end tag name: " + tagName + ' is not complete:' + currentElement?.tagName);
-				end = tagStart + 1 + tagName.length;
-			} else if (tagName.match(/\s</)) {
-				tagName = tagName.replace(/[\s<].*/, '');
-				error("end tag name: " + tagName + ' maybe not complete');
-				end = tagStart + 1 + tagName.length;
+				name = source.substring(tagStart + 2).replace(/[\s<].*/, '');
+				error("end tag name: " + name + ' is not complete:' + currentNode?.name);
+				end = tagStart + 1 + name.length;
+			} else if (name.match(/\s</)) {
+				name = name.replace(/[\s<].*/, '');
+				error("end tag name: " + name + ' maybe not complete');
+				end = tagStart + 1 + name.length;
 			}
-			if (currentElement) {
-				if (currentElement.tagName == tagName) {
+			if (currentNode) {
+				const currentName = currentNode.name;
+				if (currentName === name) {
 					endElement();
-				} else if (currentElement.tagName.toLowerCase() == tagName.toLowerCase()) {
+				} else if (currentName.toLowerCase() == name.toLowerCase()) {
 					endElement();
-					throw new Error("end tag name: " + tagName + ' is not match the current start tagName:' + currentElement.tagName);
+					throw new Error("end tag name: " + name + ' is not match the current start tagName:' + currentNode.name);
 				}
 			}
 			end++;
@@ -165,8 +154,14 @@ function parse(source) {
 				case '=': case '>': case '/': throw new Error(`意外的 "${c}"`);
 				case '': throw new Error('意外的文件结束');
 			}
-			const tagName = getId();
-			const { attributes, directives, events } = startElement(tagName);
+			const name = getId();
+			const tagRes = tagNamePattern.exec(name)?.groups;
+			if (!tagRes) { throw new Error('invalid tagName:' + name); }
+			stack.push(currentNode);
+			currentNode = new LayoutNode(tagRes.name, tagRes.is);
+			current.add(currentNode);
+			current = currentNode;
+			const { attrs, directives, events } = currentNode;
 			/**
 			 * @param {string} qName
 			 * @param {string} value
@@ -176,9 +171,9 @@ function parse(source) {
 				if (!attr) { throw new Error('无效的属性:' + qName); }
 				const {decorator, name} = attr;
 				if (!decorator) {
-					attributes[qName] = value;
+					attrs[qName] = value;
 				} else if (decorator === ':') {
-					attributes[qName] = {value};
+					attrs[qName] = {value};
 				} else if (decorator === '!') {
 					directives[name] = value;
 				} else if (decorator === '@') {
@@ -233,7 +228,7 @@ function parse(source) {
 					default:  console.log(end, c, source.slice(end)); throw new Error("elements closed character '/' and '>' must be connected to");
 				}
 				endElement();
-			} else if (fixSelfClosed(source, end, tagName, closeMap)) {
+			} else if (fixSelfClosed(source, end, name, closeMap)) {
 				endElement();
 			}
 
@@ -247,62 +242,64 @@ function parse(source) {
 	}
 	return list;
 }
-export default class Node {
+/** @import { Layout } from './types.mjs' */
+/**
+ * @implements {Layout}
+ */
+export default class LayoutNode {
 	/**
 	 * 
 	 * @param {string} source 
-	 * @returns {(Node | string)[]}
+	 * @returns {(LayoutNode | string)[]}
 	 */
-	static parse(source) {
-		return parse(source);
-		}
+	static parse(source) { return parse(source); }
 	/**
-	 * @param {string | null} tagName
+	 * @param {string} name
 	 * @param {string?} [is]
 	 * 
 	*/
-	constructor(tagName, is) {
-		this.tagName = tagName;
+	constructor(name, is) {
+		this.name = name;
 		this.is = is;
 	}
 	/**@type {Record<string, any>} */
-	attributes = Object.create(null);
+	attrs = Object.create(null);
 	/**@type {Record<string, any>} */
 	events = Object.create(null);
 	/**@type {Record<string, any>} */
 	directives = Object.create(null);
-	/** @type {(Node | string)[]} */
+	/** @type {(LayoutNode | string)[]} */
 	children = [];
 	/**
 	 * 
-	 * @param {Node | string} newChild 
+	 * @param {LayoutNode | string} newChild 
 	 * @returns 
 	 */
-	appendChild(newChild){
+	add(newChild){
 		this.children.push(newChild);
 		return newChild;
 	}
 	toString() {
 		let node = this;
-		const { tagName, is } = this;
-		if (!tagName) {
+		const { name, is } = this;
+		if (!name) {
 			// return ["<!-- ",is," -->"].join('');
 			return ''
 
 		}
 		var buf = [];
 		
-		buf.push('<',tagName);
+		buf.push('<',name);
 		if (is) { buf.push('|', is) }
 		
-		for(const [name, value] of Object.entries(node.attributes)){
+		for(const [name, value] of Object.entries(node.attrs)){
 			buf.push(' ', name, '="', value.replace(/[<&"]/g,_xmlEncoder), '"');
 		}
 		
 		const { children } = this;
 		var child = children[0];
 		
-		if(child || !/^(?:meta|link|img|br|hr|input)$/i.test(tagName)){
+		if(child || !/^(?:meta|link|img|br|hr|input)$/i.test(name)){
 			buf.push('>');
 			for(const child of children){
 				if (typeof child === 'string') {
@@ -311,7 +308,7 @@ export default class Node {
 					buf.push(child.toString());
 				}
 			}
-			buf.push('</',tagName,'>');
+			buf.push('</',name,'>');
 		}else{
 			buf.push('/>');
 		}

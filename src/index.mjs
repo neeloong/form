@@ -1,6 +1,6 @@
-import Node from './lib/index.js'
+import LayoutNode from './LayoutNode.mjs'
 function parse(xml) {
-	const list = Node.parse(xml);
+	const list = LayoutNode.parse(xml);
 	console.info(list)
 }
 
