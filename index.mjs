@@ -33,7 +33,7 @@
  * @property {string} [value] 值关联（关联为列表）
  */
 
-import Value from './src/Value.mjs';
+import EnvValue from './src/EnvValue.mjs';
 
 /**
  * 
@@ -54,7 +54,7 @@ export function merge(components) {
  * @param {{roots: Record<string, Component>, connom: Record<string, Component>}} componentDefines 
  */
 export default function create(layouts, schemas, componentDefines) {
-	const rootValue = new Value(schemas);
+	const rootValue = new EnvValue(schemas);
 	/** @type {Map<string, Component>}  */
 	const componentMap = new Map();
 	/**
@@ -87,7 +87,7 @@ export default function create(layouts, schemas, componentDefines) {
 	 * @param {Layout} layout 
 	 * @param {*} schema 
 	 * @param {string[]} componentPath 
-	 * @param {Value} parentValue 
+	 * @param {EnvValue} parentValue 
 	 */
 	function render(layout, schema, componentPath, parentValue) {
 		const { name, attrs, children, directives } = layout;

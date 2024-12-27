@@ -33,11 +33,9 @@ export interface FieldComponentEvent {
 
 
 export interface FieldContext {
-	readonly from: FormLike | null;
 	readonly readonly: boolean;
 	readonly required: boolean;
 	readonly hidden: boolean;
-	readonly field: FieldScriptConfiguration;
 	readonly data?: Record<string, any>;
 	readonly updatable: boolean;
 	value: any;

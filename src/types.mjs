@@ -10,8 +10,10 @@
 /**
  * @typedef {object} Layout
  * @property {string} name
+ * @property {string?} [is]
  * @property {string} [id]
  * @property {Record<string, string | {value: string}>} attrs
+ * @property {Record<string, any>} events
  * @property {Directives} directives
  * @property {(Layout | string)[]} [children]
  */

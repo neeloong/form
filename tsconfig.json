@@ -1,0 +1,6 @@
+{
+	"buildOptions": {
+		"checkJs": true,
+		"allowJs": true
+	}
+}

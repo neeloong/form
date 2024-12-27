@@ -1,8 +1,30 @@
-import EventEmitter from './EventEmit.mjs';
-import renderFormLayout from './renderFormLayout.mjs';
+import EventEmitter from './src/EventEmitter.mjs';
 import createField from './createField.mjs';
 
 
+/**
+ * 
+ * @param {readonly any[]} layouts 
+ * @param {import('./types.mjs').FormLike} from
+ */
+function renderFormLayout(layouts, from) {
+	const children = [];
+	for (const field of layouts) {
+		const fieldHandle = createField(field, { from });
+		children.push(fieldHandle);
+	}
+
+		return children
+}
+
+const s = Symbol();
+const modelSymbol = Symbol();
+/**
+ * @typedef {{[s]: 1}} ModelScriptConfiguration
+ */
+/**
+ * @typedef {{[modelSymbol]: 1}} ModelConfiguration
+ */
 
 /**
  * @extends {EventEmitter<import('./types.mjs').FromEvent>}
@@ -12,15 +34,13 @@ export default class Form extends EventEmitter {
 	parent = null;
 	/** @readonly @type {import('./types.mjs').FormLike} */
 	root = this;
-	/** @readonly @type {import('../services/model.mjs').ModelScriptConfiguration} */
+	/** @readonly @type {ModelScriptConfiguration} */
 	define;
 	/** @type {boolean} */
 	#new = false;
 	get new() { return this.#new; }
 	/** @readonly @type {string?} */
 	field = null;
-	/** @readonly @type {import('./types.mjs').FieldComponents} */
-	fieldComponents = {};
 	/** @type {number} */
 	#no = 0;
 	get no() { return this.#no; }
@@ -64,21 +84,20 @@ export default class Form extends EventEmitter {
 			field.commonReadonly = readonly;
 		}
 	}
-	/** @type {import('@___/common').ModelConfiguration?} */
+	/** @type {ModelConfiguration?} */
 	model = null
 	/**
 	 * 
 	 * @param {object} options 
 	 * @param {HTMLElement} options.root 
 	 * @param {import('./types.mjs').FormLike?} [options.parent] 
-	 * @param {import('../services/model.mjs').ModelScriptConfiguration} options.define 
+	 * @param {ModelScriptConfiguration} options.define 
 	 * @param {string} [options.field] 
 	 * @param {number} [options.no] 
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.hidden] 
-	 * @param {import('./types.mjs').FieldComponents?} [options.fieldComponents] 
 	 */
-	constructor({ root, parent, field, no, hidden, new: isNew, define, fieldComponents }) {
+	constructor({ root, parent, field, no, hidden, new: isNew, define }) {
 		super();
 		this.parent = parent || null;
 		if (parent instanceof Form) {
@@ -93,15 +112,9 @@ export default class Form extends EventEmitter {
 		if (isNew || parent?.new) {
 			this.#new = true;
 		}
-		let components = typeof fieldComponents === 'object' && fieldComponents
 		if (parent) {
-			if (!components && field) {
-				const fieldComponents = parent.fieldComponents?.[field];
-				components = typeof fieldComponents === 'object' && fieldComponents
-			}
 			// TODO: 
 		}
-		this.fieldComponents = components || {}
 		this.field = field || null;
 		this.#no = no || 0;
 		const layout = define.fields.filter(v => !(v.primary && v.hidden));
