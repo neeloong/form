@@ -23,7 +23,7 @@ export class Schema extends EventEmitter {
 	 * @param {boolean} [options.scriptHidden] 
 	 * @param {boolean} [options.scriptReadonly] 
 	 * @param {boolean} [options.scriptDisabled] 
-	 * @param {(value: any) => void} [onUpdate] 
+	 * @param {(value: T?) => void} [onUpdate] 
 	 */
 	constructor(schema, options, onUpdate) {
 		super();
@@ -73,7 +73,7 @@ export class Schema extends EventEmitter {
 		this.#updateNew();
 	}
 	#selfNew = false;
-	get selfNew() { return this.#selfNew}
+	get selfNew() { return this.#selfNew; }
 	set selfNew(v) {
 		const val = Boolean(v);
 		if (val === this.#selfNew) { return }
@@ -263,6 +263,7 @@ export class Schema extends EventEmitter {
 	}
 
 	#destroyed = false;
+	get destroyed() { return this.#destroyed; }
 	destroy() {
 		if (this.#destroyed) { return; }
 		this.#destroyed = true;
@@ -331,8 +332,12 @@ export class Schema extends EventEmitter {
 		this.emit('refresh');
 	}
 	#toUpdate(value) {
-		if(this.#value !== value) { return }
+		if(this.#value === value) { return }
 		this.#value = value;
+		if (!this.#set) {
+			this.#set = true;
+			this.#initValue = value;
+		}
 		this.#runUpdate();
 	}
 	#runUpdate() {
@@ -369,27 +374,29 @@ export class SchemaObject extends Schema {
 	 * @param {Schema?} [parent] 
 	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
-	 * @param {any} [onUpdate] 
+	 * @param {(value: any) => void} [onUpdate] 
 	 */
 	constructor(schema, parent, { new: isNew } = {}, onUpdate) {
-		super({parent, new: isNew, schema}, onUpdate);
+		super(schema, {parent, new: isNew}, onUpdate);
 		const children = Object.create(null);
 		for (const [key, field] of Object.entries(schema.props)) {
 			let child;
 			if (typeof field.type === 'string') {
 				if (field.array) {
-					child = new SchemaArray(field, this, key);
+					child = new SchemaArray(field, this, {new: isNew});
 				} else {
 					child = new Schema(field, {parent: this}, (value) => {
 						this.value = {...this.value, [key]: value};
 					});
 				}
-			} else if (Array.isArray(field.props)) {
-				child = new SchemaTuple(field, key, this);
 			} else if (field.array) {
-				child = new SchemaArray(field, key, this);
+				child = new SchemaArray(field, this, {new: isNew}, (value) => {
+					this.value = {...this.value, [key]: value};
+				});
 			} else {
-				child = new SchemaObject(field, key, this);
+				child = new SchemaObject(field, this, {new: isNew}, (value) => {
+					this.value = {...this.value, [key]: value};
+				});
 			}
 			children[key] = child;
 		}
@@ -397,51 +404,156 @@ export class SchemaObject extends Schema {
 	}
 }
 
-export class SchemaTuple extends SchemaObject {
-	/**
-	 * @param {Schema.Tuple & Schema.Event & Schema.Attr} schema
-	*/
-	constructor(schema, key, values) {
-		super(schema, key, {}, values);
-	}
-	value = null;
-}
-
+/**
+ * @template T
+ * @extends {Schema<(T | null)[]>}
+ */
 export class SchemaArray extends Schema {
-	/** @type {Schema[]} */
+	/** @type {(index: number) => {index: number, value: Schema}} */
+	#create = () => {throw new Error}
+	/** @type {{index: number, value: Schema}[]} */
 	#children = [];
-	*[Symbol.iterator]() {yield* this.#children.entries();}
+	*[Symbol.iterator]() {
+		for (const [k, {value}] of this.#children.entries()) {
+			yield /** @type {[number, Schema]} */([k, value]);
+		}
+	}
 	/**
 	 * 
 	 * @param {string | number} key 
 	 * @returns {Schema?}
 	 */
-	child(key) { return this.#children[key] || null; }
+	child(key) { return this.#children[Number(key)]?.value || null; }
 	/**
 	 * @param {Record<string, Schema.Field>} schema
+	 * @param {Schema} parent
 	 * @param {object} options 
-	 * @param {Schema} [options.parent] 
-	 * @param {string} [options.field] 
-	 * @param {number} [options.no] 
 	 * @param {boolean} [options.new] 
-	 * @param {boolean} [options.hidden] 
+	 * @param {(value: any) => void} [onUpdate] 
 	 */
-	constructor(schema, parent, onUpdate) {
-		super({ parent, schema }, onUpdate);
-		this.schema = schema;
-	}
-	#create() {
-		const schema = this.schema;
-		if (typeof schema.type === 'string') {
-			return new Schema(schema, {parent: this}, (value) => {
-				// this.value = {...this.value, [key]: value};
-			});
-		} else if (Array.isArray(schema.props)) {
-			return null;
-		}
-		return new SchemaObject(schema, this, (value) => {
-			// this.value = {...this.value, [key]: value};
+	constructor(schema, parent, options, onUpdate) {
+		
+		super(schema, { parent }, (value) => {
+			onUpdate?.(value);
+			if (this.destroyed) { return; }
+			const length = Array.isArray(value) && value.length || 0;
+			const children = this.#children;
+			for (let i = children.length; i < length; i++) {
+					children.push(this.#create(i));
+			}
+			for (const {value} of children.splice(length)) {
+				value.destroy();
+			}
 		});
+		/**
+		 * 
+		 * @param {any} value 
+		 * @param {number} index 
+		 */
+		const childUpdated = (value, index) => {
+			const val = [...this.value || []];
+			if (val.length < index) {
+				val.length = index;
+			}
+			val[index] = value;
+			this.value = val;
+
+		}
+		if (typeof schema.type === 'string') {
+		
+			this.#create = index => ({
+						get index() { return index},
+						set index(i) { index = i},
+						value: new Schema(schema, {parent: this}, (value) => childUpdated(value, index)),
+					});
+		} else if (!Array.isArray(schema.props)) {
+			this.#create = index => ({
+					get index() { return index},
+					set index(i) { index = i},
+					value: new SchemaObject(schema, this, {}, (value) => childUpdated(value, index)),
+			})
+		} else {
+			throw new Error();
+		}
+		
+	}
+	insert(index, value) {
+		if (this.destroyed) { return false; }
+		const data = this.value;
+		if (!Array.isArray(data)) { return false; }
+		const children = this.#children;
+		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
+		const item = this.#create(insertIndex);
+		item.value.new = true;
+		children.splice(insertIndex, 0, item);
+		for (let i = index + 1; i < children.length; i++) {
+			children[i].index = i;
+		}
+		let val = [...data];
+		val.splice(insertIndex, 0, value);
+		this.value = val;
+		return true;
+	}
+	add(value) {
+		return this.insert(this.#children.length, value);
+	}
+	remove(index) {
+		if (this.destroyed) { return; }
+		const data = this.value;
+		if (!Array.isArray(data)) { return false; }
+		const children = this.#children;
+		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
+		const [item] = children.splice(insertIndex, 1);
+		if (!item) { return; }
+		for (let i = index; i < children.length; i++) {
+			children[i].index = i;
+		}
+		item.value.destroy();
+		const val = [...data];
+		const [value] = val.splice(insertIndex, 1);
+		this.value = val;
+		return value;
+
+	}
+	move(from, to) {
+		if (this.destroyed) { return false; }
+		const data = this.value;
+		if (!Array.isArray(data)) { return false; }
+		const children = this.#children;
+		const [item] = children.splice(from, 1);
+		if (!item) { return false; }
+		children.splice(to, 0, item);
+		let lft = Math.min(from, to);
+		let rgt = Math.max(from, to);
+		for (let i = lft; i <= rgt; i++) {
+			children[i].index = i;
+		}
+		const val = [...data];
+		const [value] = val.splice(from, 1);
+		val.splice(to, 0, value);
+		this.value = val;
+		return true;
+
+	}
+	exchange(a, b) {
+		if (this.destroyed) { return false; }
+		const data = this.value;
+		if (!Array.isArray(data)) { return false; }
+		const children = this.#children;
+		const aItem = children[a];
+		const bItem = children[b];
+		if (!aItem || !bItem) { return; }
+		children[b] = aItem;
+		children[a] = bItem;
+		aItem.index = b;
+		bItem.index = a;
+		const val = [...data];
+		const aValue = val[a];
+		const bValue = val[b];
+		val[b] = aValue;
+		val[a] = bValue;
+		this.value = val;
+		return true;
 	}
 }
 /**
@@ -508,12 +620,13 @@ export class SchemaArray extends Schema {
  */
 /**
  * @typedef {object} Schema.Attr
- * @typedef {boolean | (() => boolean)} [immutable]
+ * @typedef {boolean} [immutable]
+ * @typedef {boolean} [creatable]
  * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [readonly]
  * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [hidden]
  * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [required]
- * @property {boolean | ((row: any, rowState: any, data: any, state: any) => boolean)} [clearable]
- * @property {boolean | ((row: any, rowState: any, data: any, state: any) => boolean)} [disabled]
+ * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [disabled]
+ * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [clearable]
  * @property {any} [default] 默认值
  * @property {(Schema.Value.Group | Schema.Value | string | number)[]} values 可选值
  * @property {string} [label] 字段标签
@@ -533,7 +646,7 @@ export class SchemaArray extends Schema {
  * // TODO: 最小值、最大值、步长增加函数支持
  * 
  * 
- * @property {boolean} nullable 是否可为空
+ * @property {boolean} [nullable] 是否可为空
  * 
  * 
  * @property {Record<string, string>} [fieldMap]
