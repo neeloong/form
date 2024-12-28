@@ -1,44 +1,99 @@
 import EventEmitter from './EventEmitter.mjs';
 
+/**
+ * @template T
+ */
 export class Schema extends EventEmitter {
 	/**
+	 * @param {Record<string, Schema.Field>} schema
 	 * @param {object} options 
-	 * @param {HTMLElement} options.root 
-	 * @param {Schema} [options.parent] 
-	 * @param {string} [options.field] 
-	 * @param {number} [options.no] 
+	 * @param {boolean} [options.new] 
+	 */
+	static create(schema, { new: isNew }) {
+		return new SchemaObject({attrs: schema}, null, { new: isNew });
+	}
+	/**
+	 * @param {any} schema
+	 * @param {object} options 
+	 * @param {*} [options.parent] 
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.hidden] 
+	 * @param {boolean} [options.readonly] 
+	 * @param {boolean} [options.disabled] 
+	 * @param {boolean} [options.scriptHidden] 
+	 * @param {boolean} [options.scriptReadonly] 
+	 * @param {boolean} [options.scriptDisabled] 
 	 * @param {(value: any) => void} [onUpdate] 
 	 */
-	constructor({ parent, hidden, new: isNew }, onUpdate) {
+	constructor(schema, options, onUpdate) {
 		super();
-		this.parent = parent || null;
+		this.schema = schema;
+		this.#onUpdate = onUpdate || null;
+		const { parent } = options;
 		if (parent instanceof Schema) {
+			this.#parent = parent;
+			this.#root = parent.#root;
+			this.#parentNew = Boolean(parent.#new);
+			this.#parentHidden = Boolean(parent.#hidden);
+			this.#parentDisabled = Boolean(parent.#disabled);
+			this.#parentReadonly = Boolean(parent.#readonly);
 			// TODO: 事件向上冒泡
 		}
-		this.root = parent?.root || this;
-		if (isNew || parent?.new) {
-			this.#new = true;
-		}
-		if (parent) {
-			// TODO: 
-		}
-		if (hidden) {
-			this.#selfHidden = true;
-			this.#hidden = true;
-		}
-		this.#onUpdate = onUpdate || null;
+		this.#selfNew = Boolean(options.new);
+		this.#new = this.#selfNew || this.#parentNew;
+		
+		this.#selfHidden = typeof options.hidden === 'boolean' ? options.hidden : null;
+		this.#scriptHidden = Boolean(options.scriptHidden);
+		this.#hidden = this.#parentHidden || this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden;
+		
+		this.#selfDisabled = typeof options.disabled === 'boolean' ? options.disabled : null;
+		this.#scriptDisabled = Boolean(options.scriptDisabled);
+		this.#disabled = this.#parentDisabled || this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled;
+		
+		this.#selfReadonly = typeof options.readonly === 'boolean' ? options.readonly : null;
+		this.#scriptReadonly = Boolean(options.scriptReadonly);
+		this.#readonly = this.#parentReadonly || this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly;
 	}
 	/** @type {((value: any) => void)?} */
 	#onUpdate
 	/** @readonly @type {Schema?} */
-	parent = null;
+	#parent = null;
 	/** @readonly @type {Schema} */
-	root = this;
-	/** @type {boolean} */
+	#root = this;
+	get parent() { return this.#parent; }
+	get root() { return this.#root; }
+
+
+	#parentNew = false;
+	/** @param {boolean} v */
+	#setParentNew(v) {
+		const val = Boolean(v);
+		if (val === this.#parentNew) { return }
+		this.#parentNew = val;
+		this.#updateNew();
+	}
+	#selfNew = false;
+	get selfNew() { return this.#selfNew}
+	set selfNew(v) {
+		const val = Boolean(v);
+		if (val === this.#selfNew) { return }
+		this.#selfNew = val;
+		this.#updateNew();
+	}
 	#new = false;
-	get new() { return this.#new; }
+	#updateNew() {
+		const val = this.#parentNew || this.#selfNew;
+		if (val === this.#new) { return }
+		this.#new = val;
+		for (const [, field] of this[Symbol.iterator]()) {
+			field.#setParentNew(val);
+		}
+		this.emit('new', val);
+	}
+	get new() {return this.#new; }
+	set new(v) { this.selfNew = v; }
+
+
 	#parentHidden = false;
 	/** @param {boolean} v */
 	#setParentHidden(v) {
@@ -47,17 +102,19 @@ export class Schema extends EventEmitter {
 		this.#parentHidden = hidden;
 		this.#updateHidden();
 	}
-	#selfHidden = false;
-	get hidden() { return this.#selfHidden}
-	set hidden(v) {
-		const hidden = Boolean(v);
-		if (hidden === this.#selfHidden) { return }
-		this.#selfHidden = hidden;
+	#scriptHidden = false;
+	/** @type {boolean?} */
+	#selfHidden = null;
+	get selfHidden() { return this.#selfHidden}
+	set selfHidden(v) {
+		const val = v === null ? v : Boolean(v);
+		if (val === this.#selfHidden) { return }
+		this.#selfHidden = val;
 		this.#updateHidden();
 	}
 	#hidden = false;
 	#updateHidden() {
-		const hidden = this.#parentHidden || this.#selfHidden;
+		const hidden = this.#parentHidden || (this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden);
 		if (hidden === this.#hidden) { return }
 		this.#hidden = hidden;
 		for (const [, field] of this[Symbol.iterator]()) {
@@ -65,62 +122,8 @@ export class Schema extends EventEmitter {
 		}
 		this.emit('hidden', hidden);
 	}
-
-	#parentReadonly = false;
-	/** @param {boolean} v */
-	#setParentReadonly(v) {
-		const readonly = Boolean(v);
-		if (readonly === this.#parentReadonly) { return }
-		this.#parentReadonly = readonly;
-		this.#updateReadonly();
-	}
-	#selfReadonly = false;
-	get readonly() { return this.#selfReadonly; }
-	set readonly(value) {
-		const readonly = Boolean(value);
-		if (this.#selfReadonly === readonly) { return; }
-		this.#updateReadonly();
-	}
-	#readonly = false;
-	#updateReadonly() {
-		const readonly = this.#parentReadonly || this.#selfReadonly;
-		if (readonly === this.#readonly) { return }
-		this.#readonly = readonly;
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.#setParentReadonly(readonly);
-		}
-		this.emit('readonly', readonly);
-	}
-
-
-
-	#parentWritable = false;
-	/** @param {boolean} v */
-	#setParentWritable(v) {
-		const writable = Boolean(v);
-		if (writable === this.#parentWritable) { return }
-		this.#parentWritable = writable;
-		this.#updateWritable();
-	}
-	#selfWritable = false;
-	get writable() { return this.#selfWritable}
-	set writable(v) {
-		const writable = Boolean(v);
-		if (writable === this.#selfWritable) { return }
-		this.#selfWritable = writable;
-		this.#updateWritable();
-	}
-	#writable = false;
-	#updateWritable() {
-		const writable = this.#parentWritable || this.#selfWritable;
-		if (writable === this.#writable) { return }
-		this.#writable = writable;
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.#setParentWritable(writable);
-		}
-		this.emit('writable', writable);
-	}
-
+	get hidden() {return this.#hidden; }
+	set hidden(v) { this.selfHidden = v; }
 
 
 
@@ -132,17 +135,19 @@ export class Schema extends EventEmitter {
 		this.#parentDisabled = disabled;
 		this.#updateDisabled();
 	}
-	#selfDisabled = false;
-	get disabled() { return this.#selfDisabled}
-	set disabled(v) {
-		const disabled = Boolean(v);
-		if (disabled === this.#selfDisabled) { return }
-		this.#selfDisabled = disabled;
+	#scriptDisabled = false;
+	/** @type {boolean?} */
+	#selfDisabled = null;
+	get selfDisabled() { return this.#selfDisabled}
+	set selfDisabled(v) {
+		const val = v === null ? v : Boolean(v);
+		if (val === this.#selfDisabled) { return }
+		this.#selfDisabled = val;
 		this.#updateDisabled();
 	}
 	#disabled = false;
 	#updateDisabled() {
-		const disabled = this.#parentDisabled || this.#selfDisabled;
+		const disabled = this.#parentDisabled || (this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled);
 		if (disabled === this.#disabled) { return }
 		this.#disabled = disabled;
 		for (const [, field] of this[Symbol.iterator]()) {
@@ -150,7 +155,43 @@ export class Schema extends EventEmitter {
 		}
 		this.emit('disabled', disabled);
 	}
-	/** @returns {Iterable<[key: string, value: Schema]>} */
+	get disabled() {return this.#disabled; }
+	set disabled(v) { this.selfDisabled = v; }
+
+	#parentReadonly = false;
+	/** @param {boolean} v */
+	#setParentReadonly(v) {
+		const readonly = Boolean(v);
+		if (readonly === this.#parentReadonly) { return }
+		this.#parentReadonly = readonly;
+		this.#updateReadonly();
+	}
+	#scriptReadonly = false;
+	/** @type {boolean?} */
+	#selfReadonly = null;
+	get selfReadonly() { return this.#selfReadonly; }
+	set selfReadonly(v) {
+		const val = v === null ? v : Boolean(v);
+		if (this.#selfReadonly === val) { return; }
+		this.#updateReadonly();
+	}
+	#readonly = false;
+	#updateReadonly() {
+		const readonly = this.#parentReadonly || (this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly);
+		if (readonly === this.#readonly) { return }
+		this.#readonly = readonly;
+		for (const [, field] of this[Symbol.iterator]()) {
+			field.#setParentReadonly(readonly);
+		}
+		this.emit('readonly', readonly);
+	}
+	get readonly() {return this.#readonly; }
+	set readonly(v) { this.selfReadonly = v; }
+
+
+
+
+	/** @returns {Iterable<[key: string | number, value: Schema]>} */
 	*[Symbol.iterator]() {}
 	/**
 	 * 
@@ -160,71 +201,67 @@ export class Schema extends EventEmitter {
 	child(key) { return null; }
 
 	#set = false;
-	/** @type {any} */
+	/** @type {T?} */
 	#initValue = null;
 	#value = this.#initValue;
 	#lastValue = this.#value;
+
+
 	get changed() { return this.#value === this.#lastValue; }
 	get saved() { return this.#value === this.#initValue; }
 
-
-	reset() { this.#_reset(this.#initValue); }
-	#_reset(value) {
-		if (this.#destroyed) { return; }
-		if (!this.#set) { return; }
-		this.#value = this.#lastValue = this.#initValue = value;
-		this.#set = true;
-		this.#reset();
-	}
-	/** @type {Record<string, any>} */
 	get value() { return this.#value; }
 	set value(v) {
 		if (this.#destroyed) { return; }
-		if (this.parent) {
-			this.#value = v;
-			this.#updated();
-		} else {
-			this.#lastValue = this.#value = this.#initValue = v;
-			this.#set = true;
-			this.#reset();
-		}
-	}
-	/**
-	 * @param {Record<string, any>} v
-	 * @param {boolean} [isNew] 
-	 */
-	initData(v, isNew = this.#new) {
-		if (this.#destroyed) { return; }
-		this.#lastValue = this.#value = this.#initValue = v;
+		this.#value = v;
 		this.#set = true;
-		this.#new = Boolean(this.parent?.new || isNew);
-		this.#reset();
-	}
-	/**
-	 * @param {Record<string, any>} v
-	 * @param {boolean} [isNew] 
-	 */
-	updateData(v, isNew = this.#new) {
-		if (this.#destroyed) { return; }
-		const newState = Boolean(this.parent?.new || isNew);
-		if (newState !== this.#new) {
-			this.#lastValue = this.#value = v;
-			this.#set = true;
-			this.#new = newState;
-			this.#reset();
-			return;
-		}
-		if (this.#set) {
-			this.#value = v;
-			this.#emitUpdate();
-			return;
-		}
-		this.#lastValue = this.#value = v;
-		this.#set = true;
-		this.#reset();
+		this.#onUpdate?.(this.#value);
+		if (this.#needUpdate) { return; }
+		this.#needUpdate = true;
+		requestAnimationFrame(() => { this.#runUpdate() });
 	}
 
-	#needUpdate = false;
+	/**
+	 * @param {T} v
+	 * @param {boolean} [isNew] 
+	 */
+	reset(v, isNew = this.#new) {
+		if (this.#destroyed) { return; }
+		if (this.#parent) {
+			if (!this.#set) { return; }
+			this.#new = Boolean(this.#parent.#new || isNew);
+			this.#reset(this.#initValue);
+		} else if (arguments.length) {
+			this.#set = true;
+			this.#new = Boolean(isNew);
+			this.#reset(v);
+		} else if (this.#set) {
+			this.#reset(this.#initValue);
+		}
+	}
+	/**
+	 * @param {T?} v
+	 */
+	#reset(v) {
+		if (this.#destroyed || !this.#set) { return; }
+		this.#value = this.#lastValue = this.#initValue = v;
+		this.#set = true;
+		this.#needUpdate = false;
+		this.#lastValue = this.#value;
+		const readonly = this.#readonly;
+		const hidden = this.#hidden;
+		const disabled = this.#disabled;
+		const val = this.#value;
+		if (val && typeof val === 'object') {
+			for (const [key, field] of this[Symbol.iterator]()) {
+				field.#reset(val[key]);
+				field.#setParentReadonly(readonly);
+				field.#setParentHidden(hidden);
+				field.#setParentDisabled(disabled);
+			}
+		}
+	}
+
 	#destroyed = false;
 	destroy() {
 		if (this.#destroyed) { return; }
@@ -272,51 +309,7 @@ export class Schema extends EventEmitter {
 			}
 		});
 	}
-	#updateState() {
-		// TODO: 调整权限只读
-		const fieldWriteable = new Set();
-		// TODO: 只读
-		const fieldDisabled = new Set();
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.writeable = fieldWriteable.has(field.name);
-			field.disabled = fieldDisabled.has(field.name);
-			// TODO: 选项处理
-			// TODO: 查询条件处理
-		}
-
-	}
-	#reset() {
-		this.#needUpdate = false;
-		this.#lastValue = this.#value;
-		const readonly = this.#readonly;
-		const hidden = this.#hidden;
-		const writable = this.#writable;
-		const disabled = this.#disabled;
-		const value = this.#value;
-		for (const [key, field] of this[Symbol.iterator]()) {
-			field.#_reset(value[key]);
-			field.#setParentReadonly(readonly);
-			field.#setParentHidden(hidden);
-			field.#setParentWritable(writable);
-			field.#setParentDisabled(disabled);
-		}
-	}
-	#emitUpdate() {
-		if (this.#destroyed) { return; }
-		if (this.#needUpdate) { return; }
-		this.#needUpdate = true;
-		requestAnimationFrame(() => {
-			if (this.#destroyed) { return; }
-			if (!this.#needUpdate) { return; }
-			this.#needUpdate = false;
-			for (const [key, field] of this[Symbol.iterator]()) {
-				field.#update(this.#value[key]);
-			}
-			if (this.#lastValue === this.#value) { return; }
-			this.#lastValue = this.#value;
-			this.emit('update', this.#value);
-		});
-	}
+	#needUpdate = false;
 	/**
 	 * 
 	 * @param {...string | number | (string | number)[]} fields 
@@ -337,29 +330,32 @@ export class Schema extends EventEmitter {
 		}
 		this.emit('refresh');
 	}
-	#updated() {
-		this.#emitUpdate();
-		this.#onUpdate?.(this.#value);
-	}
-	#update(value) {
+	#toUpdate(value) {
 		if(this.#value !== value) { return }
 		this.#value = value;
-		this.#updated();
+		this.#runUpdate();
+	}
+	#runUpdate() {
+		if (this.#destroyed) { return; }
+		if (!this.#needUpdate) { return; }
+		this.#needUpdate = false;
+		const val = this.#value;
+		if (val && typeof val === 'object') {
+			for (const [key, field] of this[Symbol.iterator]()) {
+				field.#toUpdate(val[key]);
+			}
+		}
+		if (this.#lastValue === val) { return; }
+		this.#lastValue = val;
+		this.emit('update', val);
 
 	}
 }
-export class SchemaRoot extends Schema {
-	/** @readonly @type {string?} */
-	field = null;
-	/** @type {number} */
-	#no = 0;
-	get no() { return this.#no; }
-	set no(v) {
-		if (this.#no === v) { return; }
-		this.#no = v;
-		this.move();
-	}
-	/** @type {Record<string, SchemaRoot>} */
+
+
+
+export class SchemaObject extends Schema {
+	/** @type {Record<string, Schema>} */
 	#children
 	*[Symbol.iterator]() {yield* Object.entries(this.#children);}
 	/**
@@ -370,25 +366,23 @@ export class SchemaRoot extends Schema {
 	child(key) { return this.#children[key] || null; }
 	/**
 	 * @param {Record<string, Schema.Field>} schema
-	 * @param {Record<string, any>} values
-	 * @param {object} options 
-	 * @param {HTMLElement} options.root 
-	 * @param {SchemaRoot} [options.parent] 
-	 * @param {string} [options.field] 
-	 * @param {number} [options.no] 
+	 * @param {Schema?} [parent] 
+	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
-	 * @param {boolean} [options.hidden] 
+	 * @param {any} [onUpdate] 
 	 */
-	constructor(schema, values, { root, parent, hidden, new: isNew }) {
-		super({ root, parent, hidden, new: isNew });
+	constructor(schema, parent, { new: isNew } = {}, onUpdate) {
+		super({parent, new: isNew, schema}, onUpdate);
 		const children = Object.create(null);
-		for (const [key, field] of Object.entries(schema)) {
+		for (const [key, field] of Object.entries(schema.props)) {
 			let child;
 			if (typeof field.type === 'string') {
 				if (field.array) {
-					child = new SchemaArray(field, key, this);
+					child = new SchemaArray(field, this, key);
 				} else {
-					child = new SchemaValue(field, key, this);
+					child = new Schema(field, {parent: this}, (value) => {
+						this.value = {...this.value, [key]: value};
+					});
 				}
 			} else if (Array.isArray(field.props)) {
 				child = new SchemaTuple(field, key, this);
@@ -399,51 +393,56 @@ export class SchemaRoot extends Schema {
 			}
 			children[key] = child;
 		}
-		for (const [,el] of Object.entries(children)) {
-			root.appendChild(el.root);
-		}
-		this.#children = Object.freeze(children);
+		this.#children = children;
 	}
-
 }
-
-export class SchemaObject {
-	/**
-	 * @param {Schema.Object & Schema.Event & Schema.Attr} schema
-	*/
-	constructor(schema, key, values) {
-	}
-	value = null;
-}
-
-
 
 export class SchemaTuple extends SchemaObject {
 	/**
 	 * @param {Schema.Tuple & Schema.Event & Schema.Attr} schema
 	*/
 	constructor(schema, key, values) {
-		super(schema, key, values);
+		super(schema, key, {}, values);
 	}
 	value = null;
 }
 
-export class SchemaValue {
+export class SchemaArray extends Schema {
+	/** @type {Schema[]} */
+	#children = [];
+	*[Symbol.iterator]() {yield* this.#children.entries();}
 	/**
-	 * @param {Schema.Type & Schema.Event & Schema.Attr} schema
-	*/
-	constructor(schema, key,  values) {
-	}
-	value = null;
-}
-
-export class SchemaArray {
+	 * 
+	 * @param {string | number} key 
+	 * @returns {Schema?}
+	 */
+	child(key) { return this.#children[key] || null; }
 	/**
-	 * @param {Schema.Field} schema
-	*/
-	constructor(schema, key,  values) {
+	 * @param {Record<string, Schema.Field>} schema
+	 * @param {object} options 
+	 * @param {Schema} [options.parent] 
+	 * @param {string} [options.field] 
+	 * @param {number} [options.no] 
+	 * @param {boolean} [options.new] 
+	 * @param {boolean} [options.hidden] 
+	 */
+	constructor(schema, parent, onUpdate) {
+		super({ parent, schema }, onUpdate);
+		this.schema = schema;
 	}
-	value = null;
+	#create() {
+		const schema = this.schema;
+		if (typeof schema.type === 'string') {
+			return new Schema(schema, {parent: this}, (value) => {
+				// this.value = {...this.value, [key]: value};
+			});
+		} else if (Array.isArray(schema.props)) {
+			return null;
+		}
+		return new SchemaObject(schema, this, (value) => {
+			// this.value = {...this.value, [key]: value};
+		});
+	}
 }
 /**
  * @typedef {(Schema.Object | Schema.Tuple | Schema.Type) & Schema.Event & Schema.Attr} Schema.Field
