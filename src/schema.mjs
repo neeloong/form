@@ -12,8 +12,8 @@ export class Schema extends EventEmitter {
 	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
 	 */
-	static create(schema, { new: isNew } = {}) {
-		return new SchemaObject({props: schema}, null, { new: isNew });
+	static create(schema, options = {}) {
+		return new SchemaObject({props: schema}, { ...options, parent: null });
 	}
 	/** @type {Schema?} */
 	#null = null;
@@ -28,6 +28,8 @@ export class Schema extends EventEmitter {
 	 * @param {any} schema
 	 * @param {object} options 
 	 * @param {*} [options.parent] 
+	 * @param {number | string | null} [options.index] 
+	 * @param {number} [options.length] 
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.hidden] 
 	 * @param {boolean} [options.readonly] 
@@ -36,18 +38,20 @@ export class Schema extends EventEmitter {
 	 * @param {boolean} [options.scriptReadonly] 
 	 * @param {boolean} [options.scriptDisabled] 
 	 * @param {((value: any) => any)?} [options.setValue] 
-	 * @param {((value: any) => any)?} [options.convert] 
+	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
 	 * @param {((value: T?) => void)?} [options.onUpdate] 
+	 * @param {((value: T?) => void)?} [options.onUpdateState] 
 	 */
 	constructor(schema, {
-		setValue, convert, onUpdate,
-		new: isNew, parent: parentNode,
+		setValue, convert, onUpdate, onUpdateState,
+		index, length, new: isNew, parent: parentNode,
 		hidden, disabled, readonly,
 		scriptHidden, scriptReadonly, scriptDisabled,
 	}) {
 		super();
 		this.schema = schema;
 		this.#onUpdate = onUpdate || null;
+		this.#onUpdateState = onUpdateState || null;
 		this.#setValue = typeof setValue === 'function' ? setValue : null;
 		this.#convert = typeof convert === 'function' ? convert : null;
 		const parent = parentNode instanceof Schema ? parentNode : null;
@@ -56,6 +60,8 @@ export class Schema extends EventEmitter {
 			this.#root = parent.#root;
 			// TODO: 事件向上冒泡
 		}
+		this.#length = length || 0;
+		this.#index = index ?? null;
 		this.#selfNew = Boolean(isNew);
 		this.#new = parent && parent.#new || this.#selfNew
 
@@ -73,10 +79,12 @@ export class Schema extends EventEmitter {
 	}
 	/** @type {((value: any) => any)?} */
 	#setValue
-	/** @type {((value: any) => any)?} */
+	/** @type {((value: any, state: any) => [value: any, state: any])?} */
 	#convert
 	/** @type {((value: any) => void)?} */
 	#onUpdate
+	/** @type {((value: any) => void)?} */
+	#onUpdateState
 	/** @readonly @type {Schema?} */
 	#parent = null;
 	/** @readonly @type {Schema} */
@@ -84,8 +92,21 @@ export class Schema extends EventEmitter {
 	get parent() { return this.#parent; }
 	get root() { return this.#root; }
 
-
-	#index = -1;
+	/** @type {number} */
+	#length = 0;
+	get length() {
+		markRead(this, 'length');
+		return this.#length;
+	}
+	set length(v) {
+		const val = v;
+		if (val === this.#length) { return }
+		this.#length = val;
+		markChange(this, 'length');
+		this.emit('length', val);
+	}
+	/** @type {string | number | null} */
+	#index = '';
 	get index() {
 		markRead(this, 'index');
 		return this.#index;
@@ -96,6 +117,10 @@ export class Schema extends EventEmitter {
 		this.#index = val;
 		markChange(this, 'index');
 		this.emit('index', val);
+	}
+	get no() {
+		const index = this.index;
+		return typeof index === 'number' ? index + 1 : index;
 	}
 
 	#selfNew = false;
@@ -240,6 +265,10 @@ export class Schema extends EventEmitter {
 	#value = this.#initValue;
 	#lastValue = this.#value;
 
+	/** @type {any} */
+	#state = null;
+	#lastState = this.#state;
+
 
 	get changed() { return this.#value === this.#lastValue; }
 	get saved() { return this.#value === this.#initValue; }
@@ -256,10 +285,110 @@ export class Schema extends EventEmitter {
 		this.#onUpdate?.(this.#value);
 		if (this.#needUpdate) { return; }
 		this.#needUpdate = true;
-		requestAnimationFrame(() => {
-			this.#runUpdate();
+		if (this.#needUpdateState) { return; }
+		requestAnimationFrame(() => { this.#runUpdate(); });
+	}
+
+	get state() {
+		markRead(this, 'value');
+		return this.#state;
+	}
+	set state(v) {
+		if (this.#destroyed) { return; }
+		const val = v;
+		this.#state = val;
+		this.#set = true;
+		this.#onUpdateState?.(this.#state);
+		if (this.#needUpdateState) { return; }
+		this.#needUpdateState = true;
+		if (this.#needUpdate) { return; }
+		requestAnimationFrame(() => { this.#runUpdate(); });
+	}
+
+
+	#needUpdate = false;
+	#needUpdateState = false;
+	#toUpdate(value, state) {
+		if (this.#destroyed) { return value; }
+		const [val,sta] = this.#convert?.(value, state) || [value, state];
+		if(this.#value === val && this.#state === sta) { return [val,sta] }
+		this.#value = val;
+		this.#state = sta;
+		if (!this.#set) {
+			this.#set = true;
+			this.#initValue = val;
+		}
+		try {
+			return this.#runUpdate(true);
+		} finally {
 			markChange(this, 'value');
-		});
+			markChange(this, 'state');
+		}
+	}
+	#runUpdate(force = false) {
+		let val = this.#value;
+		let states = this.#state;
+		if (this.#destroyed) { return [val, states]; }
+		const needUpdate = this.#needUpdate;
+		const needUpdateState = this.#needUpdateState;
+		if (!force && !needUpdate && !needUpdateState) {
+			return [val, states];
+		}
+		this.#needUpdate = false;
+		this.#needUpdateState = false;
+		if (val && typeof val === 'object') {
+			/** @type {T} */
+			// @ts-ignore
+			let values = Array.isArray(val) ? [...val] : {...val};
+			let newStates = Array.isArray(val) ? Array.isArray(states) ? [...states] : [] : {...states};
+			let updated = false;
+			for (const [key, field] of this[Symbol.iterator]()) {
+				// @ts-ignore
+				const data = val[key];
+				const state = states?.[key];
+				const [newData, newState] = field.#toUpdate(data, state);
+				if (data !== newData) {
+					values[key] = newData;
+					updated = true;
+				}
+				if (state !== newState) {
+					newStates[key] = newState;
+					updated = true;
+				}
+			}
+			if (updated) {
+				val = values;
+				states = newStates;
+				this.#value = val;
+				this.#state = newStates;
+			}
+		}
+		try {
+
+			if (this.#lastValue === val && this.#lastState === states) {
+				return [val, states];
+			}
+			this.#lastValue = val;
+			this.#lastState = states;
+			this.emit('update', val, states);
+			return [val, states];
+		} finally {
+			if (needUpdate) { markChange(this, 'value'); }
+			if (needUpdateState) { markChange(this, 'state'); }
+
+		}
+	}
+
+
+
+	#destroyed = false;
+	get destroyed() { return this.#destroyed; }
+	destroy() {
+		if (this.#destroyed) { return; }
+		this.#destroyed = true;
+		for (const [, field] of this[Symbol.iterator]()) {
+			field.destroy();
+		}
 	}
 
 	/**
@@ -289,27 +418,16 @@ export class Schema extends EventEmitter {
 		this.#set = true;
 		this.#needUpdate = false;
 		this.#lastValue = this.#value;
+		this.#lastState = this.#state;
 		const val = this.#value;
 		if (val && typeof val === 'object') {
 			for (const [key, field] of this[Symbol.iterator]()) {
 				field.#reset(val[key]);
-				field.#updateHidden();
-				field.#updateDisabled();
-				field.#updateReadonly();
 			}
 		}
 		markChange(this, 'value');
 	}
 
-	#destroyed = false;
-	get destroyed() { return this.#destroyed; }
-	destroy() {
-		if (this.#destroyed) { return; }
-		this.#destroyed = true;
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.destroy();
-		}
-	}
 	async verify() {
 		return Promise.all([...this[Symbol.iterator]()].map(([,field]) => {
 			/** @type {import('../types.mjs').VerifyError[]} */
@@ -335,7 +453,7 @@ export class Schema extends EventEmitter {
 				.then(() => error);
 		})).then(v => v.flat());
 	}
-	#needUpdate = false;
+
 	/**
 	 * 
 	 * @param {...string | number | (string | number)[]} fields 
@@ -355,49 +473,6 @@ export class Schema extends EventEmitter {
 			field.refresh();
 		}
 		this.emit('refresh');
-	}
-	#toUpdate(value) {
-		if (this.#destroyed) { return value; }
-		const val = this.#convert?.(value) || value;
-		if(this.#value === val) { return val }
-		this.#value = val;
-		if (!this.#set) {
-			this.#set = true;
-			this.#initValue = val;
-		}
-		try {
-			return this.#runUpdate(true);
-		} finally {
-			markChange(this, 'value');
-		}
-	}
-	#runUpdate(force = false) {
-		let val = this.#value;
-		if (this.#destroyed) { return val; }
-		if (!force && !this.#needUpdate) { return val; }
-		this.#needUpdate = false;
-		if (val && typeof val === 'object') {
-			/** @type {T} */
-			// @ts-ignore
-			let values = Array.isArray(val) ? [...val] : {...val};
-			let updated = false;
-			for (const [key, field] of this[Symbol.iterator]()) {
-				const data = val[key];
-				const newData = field.#toUpdate(data);
-				if (data !== newData) {
-					values[key] = newData;
-					updated = true;
-				}
-			}
-			if (updated) {
-				val = values;
-				this.#value = val;
-			}
-		}
-		if (this.#lastValue === val) { return val; }
-		this.#lastValue = val;
-		this.emit('update', val);
-		return val;
 	}
 	/**
 	 * 
@@ -441,47 +516,46 @@ export class SchemaObject extends Schema {
 	}
 	/**
 	 * @param {Record<string, Schema.Field>} schema
-	 * @param {Schema?} [parent] 
 	 * @param {object} [options] 
+	 * @param {Schema?} [options.parent] 
+	 * @param {string | number} [options.index] 
 	 * @param {boolean} [options.new] 
 	 * @param {(value: any) => void} [options.onUpdate] 
 	 */
-	constructor(schema, parent, { new: isNew, onUpdate } = {}) {
+	constructor(schema,{ ...options } = {}) {
 		super(schema, {
-			parent,
-			new: isNew,
-			onUpdate,
+			...options,
 			setValue(v) {
 				if (typeof v !== 'object') { return {}; }
 				return v;
 			},
-			convert(v) {
-				if (typeof v !== 'object') { return {}; }
-				return v;
+			convert(v, state) {
+				return [
+					typeof v === 'object' ? v : {},
+					typeof state === 'object' ? state : {},
+				]
 			},
 
 		});
 		const children = Object.create(null);
-		for (const [key, field] of Object.entries(schema.props)) {
+		for (const [index, field] of Object.entries(schema.props)) {
+			/** @param {*} value */
+			const onUpdate = (value) => {
+				this.value = {...this.value, [index]: value};
+			}
 			let child;
 			if (typeof field.type === 'string') {
 				if (field.array) {
-					child = new SchemaArray(field, this, {new: isNew});
+					child = new SchemaArray(field, {parent: this, index, onUpdate});
 				} else {
-					child = new Schema(field, {parent: this, onUpdate: (value) => {
-						this.value = {...this.value, [key]: value};
-					}});
+					child = new Schema(field, {parent: this, index, onUpdate});
 				}
 			} else if (field.array) {
-				child = new SchemaArray(field, this, {new: isNew, onUpdate: (value) => {
-					this.value = {...this.value, [key]: value};
-				}});
+				child = new SchemaArray(field, {parent: this, index, onUpdate});
 			} else {
-				child = new SchemaObject(field, this, {new: isNew, onUpdate: (value) => {
-					this.value = {...this.value, [key]: value};
-				}});
+				child = new SchemaObject(field, { parent: this, index, onUpdate});
 			}
-			children[key] = child;
+			children[index] = child;
 		}
 		this.#children = children;
 	}
@@ -529,12 +603,13 @@ export class SchemaArray extends Schema {
 	}
 	/**
 	 * @param {Record<string, Schema.Field>} schema
-	 * @param {Schema} parent
-	 * @param {object} options 
+	 * @param {object} [options] 
+	 * @param {Schema?} [options.parent]
+	 * @param {string | number | null} [options.index] 
 	 * @param {boolean} [options.new] 
 	 * @param {(value: any) => void} [options.onUpdate] 
 	 */
-	constructor(schema, parent, { new: isNew, onUpdate}) {
+	constructor(schema,  { parent, onUpdate, ...options} = {}) {
 		const updateChildren = (list) => {
 			if (this.destroyed) { return; }
 			const length = Array.isArray(list) && list.length || 0;
@@ -547,18 +622,22 @@ export class SchemaArray extends Schema {
 				schema.destroy();
 			}
 			if (oldLength !== length) {
+				this.length = children.length;
 				markChange(this, 'children');
 			}
 
 		}
 		super(schema, {
+			...options,
 			parent,
-			new: isNew,
 			setValue(v) { return Array.isArray(v) ? v : v == null ? [] : [v] },
-			convert(v) {
+			convert(v, state) {
 				const val = Array.isArray(v) ? v : v == null ? [] : [v];
 				updateChildren(val);
-				return val;
+				return [
+					val,
+					(Array.isArray(state) ? state : v == null ? [] : [state]),
+				];
 			},
 			onUpdate:(value) => {
 				updateChildren(value);
@@ -580,13 +659,13 @@ export class SchemaArray extends Schema {
 		}
 		if (typeof schema.type === 'string') {
 			this.#create = index => {
-				const child = new Schema(schema, {parent: this, onUpdate: (value) => childUpdated(value, index) });;
+				const child = new Schema(schema, {parent: this, index, onUpdate: (value) => childUpdated(value, index) });;
 				child.index = index;
 				return child
 			}
 		} else if (!Array.isArray(schema.props)) {
 			this.#create = index =>  {
-				const child = new SchemaObject(schema, this, {onUpdate: (value) => childUpdated(value, index)});
+				const child = new SchemaObject(schema, { parent: this, index, onUpdate: (value) => childUpdated(value, index)});
 				child.index = index;
 				return child
 			}
@@ -616,6 +695,7 @@ export class SchemaArray extends Schema {
 		let val = [...data];
 		val.splice(insertIndex, 0, value);
 		this.value = val;
+		this.length = children.length;
 		markChange(this, 'children');
 		return true;
 	}
@@ -647,6 +727,7 @@ export class SchemaArray extends Schema {
 		const val = [...data];
 		const [value] = val.splice(insertIndex, 1);
 		this.value = val;
+		this.length = children.length;
 		markChange(this, 'children');
 		return value;
 

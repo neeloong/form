@@ -13,6 +13,6 @@
     "emitDeclarationOnly": true
   },
   "locale": "zh-CN",
-  "include": ["src"],
+  "include": ["src", "test/test.mjs"],
   "compileOnSave": true
 }

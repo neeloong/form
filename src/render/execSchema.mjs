@@ -1,4 +1,4 @@
-const regex1 = /^:(readonly|disabled|hidden|value)$/
+const regex1 = /^:(index|no|length|state|readonly|disabled|hidden|value)$/
 /**
  * @param {import('../schema.mjs').Schema} schema
  * @param {string | Function} value
@@ -14,7 +14,7 @@ export default function execSchema(schema, value, envs) {
 	}
 	const r1 = regex1.exec(value);
 	if (r1) {
-		const key = /** @type {'readonly'|'disabled'|'hidden'|'value'} */(r1[1]);
+		const key = /** @type {'index'|'no'|'length'|'state'|'readonly'|'disabled'|'hidden'|'value'} */(r1[1]);
 		return schema[key];
 	}
 	

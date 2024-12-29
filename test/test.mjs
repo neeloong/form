@@ -1,4 +1,4 @@
-import { Schema, LayoutNode } from './index.mjs';
+import { Schema, LayoutNode } from '../src/index.mjs';
 
 const layouts = LayoutNode.parse(await fetch('./template.xml').then(v => v.text()));
 

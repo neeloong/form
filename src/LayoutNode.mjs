@@ -5,7 +5,7 @@ const attrPattern = /^(?<decorator>:|@|!|class:|style:)?(?<name>[-\w\p{Unified_I
 const namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
 
 
-const computedIdRegex = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)(?::(?:readonly|hidden|disabled))?$/u
+const computedIdRegex = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)?(?::(?:index|no|length|state|readonly|hidden|disabled))?$/u
 function isSpace(c) {
 	return c === '0x80' || c <= ' ';
 }
@@ -63,7 +63,7 @@ function parse(
 		current = currentNode || doc;
 	}
 	function characters(chars) {
-		chars = chars.replace(/^[\n\t]+|[\n\t]+$/g, '');
+		chars = chars.replace(/^\t*\n\t*|\n\t+|\t*\n\t*$/g, '');
 		if (!chars) { return; }
 		current.add(chars);
 	}

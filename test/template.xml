@@ -4,7 +4,7 @@
 		<input !value=b />
 		<ul id="3">
 			<li id="4" !value="c" !item>
-				<div !template="d">1</div>
+			<div !template=":no"/>. <div !template="d">1</div>
 			</li>
 		</ul>
 	</li>
@@ -15,7 +15,7 @@
 		<input !value=b />
 		<ul id="3">
 			<li id="4" !value="c" !item>
-				<div>1</div>
+		<input !value=d />
 			</li>
 		</ul>
 	</li>

@@ -92,7 +92,7 @@ function renderItem(layout, parent, next, schema, envs, componentPath, getCompon
 function render(layout, parent, next, schema, envs, componentPath, getComponent) {
 	const { directives } = layout;
 	const { value } = directives;
-	const { item, name, no: noName } = directives;
+	const { item, name, index: noName } = directives;
 	if (value) {
 		schema = schema.child(value, true);
 		envs = [...envs, { schema, name, noName }];

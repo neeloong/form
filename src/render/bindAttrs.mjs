@@ -17,7 +17,8 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 		const attrValue = attrs[name];
 		if (!(name in attrs)) {
 			const bind = attr.bind;
-			if (bind === 'value' || bind === 'disabled' || bind === 'hidden' || bind === 'readonly') {
+			if (bind && ['value', 'no', 'length', 'state', 'index', 'hidden','disabled','readonly',].includes(bind)) {
+				// @ts-ignore
 				const result = computed(() => schema[bind]);
 				let value = result.value;
 				rContext.set(name, value);
@@ -28,8 +29,8 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 					rContext.set(name, value);
 				});
 				const {event, set} = attr;
-				if (event && typeof set === 'function') {
-					rContext.addEvent(event, (...args) => { schema[bind] = set(...args)});
+				if (bind === 'value' && event && typeof set === 'function') {
+					rContext.addEvent(event, (...args) => { schema.value = set(...args)});
 				}
 			} else {
 				rContext.set(name, attr.default);

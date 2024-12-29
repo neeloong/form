@@ -7,7 +7,7 @@
  * @property {string} [name] 
  * @property {string} [value] 值关联（关联为列表）
  * @property {*} [item] 列表循环的项目名
- * @property {string} [no]
+ * @property {string} [index]
  * @property {string | Function} [for]
  * @property {string} [key]
  * 
