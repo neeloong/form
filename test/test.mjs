@@ -1,9 +1,9 @@
-import { Schema, LayoutNode } from '../src/index.mjs';
+import { Value, LayoutNode } from '../src/index.mjs';
 
 const layouts = LayoutNode.parse(await fetch('./template.xml').then(v => v.text()));
 
 
-const s = Schema.create({
+const s = Value.create({
 	int: {type: 'int'},
 	a: {
 		props: {

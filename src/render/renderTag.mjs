@@ -1,7 +1,7 @@
 import computed from '../computed/index.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
-import execSchema from './execSchema.mjs';
+import execValue from './execValue.mjs';
 import renderChildrenDirectives from './renderChildrenDirectives.mjs';
 import toAttrValue from './toAttrValue.mjs';
 /**
@@ -139,7 +139,7 @@ function *getElementModel2(el, attr) {
  * @param {import('../types.mjs').Layout} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {import("../schema.mjs").Schema} schema
+ * @param {import("../Value.mjs").default} schema
  * @param {any} envs
  * @param {(layouts: (import("../types.mjs").Layout | string)[], parent: Element, next: Node | null) => () => void} render
  */
@@ -172,13 +172,13 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 		}
 		const schemaValue = typeof attr === 'function' ? attr : attr.description || ''
 		if (node instanceof HTMLInputElement && name.toLocaleLowerCase() === 'type') {
-			let value = toAttrValue(execSchema(schema, schemaValue, envs));
+			let value = toAttrValue(execValue(schema, schemaValue, envs));
 			if (value !== null) {
 				node.setAttribute(name, value);
 			}
 			continue;
 		}
-		const result = computed(() => execSchema(schema, schemaValue, envs));
+		const result = computed(() => execValue(schema, schemaValue, envs));
 		bk.add(() => result.stop());
 		if (prop) {
 			let resValue = result.value
@@ -220,7 +220,7 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 			node.addEventListener(e, $event => {schema.value = f($event)});
 		}
 		for (const [name, prop] of getElementModel(node)) {
-			const result = computed(() => execSchema(schema, '', envs));
+			const result = computed(() => execValue(schema, '', envs));
 			bk.add(() => result.stop());
 			if (prop) {
 				let resValue = result.value

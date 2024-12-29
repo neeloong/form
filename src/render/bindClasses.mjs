@@ -1,11 +1,10 @@
 import computed from '../computed/index.mjs';
-import { Schema } from '../schema.mjs';
-import createContext from './createContext.mjs';
-import execSchema from './execSchema.mjs';
+import Value from '../Value.mjs';
+import execValue from './execValue.mjs';
 
 /**
  * @param {Node} node
- * @param {Schema} schema
+ * @param {Value} schema
  * @param {any} envs
  * @param {Record<string, string | ((...any: any) => void)>} classes
  */
@@ -17,7 +16,7 @@ export default function bindClasses(node, classes, schema, envs) {
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
 	for (const [name, attr] of Object.entries(classes)) {
-		const result = computed(() => Boolean(execSchema(schema, attr, envs)));
+		const result = computed(() => Boolean(execValue(schema, attr, envs)));
 		let value = result.value;
 		if (value) { node.classList.add(name); }
 		bk.add(() => result.stop());

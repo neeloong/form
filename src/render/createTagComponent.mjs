@@ -26,6 +26,7 @@ export default function (cContext, name, is) {
 			}
 			if (props.has(a)) { node[a] = v; }
 		})
+		// @ts-ignore
 		const v = tagAttrs[a];
 		if (props.has(a)) { node[a] = v; }
 		if (attrs.has(a)) {

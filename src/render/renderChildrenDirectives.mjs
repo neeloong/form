@@ -1,16 +1,16 @@
 import computed from '../computed/index.mjs';
-import execSchema from './execSchema.mjs';
+import execValue from './execValue.mjs';
 import toText from './toText.mjs';
 
 /**
  * @param {Element} node
- * @param {import('../schema.mjs').Schema} schema
+ * @param {import('../Value.mjs').default} schema
  * @param {any} envs
  * @param {import('../types.mjs').Directives} layout
  */
 export default function renderChildrenDirectives(node, schema, envs, { text, html }) {
 	if (text != null) {
-		const result = computed(() => execSchema(schema, text, envs));
+		const result = computed(() => execValue(schema, text, envs));
 		let value = toText(result.value);
 		const n = node.insertBefore(document.createTextNode('value'), null);
 		result.listen((val) => {
@@ -26,7 +26,7 @@ export default function renderChildrenDirectives(node, schema, envs, { text, htm
 		};
 	}
 	if (html != null) {
-		const result = computed(() => execSchema(schema, html, envs));
+		const result = computed(() => execValue(schema, html, envs));
 		let value = toText(result.value);
 		const old = node.innerHTML;
 		node.innerHTML = value;

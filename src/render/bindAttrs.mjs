@@ -1,12 +1,12 @@
 import computed from '../computed/index.mjs';
-import { Schema } from '../schema.mjs';
+import Value from '../Value.mjs';
 import createContext from './createContext.mjs';
-import execSchema from './execSchema.mjs';
+import execValue from './execValue.mjs';
 
 /**
  * @param {ReturnType<typeof createContext>['rContext']} rContext
  * @param {Record<string, import('../getComponent.mjs').Attr>} componentAttrs
- * @param {Schema} schema
+ * @param {Value} schema
  * @param {any} envs
  * @param {Record<string, string | Symbol | ((...any: any) => void)>} attrs
  */
@@ -44,11 +44,11 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 		const attrSchema = typeof attrValue === 'function' ? attrValue
 		: attrValue.description || '';
 		if (attr.immutable) {
-			rContext.set(name, execSchema(schema, attrSchema, envs));
+			rContext.set(name, execValue(schema, attrSchema, envs));
 			continue;
 
 		}
-		const result = computed(() => execSchema(schema, attrSchema, envs));
+		const result = computed(() => execValue(schema, attrSchema, envs));
 		let value = result.value;
 		rContext.set(name, value);
 		bk.add(() => result.stop());

@@ -1,4 +1,4 @@
-import { Schema, SchemaArray } from '../schema.mjs';
+import Value, { ArrayValue } from '../Value.mjs';
 import bindAttrs from './bindAttrs.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
@@ -14,7 +14,7 @@ import renderTemplate from './renderTemplate.mjs';
  * @param {import('../types.mjs').Layout} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {Schema} schema
+ * @param {Value} schema
  * @param {any} envs
  * @param {string[]} componentPath
  * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [getComponent]
@@ -83,7 +83,7 @@ function renderItem(layout, parent, next, schema, envs, componentPath, getCompon
  * @param {import('../types.mjs').Layout} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {Schema} schema
+ * @param {Value} schema
  * @param {any} envs
  * @param {string[]} componentPath
  * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [getComponent]
@@ -101,14 +101,14 @@ function render(layout, parent, next, schema, envs, componentPath, getComponent)
 		return renderItem(layout, parent, next, schema, envs, componentPath, getComponent);
 
 	}
-	if (!(schema instanceof SchemaArray)) { return () => { }; }
+	if (!(schema instanceof ArrayValue)) { return () => { }; }
 	return renderArray(layout, parent, next, schema, envs, (a, b, c, d, e) => {
 		return renderItem(a, b, c, d, e, componentPath, getComponent);
 	});
 }
 
 /**
- * @param {Schema} schema
+ * @param {Value} schema
  * @param {(import('../types.mjs').Layout | string)[]} layouts 
  * @param {Element} parent 
  * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [components] 

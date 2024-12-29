@@ -1,10 +1,10 @@
 const regex1 = /^:(index|no|length|state|readonly|disabled|hidden|value)$/
 /**
- * @param {import('../schema.mjs').Schema} schema
+ * @param {import('../Value.mjs').default} schema
  * @param {string | Function} value
  * @param {any} envs
  */
-export default function execSchema(schema, value, envs) {
+export default function execValue(schema, value, envs) {
 	if (!value) {
 		 return schema.value;
 	}

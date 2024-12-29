@@ -5,16 +5,16 @@ import computed from '../computed/index.mjs';
  * @param {import('../types.mjs').Layout} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {import('../schema.mjs').SchemaArray} schema
+ * @param {import('../Value.mjs').ArrayValue} schema
  * @param {any} envs
- * @param {(layout: import("../types.mjs").Layout, parent: Element, next: Node | null, schema: import('../schema.mjs').Schema, envs: any) => () => void} renderItem
+ * @param {(layout: import("../types.mjs").Layout, parent: Element, next: Node | null, schema: import('../Value.mjs').default, envs: any) => () => void} renderItem
  */
 export default function renderArray(layout, parent, next, schema, envs, renderItem) {
 	const start = parent.insertBefore(document.createComment(''), next);
 	const childrenResult = computed(() => schema.children);
-	/** @type {Map<import('../schema.mjs').Schema, [Comment, Comment, () => void]>} */
+	/** @type {Map<import('../Value.mjs').default, [Comment, Comment, () => void]>} */
 	let seMap = new Map();
-	/** @param {Map<import('../schema.mjs').Schema, [Comment, Comment, () => void]>} map */
+	/** @param {Map<import('../Value.mjs').default, [Comment, Comment, () => void]>} map */
 	function destroyMap(map) {
 		for (const [s, e, d] of map.values()) {
 			d();

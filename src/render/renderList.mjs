@@ -1,11 +1,11 @@
 import computed from '../computed/index.mjs';
-import execSchema from './execSchema.mjs';
+import execValue from './execValue.mjs';
 
 /**
  * @param {(import('../types.mjs').Layout | string)[]} layouts
  * @param {Element} parent
  * @param {Node?} next
- * @param {import('../schema.mjs').Schema} schema
+ * @param {import('../Value.mjs').default} schema
  * @param {any} envs
  * @param {(layout: import("../types.mjs").Layout) => () => void} renderItem
  * @returns {() => void}
@@ -23,7 +23,7 @@ export default function renderList(layouts, parent, next, schema, envs, renderIt
 		const end = parent.insertBefore(document.createComment(''), next);
 		let result = computed(() => list.findIndex(v => {
 			const ifv = v[0];
-				return ifv === null || Boolean(execSchema(schema, ifv, envs));
+				return ifv === null || Boolean(execValue(schema, ifv, envs));
 		}));
 		let lastIndex = result.value;
 		let destroy = () => { };
