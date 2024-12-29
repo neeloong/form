@@ -390,11 +390,10 @@ export class Schema extends EventEmitter {
 	 * 
 	 * @param {(string | import('./types.mjs').Layout)[]} layouts 
 	 * @param {Element} parent 
+	 * @param {((path: string[]) => import('./getComponent.mjs').Component | null)?} [components] 
 	 */
-	render(layouts, parent, ...args) {
-		const next = args.find(v => v instanceof Node) || null;
-		const components = args.find(v => typeof v === 'function');
-		return render(this, layouts, parent, next, components);
+	render(layouts, parent, components) {
+		return render(this, layouts, parent, components);
 	}
 }
 

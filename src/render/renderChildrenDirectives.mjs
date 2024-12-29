@@ -4,16 +4,15 @@ import toText from './toText.mjs';
 
 /**
  * @param {Element} node
- * @param {Node?} next
  * @param {import('../schema.mjs').Schema} schema
  * @param {any} envs
  * @param {import('../types.mjs').Directives} layout
  */
-export default function renderChildrenDirectives(node, next, schema, envs, { text, html }) {
+export default function renderChildrenDirectives(node, schema, envs, { text, html }) {
 	if (text != null) {
 		const result = computed(() => execSchema(schema, text, envs));
 		let value = toText(result.value);
-		const n = node.insertBefore(document.createTextNode('value'), next);
+		const n = node.insertBefore(document.createTextNode('value'), null);
 		result.listen((val) => {
 			if (!n.parentNode) { return; }
 			const newVal = toText(val);

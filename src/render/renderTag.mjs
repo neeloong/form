@@ -150,7 +150,7 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
 	bk.add(
-		renderChildrenDirectives(node, null, schema, envs, layout.directives)
+		renderChildrenDirectives(node, schema, envs, layout.directives)
 		|| render(layout.children || [], node, null)
 	);
 

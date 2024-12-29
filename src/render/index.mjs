@@ -49,12 +49,11 @@ function renderItem(layout, parent, next, schema, envs, componentPath, getCompon
 		: createTagComponent(cContext, component.tag, component.is);
 	const root = Array.isArray(r) ? r[0] : r;
 	const slot = Array.isArray(r) && r[1] || root;
-	const nextNode = Array.isArray(r) && r[2] || null;
 	parent.insertBefore(root, next);
 	const children =
-		renderChildrenDirectives(slot, nextNode, schema, envs, layout.directives)
-		|| renderList(layout.children || [], slot, nextNode, schema, envs, l => {
-			return render(l, slot, nextNode, schema, envs, componentPath, getComponent);
+		renderChildrenDirectives(slot, schema, envs, layout.directives)
+		|| renderList(layout.children || [], slot, null, schema, envs, l => {
+			return render(l, slot, null, schema, envs, componentPath, getComponent);
 		});
 
 
@@ -112,12 +111,11 @@ function render(layout, parent, next, schema, envs, componentPath, getComponent)
  * @param {Schema} schema
  * @param {(import('../types.mjs').Layout | string)[]} layouts 
  * @param {Element} parent 
- * @param {Node?} next 
  * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [components] 
  */
-export default function (schema, layouts, parent, next, components) {
+export default function (schema, layouts, parent, components) {
 	const envs = [{ schema }];
-	return renderList(layouts, parent, next, schema, envs, l => {
-		return render(l, parent, next, schema, envs, [], components);
+	return renderList(layouts, parent, null, schema, envs, l => {
+		return render(l, parent, null, schema, envs, [], components);
 	});
 }
