@@ -14,12 +14,16 @@ const s = Value.create({
 				},
 				array: true,
 			},
+			x: {
+				type: 'int',
+				array: true,
+			},
 		},
 		array: true,
 	},
 });
 s.value = {
-	a: {b: 2, c: [{d:1},{d:2},{d:3},4,5]}
+	a: {b: 2, c: [{d:1},{d:2},{d:3},4,5], x: [{d:1},{d:2},{d:3},4,5]}
 }
 setTimeout(() => {
 	const it = s.child('a')?.child(0)?.child('c')?.child(0);

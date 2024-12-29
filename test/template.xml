@@ -1,21 +1,29 @@
-<ul id="1">
+<ul>
 	<input !value=int />
-	<li id="2" !value="a" !item>
+	<li !value="a" !item>
 		<input !value=b />
-		<ul id="3">
-			<li id="4" !value="c" !item>
-			<div !template=":no"/>. <div !template="d">1</div>
+		<ul>
+			<li !value="c" !item>
+			<div !template=":no"/>. <div !template="d">1</div> <div !template>1</div>
+			</li>
+			<li !value="x" !item>
+			<div !template=":no"/>. <div !template="d">1</div> <div !template>1</div>
 			</li>
 		</ul>
 	</li>
 </ul>
-<ul id="1">
+<ul>
 	<input !value=int />
-	<li id="2" !value="a" !item>
+	<li !value="a" !item>
 		<input !value=b />
-		<ul id="3">
-			<li id="4" !value="c" !item>
-		<input !value=d />
+		<ul>
+			<li !value="c" !item>
+				<input !value=d />
+				<input !value />
+			</li>
+			<li !value="x" !item>
+				<input !value=d />
+				<input !value />
 			</li>
 		</ul>
 	</li>
