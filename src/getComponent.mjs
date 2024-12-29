@@ -29,11 +29,12 @@
  */
 
 /**
- * @param {Record<string, Component>} defines
+ * @param {Record<string, Component>} [defines]
  * @param {{roots: Record<string, DComponent>, common: Record<string, DComponent>}} [components] 
  * @returns {((path: string[]) => Component?)?}
  */
 export default function(defines, components) {
+	if (!defines) { return null; }
 		
 	/** @type {Map<string, DComponent>}  */
 	const componentMap = new Map();
@@ -55,29 +56,37 @@ export default function(defines, components) {
 	getComponents(['#'], components?.roots);
 	getComponents([], components?.common);
 	if (!componentMap.size) {
-		return null;
-	}
-	return (path) => {
+		return (path) => {
 			const name = path[path.length - 1];
 			if (!name) { return null; }
 			const main = defines[name];
 			if (!main) { return null; }
-
-			/** @type {DComponent[]} */
-			const components = [];
-			for (let i = path.length - 1; i >= 0; i--) {
-				const define = componentMap.get(path.slice(i).join('/'));
-				if (!define) { continue; }
-				components.push(define);
-			}
 			/** @type {Component} */
 			const component = {...main};
-			if (!components.length) { return component; }
-			const attrs = new Set(components.flatMap(v => v.attrs));
-			const events = new Set(components.flatMap(v => v.events));
-			component.attrs = Object.fromEntries(Object.entries(component.attrs).filter(v => attrs.has(v[0])))
-			component.events = Object.fromEntries(Object.entries(component.events).filter(v => events.has(v[0])))
 			return component;
+	};
+	}
+	return (path) => {
+		const name = path[path.length - 1];
+		if (!name) { return null; }
+		const main = defines[name];
+		if (!main) { return null; }
+
+		/** @type {DComponent[]} */
+		const components = [];
+		for (let i = path.length - 1; i >= 0; i--) {
+			const define = componentMap.get(path.slice(i).join('/'));
+			if (!define) { continue; }
+			components.push(define);
+		}
+		if (!components.length) { return null; }
+		/** @type {Component} */
+		const component = {...main};
+		const attrs = new Set(components.flatMap(v => v.attrs));
+		const events = new Set(components.flatMap(v => v.events));
+		component.attrs = Object.fromEntries(Object.entries(component.attrs).filter(v => attrs.has(v[0])))
+		component.events = Object.fromEntries(Object.entries(component.events).filter(v => events.has(v[0])))
+		return component;
 	}
 
 }
