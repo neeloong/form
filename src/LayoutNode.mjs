@@ -2,6 +2,7 @@ import { entityMap } from './entities.mjs';
 
 var tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
 var attrPattern = /^(?<decorator>:|@|!)?(?<name>[\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
+var namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
 
 function isSpace(c) {
 	return c === '0x80' || c <= ' ';
@@ -171,13 +172,13 @@ function parse(source) {
 				if (!attr) { throw new Error('无效的属性:' + qName); }
 				const {decorator, name} = attr;
 				if (!decorator) {
-					attrs[qName] = value;
+					attrs[name] = value;
 				} else if (decorator === ':') {
-					attrs[qName] = {value};
+					attrs[name] = namePattern.test(value) ? Symbol(value) : new Function('env', value);
 				} else if (decorator === '!') {
 					directives[name] = value;
 				} else if (decorator === '@') {
-					events[name] = value;
+					events[name] = namePattern.test(value) ? value : new Function('$event', 'env', value);
 				}
 			}
 			let run = true;
@@ -225,7 +226,7 @@ function parse(source) {
 					case '"': case '\'': throw new Error('attribute value must after "="'); // No known test case
 					case '': error('意外的文件结束'); break;
 					case '>': end++; break;
-					default:  console.log(end, c, source.slice(end)); throw new Error("elements closed character '/' and '>' must be connected to");
+					default:  throw new Error("elements closed character '/' and '>' must be connected to");
 				}
 				endElement();
 			} else if (fixSelfClosed(source, end, name, closeMap)) {
@@ -242,7 +243,7 @@ function parse(source) {
 	}
 	return list;
 }
-/** @import { Layout } from './types.mjs' */
+/** @import { Directives, Layout } from './types.mjs' */
 /**
  * @implements {Layout}
  */
@@ -266,7 +267,7 @@ export default class LayoutNode {
 	attrs = Object.create(null);
 	/**@type {Record<string, any>} */
 	events = Object.create(null);
-	/**@type {Record<string, any>} */
+	/**@type {Directives} */
 	directives = Object.create(null);
 	/** @type {(LayoutNode | string)[]} */
 	children = [];

@@ -1,16 +1,28 @@
+import markChange from './computed/markChange.mjs';
+import markRead from './computed/markRead.mjs';
 import EventEmitter from './EventEmitter.mjs';
+import render from './render/index.mjs';
 
 /**
- * @template T
+ * @template [T=any]
  */
 export class Schema extends EventEmitter {
 	/**
 	 * @param {Record<string, Schema.Field>} schema
-	 * @param {object} options 
+	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
 	 */
-	static create(schema, { new: isNew }) {
-		return new SchemaObject({attrs: schema}, null, { new: isNew });
+	static create(schema, { new: isNew } = {}) {
+		return new SchemaObject({props: schema}, null, { new: isNew });
+	}
+	/** @type {Schema?} */
+	#null = null;
+	get null() {
+		const v = this.#null;
+		if (v) { return v; }
+		const val = new Schema({type: null}, {parent: this});
+		this.#null = val;
+		return val;
 	}
 	/**
 	 * @param {any} schema
@@ -23,37 +35,46 @@ export class Schema extends EventEmitter {
 	 * @param {boolean} [options.scriptHidden] 
 	 * @param {boolean} [options.scriptReadonly] 
 	 * @param {boolean} [options.scriptDisabled] 
-	 * @param {(value: T?) => void} [onUpdate] 
+	 * @param {((value: any) => any)?} [options.setValue] 
+	 * @param {((value: any) => any)?} [options.convert] 
+	 * @param {((value: T?) => void)?} [options.onUpdate] 
 	 */
-	constructor(schema, options, onUpdate) {
+	constructor(schema, {
+		setValue, convert, onUpdate,
+		new: isNew, parent: parentNode,
+		hidden, disabled, readonly,
+		scriptHidden, scriptReadonly, scriptDisabled,
+	}) {
 		super();
 		this.schema = schema;
 		this.#onUpdate = onUpdate || null;
-		const { parent } = options;
-		if (parent instanceof Schema) {
+		this.#setValue = typeof setValue === 'function' ? setValue : null;
+		this.#convert = typeof convert === 'function' ? convert : null;
+		const parent = parentNode instanceof Schema ? parentNode : null;
+		if (parent) {
 			this.#parent = parent;
 			this.#root = parent.#root;
-			this.#parentNew = Boolean(parent.#new);
-			this.#parentHidden = Boolean(parent.#hidden);
-			this.#parentDisabled = Boolean(parent.#disabled);
-			this.#parentReadonly = Boolean(parent.#readonly);
 			// TODO: 事件向上冒泡
 		}
-		this.#selfNew = Boolean(options.new);
-		this.#new = this.#selfNew || this.#parentNew;
-		
-		this.#selfHidden = typeof options.hidden === 'boolean' ? options.hidden : null;
-		this.#scriptHidden = Boolean(options.scriptHidden);
-		this.#hidden = this.#parentHidden || this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden;
-		
-		this.#selfDisabled = typeof options.disabled === 'boolean' ? options.disabled : null;
-		this.#scriptDisabled = Boolean(options.scriptDisabled);
-		this.#disabled = this.#parentDisabled || this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled;
-		
-		this.#selfReadonly = typeof options.readonly === 'boolean' ? options.readonly : null;
-		this.#scriptReadonly = Boolean(options.scriptReadonly);
-		this.#readonly = this.#parentReadonly || this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly;
+		this.#selfNew = Boolean(isNew);
+		this.#new = parent && parent.#new || this.#selfNew
+
+		this.#selfHidden = typeof hidden === 'boolean' ? hidden : null;
+		this.#scriptHidden = Boolean(scriptHidden);
+		this.#hidden = parent && parent.#hidden || this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden;
+
+		this.#selfDisabled = typeof disabled === 'boolean' ? disabled : null;
+		this.#scriptDisabled = Boolean(scriptDisabled);
+		this.#disabled = parent && parent.#disabled || this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled;
+
+		this.#selfReadonly = typeof readonly === 'boolean' ? readonly : null;
+		this.#scriptReadonly = Boolean(scriptReadonly);
+		this.#readonly = parent && parent.#readonly || this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly;
 	}
+	/** @type {((value: any) => any)?} */
+	#setValue
+	/** @type {((value: any) => any)?} */
+	#convert
 	/** @type {((value: any) => void)?} */
 	#onUpdate
 	/** @readonly @type {Schema?} */
@@ -64,14 +85,6 @@ export class Schema extends EventEmitter {
 	get root() { return this.#root; }
 
 
-	#parentNew = false;
-	/** @param {boolean} v */
-	#setParentNew(v) {
-		const val = Boolean(v);
-		if (val === this.#parentNew) { return }
-		this.#parentNew = val;
-		this.#updateNew();
-	}
 	#selfNew = false;
 	get selfNew() { return this.#selfNew; }
 	set selfNew(v) {
@@ -82,29 +95,36 @@ export class Schema extends EventEmitter {
 	}
 	#new = false;
 	#updateNew() {
-		const val = this.#parentNew || this.#selfNew;
+		const val = this.#parent && this.#parent.#new || this.#selfNew;
 		if (val === this.#new) { return }
 		this.#new = val;
 		for (const [, field] of this[Symbol.iterator]()) {
-			field.#setParentNew(val);
+			field.#updateNew();
 		}
+		markChange(this, 'new');
 		this.emit('new', val);
 	}
-	get new() {return this.#new; }
+	get new() {
+		markRead(this, 'new');
+		return this.#new;
+	}
 	set new(v) { this.selfNew = v; }
 
 
-	#parentHidden = false;
-	/** @param {boolean} v */
-	#setParentHidden(v) {
-		const hidden = Boolean(v);
-		if (hidden === this.#parentHidden) { return }
-		this.#parentHidden = hidden;
-		this.#updateHidden();
-	}
 	#scriptHidden = false;
 	/** @type {boolean?} */
 	#selfHidden = null;
+	#hidden = false;
+	#updateHidden() {
+		const val = this.#parent && this.#parent.hidden || (this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden);
+		if (val === this.#hidden) { return }
+		this.#hidden = val;
+		for (const [, field] of this[Symbol.iterator]()) {
+			field.#updateHidden();
+		}
+		markChange(this, 'hidden');
+		this.emit('hidden', val);
+	}
 	get selfHidden() { return this.#selfHidden}
 	set selfHidden(v) {
 		const val = v === null ? v : Boolean(v);
@@ -112,32 +132,28 @@ export class Schema extends EventEmitter {
 		this.#selfHidden = val;
 		this.#updateHidden();
 	}
-	#hidden = false;
-	#updateHidden() {
-		const hidden = this.#parentHidden || (this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden);
-		if (hidden === this.#hidden) { return }
-		this.#hidden = hidden;
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.#setParentHidden(hidden);
-		}
-		this.emit('hidden', hidden);
+	get hidden() {
+		markRead(this, 'hidden');
+		return this.#hidden;
 	}
-	get hidden() {return this.#hidden; }
 	set hidden(v) { this.selfHidden = v; }
 
 
 
-	#parentDisabled = false;
-	/** @param {boolean} v */
-	#setParentDisabled(v) {
-		const disabled = Boolean(v);
-		if (disabled === this.#parentDisabled) { return }
-		this.#parentDisabled = disabled;
-		this.#updateDisabled();
-	}
 	#scriptDisabled = false;
 	/** @type {boolean?} */
 	#selfDisabled = null;
+	#disabled = false;
+	#updateDisabled() {
+		const val = this.#parent && this.#parent.disabled || (this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled);
+		if (val === this.#disabled) { return }
+		this.#disabled = val;
+		for (const [, field] of this[Symbol.iterator]()) {
+			field.#updateDisabled();
+		}
+		markChange(this, 'disabled');
+		this.emit('disabled', val);
+	}
 	get selfDisabled() { return this.#selfDisabled}
 	set selfDisabled(v) {
 		const val = v === null ? v : Boolean(v);
@@ -145,47 +161,37 @@ export class Schema extends EventEmitter {
 		this.#selfDisabled = val;
 		this.#updateDisabled();
 	}
-	#disabled = false;
-	#updateDisabled() {
-		const disabled = this.#parentDisabled || (this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled);
-		if (disabled === this.#disabled) { return }
-		this.#disabled = disabled;
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.#setParentDisabled(disabled);
-		}
-		this.emit('disabled', disabled);
+	get disabled() {
+		markRead(this, 'disabled');
+		return this.#disabled;
 	}
-	get disabled() {return this.#disabled; }
 	set disabled(v) { this.selfDisabled = v; }
 
-	#parentReadonly = false;
-	/** @param {boolean} v */
-	#setParentReadonly(v) {
-		const readonly = Boolean(v);
-		if (readonly === this.#parentReadonly) { return }
-		this.#parentReadonly = readonly;
-		this.#updateReadonly();
-	}
+
 	#scriptReadonly = false;
 	/** @type {boolean?} */
 	#selfReadonly = null;
+	#readonly = false;
+	#updateReadonly() {
+		const val = this.#parent && this.#parent.readonly || (this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly);
+		if (val === this.#readonly) { return }
+		this.#readonly = val;
+		for (const [, field] of this[Symbol.iterator]()) {
+			field.#updateReadonly();
+		}
+		markChange(this, 'readonly');
+		this.emit('readonly', val);
+	}
 	get selfReadonly() { return this.#selfReadonly; }
 	set selfReadonly(v) {
 		const val = v === null ? v : Boolean(v);
 		if (this.#selfReadonly === val) { return; }
 		this.#updateReadonly();
 	}
-	#readonly = false;
-	#updateReadonly() {
-		const readonly = this.#parentReadonly || (this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly);
-		if (readonly === this.#readonly) { return }
-		this.#readonly = readonly;
-		for (const [, field] of this[Symbol.iterator]()) {
-			field.#setParentReadonly(readonly);
-		}
-		this.emit('readonly', readonly);
+	get readonly() {
+		markRead(this, 'readonly');
+		return this.#readonly;
 	}
-	get readonly() {return this.#readonly; }
 	set readonly(v) { this.selfReadonly = v; }
 
 
@@ -195,10 +201,25 @@ export class Schema extends EventEmitter {
 	*[Symbol.iterator]() {}
 	/**
 	 * 
+	 * @overload
 	 * @param {string | number} key 
+	 * @param {true} must
+	 * @returns {Schema}
+	 */
+	/**
+	 * 
+	 * @overload
+	 * @param {string | number} key 
+	 * @param {boolean?} [must]
 	 * @returns {Schema?}
 	 */
-	child(key) { return null; }
+	/**
+	 * 
+	 * @param {string | number} key 
+	 * @param {boolean?} [must]
+	 * @returns {Schema?}
+	 */
+	child(key, must) { return must && this.null || null; }
 
 	#set = false;
 	/** @type {T?} */
@@ -210,15 +231,22 @@ export class Schema extends EventEmitter {
 	get changed() { return this.#value === this.#lastValue; }
 	get saved() { return this.#value === this.#initValue; }
 
-	get value() { return this.#value; }
+	get value() {
+		markRead(this, 'value');
+		return this.#value;
+	}
 	set value(v) {
 		if (this.#destroyed) { return; }
-		this.#value = v;
+		const val = this.#setValue?.(v) || v;
+		this.#value = val;
 		this.#set = true;
 		this.#onUpdate?.(this.#value);
 		if (this.#needUpdate) { return; }
 		this.#needUpdate = true;
-		requestAnimationFrame(() => { this.#runUpdate() });
+		requestAnimationFrame(() => {
+			this.#runUpdate();
+			markChange(this, 'value');
+		});
 	}
 
 	/**
@@ -248,18 +276,16 @@ export class Schema extends EventEmitter {
 		this.#set = true;
 		this.#needUpdate = false;
 		this.#lastValue = this.#value;
-		const readonly = this.#readonly;
-		const hidden = this.#hidden;
-		const disabled = this.#disabled;
 		const val = this.#value;
 		if (val && typeof val === 'object') {
 			for (const [key, field] of this[Symbol.iterator]()) {
 				field.#reset(val[key]);
-				field.#setParentReadonly(readonly);
-				field.#setParentHidden(hidden);
-				field.#setParentDisabled(disabled);
+				field.#updateHidden();
+				field.#updateDisabled();
+				field.#updateReadonly();
 			}
 		}
+		markChange(this, 'value');
 	}
 
 	#destroyed = false;
@@ -296,20 +322,6 @@ export class Schema extends EventEmitter {
 				.then(() => error);
 		})).then(v => v.flat());
 	}
-	#needMove = false;
-	move() {
-		if (this.#destroyed) { return; }
-		if (this.#needMove) { return; }
-		this.#needMove = true;
-		requestAnimationFrame(() => {
-			if (this.#destroyed) { return; }
-			if (!this.#needMove) { return; }
-			this.#needMove = false;
-			for (const [, field] of this[Symbol.iterator]()) {
-				field.emit('move');
-			}
-		});
-	}
 	#needUpdate = false;
 	/**
 	 * 
@@ -332,28 +344,57 @@ export class Schema extends EventEmitter {
 		this.emit('refresh');
 	}
 	#toUpdate(value) {
-		if(this.#value === value) { return }
-		this.#value = value;
+		if (this.#destroyed) { return value; }
+		const val = this.#convert?.(value) || value;
+		if(this.#value === val) { return val }
+		this.#value = val;
 		if (!this.#set) {
 			this.#set = true;
-			this.#initValue = value;
+			this.#initValue = val;
 		}
-		this.#runUpdate();
+		try {
+			return this.#runUpdate(true);
+		} finally {
+			markChange(this, 'value');
+		}
 	}
-	#runUpdate() {
-		if (this.#destroyed) { return; }
-		if (!this.#needUpdate) { return; }
+	#runUpdate(force = false) {
+		let val = this.#value;
+		if (this.#destroyed) { return val; }
+		if (!force && !this.#needUpdate) { return val; }
 		this.#needUpdate = false;
-		const val = this.#value;
 		if (val && typeof val === 'object') {
+			/** @type {T} */
+			// @ts-ignore
+			let values = Array.isArray(val) ? [...val] : {...val};
+			let updated = false;
 			for (const [key, field] of this[Symbol.iterator]()) {
-				field.#toUpdate(val[key]);
+				const data = val[key];
+				const newData = field.#toUpdate(data);
+				if (data !== newData) {
+					values[key] = newData;
+					updated = true;
+				}
+			}
+			if (updated) {
+				val = values;
+				this.#value = val;
 			}
 		}
-		if (this.#lastValue === val) { return; }
+		if (this.#lastValue === val) { return val; }
 		this.#lastValue = val;
 		this.emit('update', val);
-
+		return val;
+	}
+	/**
+	 * 
+	 * @param {(string | import('./types.mjs').Layout)[]} layouts 
+	 * @param {Element} parent 
+	 */
+	render(layouts, parent, ...args) {
+		const next = args.find(v => v instanceof Node) || null;
+		const components = args.find(v => !(v instanceof Node) && v);
+		return render(this, layouts, parent, next, components)
 	}
 }
 
@@ -365,19 +406,49 @@ export class SchemaObject extends Schema {
 	*[Symbol.iterator]() {yield* Object.entries(this.#children);}
 	/**
 	 * 
+	 * @overload
 	 * @param {string | number} key 
+	 * @param {true} must
+	 * @returns {Schema}
+	 */
+	/**
+	 * 
+	 * @overload
+	 * @param {string | number} key 
+	 * @param {boolean?} [must]
 	 * @returns {Schema?}
 	 */
-	child(key) { return this.#children[key] || null; }
+	/**
+	 * 
+	 * @param {string | number} key 
+	 * @param {boolean?} [must]
+	 * @returns {Schema?}
+	 */
+	child(key, must) {
+		return this.#children[key] || must && this.null || null;
+	}
 	/**
 	 * @param {Record<string, Schema.Field>} schema
 	 * @param {Schema?} [parent] 
 	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
-	 * @param {(value: any) => void} [onUpdate] 
+	 * @param {(value: any) => void} [options.onUpdate] 
 	 */
-	constructor(schema, parent, { new: isNew } = {}, onUpdate) {
-		super(schema, {parent, new: isNew}, onUpdate);
+	constructor(schema, parent, { new: isNew, onUpdate } = {}) {
+		super(schema, {
+			parent,
+			new: isNew,
+			onUpdate,
+			setValue(v) {
+				if (typeof v !== 'object') { return {}; }
+				return v;
+			},
+			convert(v) {
+				if (typeof v !== 'object') { return {}; }
+				return v;
+			},
+
+		});
 		const children = Object.create(null);
 		for (const [key, field] of Object.entries(schema.props)) {
 			let child;
@@ -385,18 +456,18 @@ export class SchemaObject extends Schema {
 				if (field.array) {
 					child = new SchemaArray(field, this, {new: isNew});
 				} else {
-					child = new Schema(field, {parent: this}, (value) => {
+					child = new Schema(field, {parent: this, onUpdate: (value) => {
 						this.value = {...this.value, [key]: value};
-					});
+					}});
 				}
 			} else if (field.array) {
-				child = new SchemaArray(field, this, {new: isNew}, (value) => {
+				child = new SchemaArray(field, this, {new: isNew, onUpdate: (value) => {
 					this.value = {...this.value, [key]: value};
-				});
+				}});
 			} else {
-				child = new SchemaObject(field, this, {new: isNew}, (value) => {
+				child = new SchemaObject(field, this, {new: isNew, onUpdate: (value) => {
 					this.value = {...this.value, [key]: value};
-				});
+				}});
 			}
 			children[key] = child;
 		}
@@ -405,7 +476,7 @@ export class SchemaObject extends Schema {
 }
 
 /**
- * @template T
+ * @template [T=any]
  * @extends {Schema<(T | null)[]>}
  */
 export class SchemaArray extends Schema {
@@ -413,6 +484,10 @@ export class SchemaArray extends Schema {
 	#create = () => {throw new Error}
 	/** @type {{index: number, value: Schema}[]} */
 	#children = [];
+	get children() {
+		markRead(this, 'children');
+		return this.#children.map(v => v.value);
+	}
 	*[Symbol.iterator]() {
 		for (const [k, {value}] of this.#children.entries()) {
 			yield /** @type {[number, Schema]} */([k, value]);
@@ -420,30 +495,68 @@ export class SchemaArray extends Schema {
 	}
 	/**
 	 * 
+	 * @overload
 	 * @param {string | number} key 
+	 * @param {true} must
+	 * @returns {Schema}
+	 */
+	/**
+	 * 
+	 * @overload
+	 * @param {string | number} key 
+	 * @param {boolean?} [must]
 	 * @returns {Schema?}
 	 */
-	child(key) { return this.#children[Number(key)]?.value || null; }
+	/**
+	 * 
+	 * @param {string | number} key 
+	 * @param {boolean?} [must]
+	 * @returns {Schema?}
+	 */
+	child(key, must) {
+		const children = this.#children;
+		if (typeof key === 'number' && key < 0) {
+			return children[children.length + key]?.value || must && this.null || null;
+		}
+		return children[Number(key)]?.value || must && this.null || null;
+	}
 	/**
 	 * @param {Record<string, Schema.Field>} schema
 	 * @param {Schema} parent
 	 * @param {object} options 
 	 * @param {boolean} [options.new] 
-	 * @param {(value: any) => void} [onUpdate] 
+	 * @param {(value: any) => void} [options.onUpdate] 
 	 */
-	constructor(schema, parent, options, onUpdate) {
-		
-		super(schema, { parent }, (value) => {
-			onUpdate?.(value);
+	constructor(schema, parent, { new: isNew, onUpdate}) {
+		const updateChildren = (list) => {
 			if (this.destroyed) { return; }
-			const length = Array.isArray(value) && value.length || 0;
+			const length = Array.isArray(list) && list.length || 0;
 			const children = this.#children;
+			const oldLength = children.length;
 			for (let i = children.length; i < length; i++) {
 					children.push(this.#create(i));
 			}
 			for (const {value} of children.splice(length)) {
 				value.destroy();
 			}
+			if (oldLength !== length) {
+				markChange(this, 'children');
+			}
+
+		}
+		super(schema, {
+			parent,
+			new: isNew,
+			setValue(v) { return Array.isArray(v) ? v : v == null ? [] : [v] },
+			convert(v) {
+				const val = Array.isArray(v) ? v : v == null ? [] : [v];
+				updateChildren(val);
+				return val;
+			},
+			onUpdate:(value) => {
+				onUpdate?.(value);
+				updateChildren(value);
+			},
 		});
 		/**
 		 * 
@@ -457,20 +570,18 @@ export class SchemaArray extends Schema {
 			}
 			val[index] = value;
 			this.value = val;
-
 		}
 		if (typeof schema.type === 'string') {
-		
 			this.#create = index => ({
-						get index() { return index},
-						set index(i) { index = i},
-						value: new Schema(schema, {parent: this}, (value) => childUpdated(value, index)),
-					});
+				get index() { return index},
+				set index(i) { index = i},
+				value: new Schema(schema, {parent: this, onUpdate: (value) => childUpdated(value, index) }),
+			});
 		} else if (!Array.isArray(schema.props)) {
 			this.#create = index => ({
-					get index() { return index},
-					set index(i) { index = i},
-					value: new SchemaObject(schema, this, {}, (value) => childUpdated(value, index)),
+				get index() { return index},
+				set index(i) { index = i},
+				value: new SchemaObject(schema, this, {onUpdate: (value) => childUpdated(value, index)}),
 			})
 		} else {
 			throw new Error();
@@ -492,6 +603,7 @@ export class SchemaArray extends Schema {
 		let val = [...data];
 		val.splice(insertIndex, 0, value);
 		this.value = val;
+		markChange(this, 'children');
 		return true;
 	}
 	add(value) {
@@ -500,7 +612,7 @@ export class SchemaArray extends Schema {
 	remove(index) {
 		if (this.destroyed) { return; }
 		const data = this.value;
-		if (!Array.isArray(data)) { return false; }
+		if (!Array.isArray(data)) { return; }
 		const children = this.#children;
 		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
 		const [item] = children.splice(insertIndex, 1);
@@ -512,6 +624,7 @@ export class SchemaArray extends Schema {
 		const val = [...data];
 		const [value] = val.splice(insertIndex, 1);
 		this.value = val;
+		markChange(this, 'children');
 		return value;
 
 	}
@@ -532,6 +645,7 @@ export class SchemaArray extends Schema {
 		const [value] = val.splice(from, 1);
 		val.splice(to, 0, value);
 		this.value = val;
+		markChange(this, 'children');
 		return true;
 
 	}
@@ -542,7 +656,7 @@ export class SchemaArray extends Schema {
 		const children = this.#children;
 		const aItem = children[a];
 		const bItem = children[b];
-		if (!aItem || !bItem) { return; }
+		if (!aItem || !bItem) { return false; }
 		children[b] = aItem;
 		children[a] = bItem;
 		aItem.index = b;
@@ -553,11 +667,12 @@ export class SchemaArray extends Schema {
 		val[b] = aValue;
 		val[a] = bValue;
 		this.value = val;
+		markChange(this, 'children');
 		return true;
 	}
 }
 /**
- * @typedef {(Schema.Object | Schema.Tuple | Schema.Type) & Schema.Event & Schema.Attr} Schema.Field
+ * @typedef {(Schema.Object | Schema.Type) & Schema.Event & Schema.Attr} Schema.Field
  */
 /**
  * @typedef {object} Schema.Value
@@ -577,14 +692,6 @@ export class SchemaArray extends Schema {
  * @property {boolean} [array] 
  * @property {any} [meta]
  */
-/**
- * @typedef {object} Schema.Tuple
- * @property {null} [type]
- * @property {Schema.Field[]} props
- * @property {false} [array] 
- * @property {any} [meta]
- */
-
 /**
  * @typedef {object} Schema.Type
  * @property {string} type
