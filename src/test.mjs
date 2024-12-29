@@ -23,7 +23,7 @@ s.value = {
 }
 setTimeout(() => {
 	const it = s.child('a')?.child(0)?.child('c')?.child(0);
-	console.log(it)
+	console.log(s)
 	if (it)
 	setInterval(() => {
 		it.value= {d:Math.random()};

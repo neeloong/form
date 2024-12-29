@@ -85,6 +85,19 @@ export class Schema extends EventEmitter {
 	get root() { return this.#root; }
 
 
+	#index = -1;
+	get index() {
+		markRead(this, 'index');
+		return this.#index;
+	}
+	set index(v) {
+		const val = v;
+		if (val === this.#index) { return }
+		this.#index = val;
+		markChange(this, 'index');
+		this.emit('index', val);
+	}
+
 	#selfNew = false;
 	get selfNew() { return this.#selfNew; }
 	set selfNew(v) {
@@ -479,19 +492,14 @@ export class SchemaObject extends Schema {
  * @extends {Schema<(T | null)[]>}
  */
 export class SchemaArray extends Schema {
-	/** @type {(index: number) => {index: number, value: Schema}} */
+	/** @type {(index: number) => Schema} */
 	#create = () => {throw new Error}
-	/** @type {{index: number, value: Schema}[]} */
+	/** @type {Schema[]} */
 	#children = [];
 	get children() {
 		markRead(this, 'children');
-		return this.#children.map(v => v.value);
-	}
-	*[Symbol.iterator]() {
-		for (const [k, {value}] of this.#children.entries()) {
-			yield /** @type {[number, Schema]} */([k, value]);
-		}
-	}
+		return [...this.#children]; }
+	[Symbol.iterator]() { return [...this.#children.entries()]; }
 	/**
 	 * 
 	 * @overload
@@ -515,9 +523,9 @@ export class SchemaArray extends Schema {
 	child(key, must) {
 		const children = this.#children;
 		if (typeof key === 'number' && key < 0) {
-			return children[children.length + key]?.value || must && this.null || null;
+			return children[children.length + key] || must && this.null || null;
 		}
-		return children[Number(key)]?.value || must && this.null || null;
+		return children[Number(key)] || must && this.null || null;
 	}
 	/**
 	 * @param {Record<string, Schema.Field>} schema
@@ -535,8 +543,8 @@ export class SchemaArray extends Schema {
 			for (let i = children.length; i < length; i++) {
 					children.push(this.#create(i));
 			}
-			for (const {value} of children.splice(length)) {
-				value.destroy();
+			for (const schema of children.splice(length)) {
+				schema.destroy();
 			}
 			if (oldLength !== length) {
 				markChange(this, 'children');
@@ -553,8 +561,8 @@ export class SchemaArray extends Schema {
 				return val;
 			},
 			onUpdate:(value) => {
-				onUpdate?.(value);
 				updateChildren(value);
+				onUpdate?.(value);
 			},
 		});
 		/**
@@ -571,22 +579,28 @@ export class SchemaArray extends Schema {
 			this.value = val;
 		}
 		if (typeof schema.type === 'string') {
-			this.#create = index => ({
-				get index() { return index},
-				set index(i) { index = i},
-				value: new Schema(schema, {parent: this, onUpdate: (value) => childUpdated(value, index) }),
-			});
+			this.#create = index => {
+				const child = new Schema(schema, {parent: this, onUpdate: (value) => childUpdated(value, index) });;
+				child.index = index;
+				return child
+			}
 		} else if (!Array.isArray(schema.props)) {
-			this.#create = index => ({
-				get index() { return index},
-				set index(i) { index = i},
-				value: new SchemaObject(schema, this, {onUpdate: (value) => childUpdated(value, index)}),
-			})
+			this.#create = index =>  {
+				const child = new SchemaObject(schema, this, {onUpdate: (value) => childUpdated(value, index)});
+				child.index = index;
+				return child
+			}
 		} else {
 			throw new Error();
 		}
 		
 	}
+	/**
+	 * 
+	 * @param {number} index 
+	 * @param {T} value 
+	 * @returns 
+	 */
 	insert(index, value) {
 		if (this.destroyed) { return false; }
 		const data = this.value;
@@ -594,7 +608,7 @@ export class SchemaArray extends Schema {
 		const children = this.#children;
 		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
 		const item = this.#create(insertIndex);
-		item.value.new = true;
+		item.new = true;
 		children.splice(insertIndex, 0, item);
 		for (let i = index + 1; i < children.length; i++) {
 			children[i].index = i;
@@ -605,9 +619,19 @@ export class SchemaArray extends Schema {
 		markChange(this, 'children');
 		return true;
 	}
+	/**
+	 * 
+	 * @param {T} value 
+	 * @returns 
+	 */
 	add(value) {
 		return this.insert(this.#children.length, value);
 	}
+	/**
+	 * 
+	 * @param {number} index 
+	 * @returns 
+	 */
 	remove(index) {
 		if (this.destroyed) { return; }
 		const data = this.value;
@@ -627,6 +651,12 @@ export class SchemaArray extends Schema {
 		return value;
 
 	}
+	/**
+	 * 
+	 * @param {number} from 
+	 * @param {number} to 
+	 * @returns 
+	 */
 	move(from, to) {
 		if (this.destroyed) { return false; }
 		const data = this.value;
@@ -648,6 +678,12 @@ export class SchemaArray extends Schema {
 		return true;
 
 	}
+	/**
+	 * 
+	 * @param {number} a 
+	 * @param {number} b 
+	 * @returns 
+	 */
 	exchange(a, b) {
 		if (this.destroyed) { return false; }
 		const data = this.value;
@@ -706,23 +742,23 @@ export class SchemaArray extends Schema {
  * @property {any} click
  * @property {any} focus
  * @property {any} blur
- * @property {((document: any, form: import('../types.mjs').FormLike, ...fields: (string | number)[]) => void)?} [input]
- * @property {((document: any, form: import('../types.mjs').FormLike, ...fields: (string | number)[]) => void)?} [change]
- * @property {((document: any, form: import('../types.mjs').FormLike) => void)?} [beforeCreate]
- * @property {((document: any, form: import('../types.mjs').FormLike) => void)?} [beforeUpdate]
- * @property {((document: any, form: import('../types.mjs').FormLike) => void)?} [beforeSave]
- * @property {((document: any, form: import('../types.mjs').FormLike) => void)?} [beforeDestroy]
- * @property {((document: any, form: import('../types.mjs').FormLike) => void)?} [beforeUpsert]
+ * @property {Function?} [input]
+ * @property {Function?} [change]
+ * @property {Function?} [beforeCreate]
+ * @property {Function?} [beforeUpdate]
+ * @property {Function?} [beforeSave]
+ * @property {Function?} [beforeDestroy]
+ * @property {Function?} [beforeUpsert]
  * 
- * @property {((value: any, oldValue: any, document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [input]
- * @property {((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [change]
- * @property {((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [click]
- * @property {((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [focus]
- * @property {((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [blur]
+ * @property {Function?} [input]
+ * @property {Function?} [change]
+ * @property {Function?} [click]
+ * @property {Function?} [focus]
+ * @property {Function?} [blur]
  * 
- * @property {((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void | object)?} [add]
- * @property {((value: any[], document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [remove]
- * @property {((from: number[], to: number, document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => void)?} [move]
+ * @property {Function?} [add]
+ * @property {Function?} [remove]
+ * @property {Function?} [move]
  */
 /**
  * @typedef {object} Schema.Attr
