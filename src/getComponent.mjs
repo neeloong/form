@@ -2,10 +2,14 @@
 /**
  * @typedef {object} Attr
  * @property {string} type
+ * @property {boolean} [isAttr]
+ * @property {boolean} [isProp]
  * // TODO: 可否计算，可否关联
  * @property {'value' | 'readonly' | 'disabled' | 'hidden'} [bind]
  * @property {string} [event]
  * @property {Function} [set]
+ * @property {*} [default]
+ * @property {boolean} [immutable]
  * 
  */
 /**

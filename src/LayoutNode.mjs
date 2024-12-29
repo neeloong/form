@@ -1,9 +1,11 @@
 import { entityMap } from './entities.mjs';
 
-var tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
-var attrPattern = /^(?<decorator>:|@|!)?(?<name>[\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
-var namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
+const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
+const attrPattern = /^(?<decorator>:|@|!|class:|style:)?(?<name>[-\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
+const namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
 
+
+const computedIdRegex = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)(?::(?:readonly|hidden|disabled))?$/u
 function isSpace(c) {
 	return c === '0x80' || c <= ' ';
 }
@@ -34,9 +36,15 @@ function fixSelfClosed(source, elStartEnd, name, closeMap) {
 /**
  * 
  * @param {string} source 
+ * @param {(t: string) => Function} creteExec
+ * @param {(t: string) => Function} creteEvent
  * @returns {(LayoutNode | string)[]}
  */
-function parse(source) {
+function parse(
+	source,
+	creteExec = value => new Function('$event', 'env', value),
+	creteEvent = value => new Function('$event', 'env', value),
+) {
 	/** @type {(LayoutNode | string)[]} */
 	const list = []
 
@@ -162,7 +170,7 @@ function parse(source) {
 			currentNode = new LayoutNode(tagRes.name, tagRes.is);
 			current.add(currentNode);
 			current = currentNode;
-			const { attrs, directives, events } = currentNode;
+			const { attrs, directives, events, classes, styles } = currentNode;
 			/**
 			 * @param {string} qName
 			 * @param {string} value
@@ -174,11 +182,15 @@ function parse(source) {
 				if (!decorator) {
 					attrs[name] = value;
 				} else if (decorator === ':') {
-					attrs[name] = namePattern.test(value) ? Symbol(value) : new Function('env', value);
+					attrs[name] = computedIdRegex.test(value) ? Symbol(value) : creteExec(value);
+				} else if (decorator === 'class:') {
+					classes[name] = computedIdRegex.test(value) ? value : creteExec(value);
+				} else if (decorator === 'style:') {
+					styles[name] = computedIdRegex.test(value) ? value : creteExec(value);
 				} else if (decorator === '!') {
-					directives[name] = value;
+					directives[name] = computedIdRegex.test(value) ? value : creteExec(value);
 				} else if (decorator === '@') {
-					events[name] = namePattern.test(value) ? value : new Function('$event', 'env', value);
+					events[name] = namePattern.test(value) ? value : creteEvent(value);
 				}
 			}
 			let run = true;
@@ -271,6 +283,10 @@ export default class LayoutNode {
 	directives = Object.create(null);
 	/** @type {(LayoutNode | string)[]} */
 	children = [];
+	/**@type {Record<string, any>} */
+	classes = Object.create(null);
+	/**@type {Record<string, any>} */
+	styles = Object.create(null);
 	/**
 	 * 
 	 * @param {LayoutNode | string} newChild 

@@ -1,5 +1,7 @@
 <ul id="1">
-	<li  id="2" !value="a" !item>
+	<input !value=int />
+	<li id="2" !value="a" !item>
+		<input !value=b />
 		<ul id="3">
 			<li id="4" !value="c" !item>
 				<div !template="d">1</div>
@@ -8,7 +10,9 @@
 	</li>
 </ul>
 <ul id="1">
-	<li  id="2" !value="a" !item>
+	<input !value=int />
+	<li id="2" !value="a" !item>
+		<input !value=b />
 		<ul id="3">
 			<li id="4" !value="c" !item>
 				<div>1</div>

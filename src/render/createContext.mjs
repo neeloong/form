@@ -1,13 +1,24 @@
+/**
+ * 
+ * @param {import('../getComponent.mjs').Component} param0 
+ * @returns 
+ */
 export default function createContext({
 	attrs, events
 }) {
 	let removed = false;
 	const removedListeners = new Set();
-	const props = Object.fromEntries(Object.entries(attrs).map(([e, {default: def}]) => [e, def]));
-	const watchProps = Object.fromEntries(Object.keys(props).map(e => [e, new Set]))
+	let init = false;
+	const initListeners = new Set();
+	const tagAttrs = Object.fromEntries(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e, attr]) => [e, undefined]));
+	const watchAttrs = Object.fromEntries(Object.keys(tagAttrs).map(e => [e, new Set]))
+
+
 	/** @type {Record<string, ((e: any) => void)[]>} */
 	const listeners = Object.fromEntries(Object.keys(events).map(e => [e, []]))
 	const cContext = {
+		attrs: new Set(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e]) => e)),
+		props: new Set(Object.entries(attrs).filter(([,a]) => a.isProp).map(([e]) => e)),
 		// TODO: 触发事件
 		// TODO: 属性及监听属性
 		event: Object.fromEntries(Object.entries(listeners).map(([e, list]) => {
@@ -17,13 +28,13 @@ export default function createContext({
 				}
 			}]
 		})),
-		props: Object.defineProperties({}, Object.fromEntries(Object.keys(attrs).map(e => [e, {
+		tagAttrs: Object.defineProperties({}, Object.fromEntries(Object.keys(attrs).map(e => [e, {
 			configurable: true,
 			enumerable: true,
-			get() { return props[e]},
+			get() { return tagAttrs[e]},
 		}]))),
-		watchProp(name, fn) {
-			const list = watchProps[name];
+		watchAttr(name, fn) {
+			const list = watchAttrs[name];
 			if (!(list instanceof Set)) { return () => {}}
 			list.add(fn);
 			return () => {list.delete(fn)};
@@ -33,14 +44,20 @@ export default function createContext({
 			removedListeners.add(fn);
 			return () => {removedListeners.delete(fn)};
 
+		},
+		get init() { return init},
+		listenInit(fn) {
+			initListeners.add(fn);
+			return () => {initListeners.delete(fn)};
+
 		}
 	};
 	const rContext = {
 		set(name, value) {
-			const old = props[name];
+			const old = tagAttrs[name];
 			if (old === value) { return; }
-			props[name] = value;
-			const list = watchProps[name];
+			tagAttrs[name] = value;
+			const list = watchAttrs[name];
 			if (!(list instanceof Set)) { return; }
 			for (const f of list) {
 				f(value, old, name);
@@ -69,6 +86,14 @@ export default function createContext({
 			if (removed) { return }
 			removed = true;
 			for (const f of removedListeners) {
+				f();
+			}
+
+		},
+		init() {
+			if (init) { return }
+			init = true;
+			for (const f of initListeners) {
 				f();
 			}
 

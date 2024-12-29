@@ -393,8 +393,8 @@ export class Schema extends EventEmitter {
 	 */
 	render(layouts, parent, ...args) {
 		const next = args.find(v => v instanceof Node) || null;
-		const components = args.find(v => !(v instanceof Node) && v);
-		return render(this, layouts, parent, next, components)
+		const components = args.find(v => typeof v === 'function');
+		return render(this, layouts, parent, next, components);
 	}
 }
 
