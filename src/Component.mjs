@@ -1,29 +1,5 @@
+/** @import { Component } from './types.mjs' */ 
 
-/**
- * @typedef {object} Attr
- * @property {string} type
- * @property {boolean} [isAttr]
- * @property {boolean} [isProp]
- * // TODO: 可否计算，可否关联
- * @property {'value' | 'index' | 'no' | 'length' | 'state' | 'readonly' | 'disabled' | 'hidden'} [bind]
- * @property {string} [event]
- * @property {Function} [set]
- * @property {*} [default]
- * @property {boolean} [immutable]
- * 
- */
-/**
- * @typedef {object} Event
- * @property {Record<string, any>} filters 过滤器
- * 
- */
-/**
- * @typedef {object} Component
- * @property {string | ((ctx: any) => Element)} tag
- * @property {string} [is]
- * @property {Record<string, Attr>} attrs
- * @property {Record<string, Event>} events
- */
 
 /**
  * @typedef {object} DComponent

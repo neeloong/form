@@ -1,4 +1,7 @@
-import Value, { ArrayValue } from '../Value.mjs';
+/** @import Value from '../Value/index.mjs' */
+import { ArrayValue } from '../Value/index.mjs';
+/** @import { ENV, Component } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
 import bindAttrs from './bindAttrs.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
@@ -11,13 +14,13 @@ import renderTag from './renderTag.mjs';
 import renderTemplate from './renderTemplate.mjs';
 
 /**
- * @param {import('../types.mjs').Layout} layout
+ * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {any} envs
+ * @param {ENV} envs
  * @param {string[]} componentPath
- * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [getComponent]
+ * @param {((path: string[]) => Component?)?} [getComponent]
  */
 function renderItem(layout, parent, next, schema, envs, componentPath, getComponent) {
 	const path = [...componentPath, layout.name];
@@ -80,13 +83,13 @@ function renderItem(layout, parent, next, schema, envs, componentPath, getCompon
 }
 /**
  *
- * @param {import('../types.mjs').Layout} layout
+ * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {any} envs
+ * @param {ENV} envs
  * @param {string[]} componentPath
- * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [getComponent]
+ * @param {((path: string[]) => Component?)?} [getComponent]
  * @returns {() => void}
  */
 function render(layout, parent, next, schema, envs, componentPath, getComponent) {
@@ -109,9 +112,9 @@ function render(layout, parent, next, schema, envs, componentPath, getComponent)
 
 /**
  * @param {Value} schema
- * @param {(import('../types.mjs').Layout | string)[]} layouts 
+ * @param {(Layout.Node | string)[]} layouts 
  * @param {Element} parent 
- * @param {((path: string[]) => import('../getComponent.mjs').Component?)?} [components] 
+ * @param {((path: string[]) => Component?)?} [components] 
  */
 export default function (schema, layouts, parent, components) {
 	const envs = [{ schema }];

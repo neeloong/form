@@ -1,29 +1,31 @@
-import computed from '../computed/index.mjs';
-import execValue from './execValue.mjs';
+import { computed } from '../Value/index.mjs';
+/** @import { ENV } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
+/** @import Value from '../Value/index.mjs' */
 
 /**
- * @param {(import('../types.mjs').Layout | string)[]} layouts
+ * @param {(Layout.Node | string)[]} layouts
  * @param {Element} parent
  * @param {Node?} next
- * @param {import('../Value.mjs').default} schema
- * @param {any} envs
- * @param {(layout: import("../types.mjs").Layout) => () => void} renderItem
+ * @param {Value} schema
+ * @param {ENV} envs
+ * @param {(layout: Layout.Node) => () => void} renderItem
  * @returns {() => void}
  */
 export default function renderList(layouts, parent, next, schema, envs, renderItem) {
 
 	/** @type {Set<() => void>?} */
 	let bkList = new Set();
-	/** @type {[string | Function | null, import('../types.mjs').Layout][]} */
+	/** @type {[string | Function | null, Layout.Node][]} */
 	let ifList = [];
 
-	/** @param {[string | Function | null, import('../types.mjs').Layout][]} list */
+	/** @param {[string | Function | null, Layout.Node][]} list */
 	function renderIf(list) {
 		if (!list.length || !bkList) { return; }
 		const end = parent.insertBefore(document.createComment(''), next);
 		let result = computed(() => list.findIndex(v => {
 			const ifv = v[0];
-				return ifv === null || Boolean(execValue(schema, ifv, envs));
+				return ifv === null || Boolean(schema.exec(ifv, envs));
 		}));
 		let lastIndex = result.value;
 		let destroy = () => { };

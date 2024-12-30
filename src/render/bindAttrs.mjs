@@ -1,13 +1,13 @@
-import computed from '../computed/index.mjs';
-import Value from '../Value.mjs';
+/** @import { Component, ENV } from '../types.mjs' */
+/** @import Value from '../Value/index.mjs' */
+import { computed } from '../Value/index.mjs';
 import createContext from './createContext.mjs';
-import execValue from './execValue.mjs';
 
 /**
  * @param {ReturnType<typeof createContext>['rContext']} rContext
- * @param {Record<string, import('../getComponent.mjs').Attr>} componentAttrs
+ * @param {Record<string, Component.Attr>} componentAttrs
  * @param {Value} schema
- * @param {any} envs
+ * @param {ENV} envs
  * @param {Record<string, string | Symbol | ((...any: any) => void)>} attrs
  */
 export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs) {
@@ -19,7 +19,7 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 			const bind = attr.bind;
 			if (bind && ['value', 'no', 'length', 'state', 'index', 'hidden','disabled','readonly',].includes(bind)) {
 				// @ts-ignore
-				const result = computed(() => schema[bind]);
+				const result = computed(() => schema.exec(bind));;
 				let value = result.value;
 				rContext.set(name, value);
 				bk.add(() => result.stop());
@@ -44,11 +44,11 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 		const attrSchema = typeof attrValue === 'function' ? attrValue
 		: attrValue.description || '';
 		if (attr.immutable) {
-			rContext.set(name, execValue(schema, attrSchema, envs));
+			rContext.set(name, schema.exec(attrSchema, envs));
 			continue;
 
 		}
-		const result = computed(() => execValue(schema, attrSchema, envs));
+		const result = computed(() => schema.exec(attrSchema, envs));;
 		let value = result.value;
 		rContext.set(name, value);
 		bk.add(() => result.stop());

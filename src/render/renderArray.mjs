@@ -1,20 +1,23 @@
-import computed from '../computed/index.mjs';
+import { computed } from '../Value/index.mjs';
+/** @import { ENV } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
+/** @import Value, { ArrayValue } from '../Value/index.mjs' */
 
 /**
  *
- * @param {import('../types.mjs').Layout} layout
+ * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {import('../Value.mjs').ArrayValue} schema
- * @param {any} envs
- * @param {(layout: import("../types.mjs").Layout, parent: Element, next: Node | null, schema: import('../Value.mjs').default, envs: any) => () => void} renderItem
+ * @param {ArrayValue} schema
+ * @param {ENV} envs
+ * @param {(layout: Layout.Node, parent: Element, next: Node | null, schema: Value, envs: any) => () => void} renderItem
  */
 export default function renderArray(layout, parent, next, schema, envs, renderItem) {
 	const start = parent.insertBefore(document.createComment(''), next);
 	const childrenResult = computed(() => schema.children);
-	/** @type {Map<import('../Value.mjs').default, [Comment, Comment, () => void]>} */
+	/** @type {Map<Value, [Comment, Comment, () => void]>} */
 	let seMap = new Map();
-	/** @param {Map<import('../Value.mjs').default, [Comment, Comment, () => void]>} map */
+	/** @param {Map<Value, [Comment, Comment, () => void]>} map */
 	function destroyMap(map) {
 		for (const [s, e, d] of map.values()) {
 			d();

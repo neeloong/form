@@ -1,6 +1,6 @@
-import computed from '../computed/index.mjs';
-import Value from '../Value.mjs';
-import execValue from './execValue.mjs';
+/** @import { ENV } from '../types.mjs' */
+import { computed } from '../Value/index.mjs';
+/** @import Value from '../Value/index.mjs' */
 
 /** @type {Record<string, string>} */
 const unit = {
@@ -68,7 +68,7 @@ function toStyle(name, value) {
 /**
  * @param {Element} node
  * @param {Value} schema
- * @param {any} envs
+ * @param {ENV} envs
  * @param {Record<string, string | ((...any: any) => void)>} classes
  */
 export default function bindStyles(node, classes, schema, envs) {
@@ -79,7 +79,7 @@ export default function bindStyles(node, classes, schema, envs) {
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
 	for (const [name, attr] of Object.entries(classes)) {
-		const result = computed(() => toStyle(name, execValue(schema, attr, envs)));
+		const result = computed(() => toStyle(name, schema.exec(attr, envs)));
 		let value = result.value;
 		if (value) { node.style.setProperty(name, ...value); }
 		bk.add(() => result.stop());

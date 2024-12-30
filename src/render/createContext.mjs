@@ -1,6 +1,7 @@
+/** @import { Component } from '../types.mjs' */
 /**
  * 
- * @param {import('../getComponent.mjs').Component} param0 
+ * @param {Component} param0 
  * @returns 
  */
 export default function createContext({

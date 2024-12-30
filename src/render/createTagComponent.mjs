@@ -9,7 +9,7 @@ import toAttrValue from './toAttrValue.mjs';
  */
 export default function (cContext, name, is) {
 	const node = document.createElement(name, {is: is || undefined});
-	const {event, tagAttrs, watchAttr, listenRemove, attrs, props } = cContext;
+	const {event, tagAttrs, watchAttr, attrs, props } = cContext;
 
 	for (const a of Object.keys(event)) {
 		node.addEventListener(a, event[a]);

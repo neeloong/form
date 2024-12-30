@@ -1,15 +1,18 @@
-import { entityMap } from './entities.mjs';
 
-const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
-const attrPattern = /^(?<decorator>:|@|!|class:|style:)?(?<name>[-\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
-const namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
+/** @import * as Layout from './index.mjs' */
+import entityMap from './entityMap.mjs';
+import LayoutNode from './LayoutNode.mjs';
+
+export const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
+export const attrPattern = /^(?<decorator>:|@|!|class:|style:)?(?<name>[-\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
+export const namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
 
 
-const computedIdRegex = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)?(?::(?:index|no|length|state|readonly|hidden|disabled))?$/u
+export const computedIdRegex = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)?(?::(?:index|no|length|state|readonly|hidden|disabled))?$/u
 function isSpace(c) {
 	return c === '0x80' || c <= ' ';
 }
-function isIdCode(c) {
+export function isIdCode(c) {
 	return c !== '=' && c !== '/' && c !== '>' && c && c !== '\'' && c !== '"' && !isSpace(c);
 }
 
@@ -21,7 +24,7 @@ function isIdCode(c) {
  * @param {*} closeMap 
  * @returns 
  */
-function fixSelfClosed(source, elStartEnd, name, closeMap) {
+export function fixSelfClosed(source, elStartEnd, name, closeMap) {
 	let pos = closeMap[name];
 	if (pos == null) {
 		pos = source.lastIndexOf('</' + name + '>');
@@ -34,24 +37,20 @@ function fixSelfClosed(source, elStartEnd, name, closeMap) {
 }
 
 /**
- * 
- * @param {string} source 
+ *
+ * @param {string} source
  * @param {(t: string) => Function} creteExec
  * @param {(t: string) => Function} creteEvent
- * @returns {(LayoutNode | string)[]}
+ * @returns {(Layout.Node | string)[]}
  */
-function parse(
+export default function parse(
 	source,
 	creteExec = value => new Function('$event', 'env', value),
-	creteEvent = value => new Function('$event', 'env', value),
-) {
+	creteEvent = value => new Function('$event', 'env', value)) {
 	/** @type {(LayoutNode | string)[]} */
-	const list = []
+	const list = [];
 
-	const doc = {
-		/** @param {LayoutNode | string} newChild */
-		add(newChild){ list.push(newChild); }
-	}
+	const doc = { children: list };
 	/** @type {(LayoutNode | null)[]} */
 	const stack = [];
 	/** @type {LayoutNode?} */
@@ -65,7 +64,7 @@ function parse(
 	function characters(chars) {
 		chars = chars.replace(/^\t*\n\t*|\n\t+|\t*\n\t*$/g, '');
 		if (!chars) { return; }
-		current.add(chars);
+		current.children.push(chars);
 	}
 
 	function error(error) {
@@ -74,8 +73,8 @@ function parse(
 
 
 	/**
-	 * 
-	 * @param {string} a 
+	 *
+	 * @param {string} a
 	 * @returns {string}
 	 */
 	function entityReplacer(a) {
@@ -96,7 +95,7 @@ function parse(
 	}
 	let closeMap = {};
 	let start = 0;
-	for (;;) {
+	for (; ;) {
 		let end = 0;
 		let tagStart = source.indexOf('<', start);
 		if (tagStart < 0) {
@@ -143,7 +142,7 @@ function parse(
 			}
 			function skipSpace() {
 				let c = source.charAt(end);
-				for (;c <= ' ' || c === '\u0080';c = source.charAt(++end)) {}
+				for (; c <= ' ' || c === '\u0080'; c = source.charAt(++end)) { }
 				return c;
 
 			}
@@ -168,7 +167,7 @@ function parse(
 			if (!tagRes) { throw new Error('invalid tagName:' + name); }
 			stack.push(currentNode);
 			currentNode = new LayoutNode(tagRes.name, tagRes.is);
-			current.add(currentNode);
+			current.children.push(currentNode);
 			current = currentNode;
 			const { attrs, directives, events, classes, styles } = currentNode;
 			/**
@@ -178,7 +177,7 @@ function parse(
 			function addAttribute(qName, value) {
 				const attr = attrPattern.exec(qName)?.groups;
 				if (!attr) { throw new Error('无效的属性:' + qName); }
-				const {decorator, name} = attr;
+				const { decorator, name } = attr;
 				if (!decorator) {
 					attrs[name] = value;
 				} else if (decorator === ':') {
@@ -195,7 +194,7 @@ function parse(
 			}
 			let run = true;
 			let closed = false;
-			parseAttr: for (;run;) {
+			parseAttr: for (; run;) {
 				let c = skipSpace();
 				switch (c) {
 					case '': error('意外的文件结束'); end++; break parseAttr;
@@ -217,9 +216,9 @@ function parse(
 				}
 				c = skipSpace();
 				switch (c) {
-					case '': addAttribute(id, '');error('意外的文件结束'); end++; break parseAttr;
-					case '>': addAttribute(id, '');end++; break parseAttr;
-					case '/': addAttribute(id, '');closed = true; break parseAttr;
+					case '': addAttribute(id, ''); error('意外的文件结束'); end++; break parseAttr;
+					case '>': addAttribute(id, ''); end++; break parseAttr;
+					case '/': addAttribute(id, ''); closed = true; break parseAttr;
 					case '\'': case '"': addAttribute(id, getQu(c)); continue;
 				}
 				addAttribute(id, getId());
@@ -238,7 +237,7 @@ function parse(
 					case '"': case '\'': throw new Error('attribute value must after "="'); // No known test case
 					case '': error('意外的文件结束'); break;
 					case '>': end++; break;
-					default:  throw new Error("elements closed character '/' and '>' must be connected to");
+					default: throw new Error("elements closed character '/' and '>' must be connected to");
 				}
 				endElement();
 			} else if (fixSelfClosed(source, end, name, closeMap)) {
@@ -254,90 +253,4 @@ function parse(
 		}
 	}
 	return list;
-}
-/** @import { Directives, Layout } from './types.mjs' */
-/**
- * @implements {Layout}
- */
-export default class LayoutNode {
-	/**
-	 * 
-	 * @param {string} source 
-	 * @returns {(LayoutNode | string)[]}
-	 */
-	static parse(source) { return parse(source); }
-	/**
-	 * @param {string} name
-	 * @param {string?} [is]
-	 * 
-	*/
-	constructor(name, is) {
-		this.name = name;
-		this.is = is;
-	}
-	/**@type {Record<string, any>} */
-	attrs = Object.create(null);
-	/**@type {Record<string, any>} */
-	events = Object.create(null);
-	/**@type {Directives} */
-	directives = Object.create(null);
-	/** @type {(LayoutNode | string)[]} */
-	children = [];
-	/**@type {Record<string, any>} */
-	classes = Object.create(null);
-	/**@type {Record<string, any>} */
-	styles = Object.create(null);
-	/**
-	 * 
-	 * @param {LayoutNode | string} newChild 
-	 * @returns 
-	 */
-	add(newChild){
-		this.children.push(newChild);
-		return newChild;
-	}
-	toString() {
-		let node = this;
-		const { name, is } = this;
-		if (!name) {
-			// return ["<!-- ",is," -->"].join('');
-			return ''
-
-		}
-		var buf = [];
-		
-		buf.push('<',name);
-		if (is) { buf.push('|', is) }
-		
-		for(const [name, value] of Object.entries(node.attrs)){
-			buf.push(' ', name, '="', value.replace(/[<&"]/g,_xmlEncoder), '"');
-		}
-		
-		const { children } = this;
-		var child = children[0];
-		
-		if(child || !/^(?:meta|link|img|br|hr|input)$/i.test(name)){
-			buf.push('>');
-			for(const child of children){
-				if (typeof child === 'string') {
-					buf.push(child.replace(/[<&]/g,_xmlEncoder).replace(/]]>/g, ']]&gt;'));
-				} else{ 
-					buf.push(child.toString());
-				}
-			}
-			buf.push('</',name,'>');
-		}else{
-			buf.push('/>');
-		}
-		return buf.join('');
-	}
-	
-}
-
-function _xmlEncoder(c){
-	return c == '<' && '&lt;' ||
-		c == '>' && '&gt;' ||
-		c == '&' && '&amp;' ||
-		c == '"' && '&quot;' ||
-		'&#'+c.charCodeAt()+';'
 }

@@ -1,4 +1,4 @@
-export const entityMap = {
+export default {
        lt: '<',
        gt: '>',
        amp: '&',

@@ -1,35 +1,60 @@
-import markChange from './computed/markChange.mjs';
-import markRead from './computed/markRead.mjs';
+import markChange from './markChange.mjs';
+import markRead from './markRead.mjs';
 import EventEmitter from './EventEmitter.mjs';
-import render from './render/index.mjs';
+import render from '../render/index.mjs';
+export { default as computed } from './computed.mjs';
+/** @import { ENV, Schema, Component } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
 
+	const regex1 = /^:(index|no|length|state|readonly|disabled|hidden|value)$/
 /**
  * @template [T=any]
+ * @extends {EventEmitter<Record<string, any[]>>}
  */
 export default class Value extends EventEmitter {
 	/**
-	 * @param {Record<string, import('./schema.mjs').Schema.Field>} schema
+	 * @param {Record<string, Schema.Field>} schema
 	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
 	 */
 	static create(schema, options = {}) {
 		return new ObjectValue({props: schema}, { ...options, parent: null });
 	}
+	/**
+	 * @param {string | Function} value
+	 * @param {ENV} envs
+	 */
+	exec(value, envs) {
+		if (!value) { return this.value; }
+		if (typeof value !== 'string') {
+			// TODO: 执行函数
+			return;
+		}
+		const r1 = regex1.exec(value);
+		if (r1) {
+			const key = /** @type {'index'|'no'|'length'|'state'|'readonly'|'disabled'|'hidden'|'value'} */(r1[1]);
+			return this[key];
+		}
+		return this.child(value)?.value;
+	}
 	/** @type {Value?} */
-	#null = null;
-	get null() {
-		const v = this.#null;
+	#nullValue = null;
+	get nullValue() {
+		const v = this.#nullValue;
 		if (v) { return v; }
 		const val = new Value({type: null}, {parent: this});
-		this.#null = val;
+		this.#nullValue = val;
 		return val;
 	}
+	#null = false;
+	get null() { return this.#null; }
 	/**
 	 * @param {any} schema
 	 * @param {object} options 
 	 * @param {*} [options.parent] 
 	 * @param {number | string | null} [options.index] 
 	 * @param {number} [options.length] 
+	 * @param {boolean} [options.null] 
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.hidden] 
 	 * @param {boolean} [options.readonly] 
@@ -43,6 +68,7 @@ export default class Value extends EventEmitter {
 	 * @param {((value: T?) => void)?} [options.onUpdateState] 
 	 */
 	constructor(schema, {
+		null: isNull,
 		setValue, convert, onUpdate, onUpdateState,
 		index, length, new: isNew, parent: parentNode,
 		hidden, disabled, readonly,
@@ -50,16 +76,21 @@ export default class Value extends EventEmitter {
 	}) {
 		super();
 		this.schema = schema;
-		this.#onUpdate = onUpdate || null;
-		this.#onUpdateState = onUpdateState || null;
-		this.#setValue = typeof setValue === 'function' ? setValue : null;
-		this.#convert = typeof convert === 'function' ? convert : null;
 		const parent = parentNode instanceof Value ? parentNode : null;
 		if (parent) {
 			this.#parent = parent;
 			this.#root = parent.#root;
 			// TODO: 事件向上冒泡
 		}
+
+		if (isNull) {
+			this.#null = true;
+			return;
+		}
+		this.#onUpdate = onUpdate || null;
+		this.#onUpdateState = onUpdateState || null;
+		this.#setValue = typeof setValue === 'function' ? setValue : null;
+		this.#convert = typeof convert === 'function' ? convert : null;
 		this.#length = length || 0;
 		this.#index = index ?? null;
 		this.#selfNew = Boolean(isNew);
@@ -78,13 +109,13 @@ export default class Value extends EventEmitter {
 		this.#readonly = parent && parent.#readonly || this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly;
 	}
 	/** @type {((value: any) => any)?} */
-	#setValue
+	#setValue = null
 	/** @type {((value: any, state: any) => [value: any, state: any])?} */
-	#convert
+	#convert = null
 	/** @type {((value: any) => void)?} */
-	#onUpdate
+	#onUpdate = null
 	/** @type {((value: any) => void)?} */
-	#onUpdateState
+	#onUpdateState = null
 	/** @readonly @type {Value?} */
 	#parent = null;
 	/** @readonly @type {Value} */
@@ -119,6 +150,7 @@ export default class Value extends EventEmitter {
 		this.emit('index', val);
 	}
 	get no() {
+		if (this.#null) { return ''; }
 		const index = this.index;
 		return typeof index === 'number' ? index + 1 : index;
 	}
@@ -257,7 +289,7 @@ export default class Value extends EventEmitter {
 	 * @param {boolean?} [must]
 	 * @returns {Value?}
 	 */
-	child(key, must) { return must && this.null || null; }
+	child(key, must) { return must && this.nullValue || null; }
 
 	#set = false;
 	/** @type {T?} */
@@ -476,9 +508,9 @@ export default class Value extends EventEmitter {
 	}
 	/**
 	 * 
-	 * @param {(string | import('./types.mjs').Layout)[]} layouts 
+	 * @param {(string | Layout.Node)[]} layouts 
 	 * @param {Element} parent 
-	 * @param {((path: string[]) => import('./getComponent.mjs').Component | null)?} [components] 
+	 * @param {((path: string[]) => Component | null)?} [components] 
 	 */
 	render(layouts, parent, components) {
 		return render(this, layouts, parent, components);
@@ -512,10 +544,10 @@ export class ObjectValue extends Value {
 	 * @returns {Value?}
 	 */
 	child(key, must) {
-		return this.#children[key] || must && this.null || null;
+		return this.#children[key] || must && this.nullValue || null;
 	}
 	/**
-	 * @param {Record<string, import('./schema.mjs').Schema.Field>} schema
+	 * @param {Record<string, Schema.Field>} schema
 	 * @param {object} [options] 
 	 * @param {Value?} [options.parent] 
 	 * @param {string | number} [options.index] 
@@ -597,12 +629,12 @@ export class ArrayValue extends Value {
 	child(key, must) {
 		const children = this.#children;
 		if (typeof key === 'number' && key < 0) {
-			return children[children.length + key] || must && this.null || null;
+			return children[children.length + key] || must && this.nullValue || null;
 		}
-		return children[Number(key)] || must && this.null || null;
+		return children[Number(key)] || must && this.nullValue || null;
 	}
 	/**
-	 * @param {Record<string, import('./schema.mjs').Schema.Field>} schema
+	 * @param {Record<string, Schema.Field>} schema
 	 * @param {object} [options] 
 	 * @param {Value?} [options.parent]
 	 * @param {string | number | null} [options.index] 

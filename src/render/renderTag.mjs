@@ -1,9 +1,12 @@
-import computed from '../computed/index.mjs';
+import { computed } from '../Value/index.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
-import execValue from './execValue.mjs';
 import renderChildrenDirectives from './renderChildrenDirectives.mjs';
 import toAttrValue from './toAttrValue.mjs';
+/** @import { ENV } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
+/** @import Value from '../Value/index.mjs' */
+
 /**
  * 
  * @param {Element} el 
@@ -136,12 +139,12 @@ function *getElementModel2(el, attr) {
 }
 
 /**
- * @param {import('../types.mjs').Layout} layout
+ * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {import("../Value.mjs").default} schema
- * @param {any} envs
- * @param {(layouts: (import("../types.mjs").Layout | string)[], parent: Element, next: Node | null) => () => void} render
+ * @param {Value} schema
+ * @param {ENV} envs
+ * @param {(layouts: (Layout.Node | string)[], parent: Element, next: Node | null) => () => void} render
  */
 export default function renderTag(layout, parent, next, schema, envs, render) {
 
@@ -172,13 +175,13 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 		}
 		const schemaValue = typeof attr === 'function' ? attr : attr.description || ''
 		if (node instanceof HTMLInputElement && name.toLocaleLowerCase() === 'type') {
-			let value = toAttrValue(execValue(schema, schemaValue, envs));
+			let value = toAttrValue(schema.exec(schemaValue, envs));
 			if (value !== null) {
 				node.setAttribute(name, value);
 			}
 			continue;
 		}
-		const result = computed(() => execValue(schema, schemaValue, envs));
+		const result = computed(() => schema.exec(schemaValue, envs));;
 		bk.add(() => result.stop());
 		if (prop) {
 			let resValue = result.value
@@ -220,7 +223,7 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 			node.addEventListener(e, $event => {schema.value = f($event)});
 		}
 		for (const [name, prop] of getElementModel(node)) {
-			const result = computed(() => execValue(schema, '', envs));
+			const result = computed(() => schema.value);
 			bk.add(() => result.stop());
 			if (prop) {
 				let resValue = result.value
