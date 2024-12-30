@@ -12,7 +12,7 @@ import watchProp from './watchProp.mjs';
  */
 export default function computed(getter, cb) {
 	/** @type {Set<(value: T) => void>} */
-	const cbList = new Set(cb ? [cb] : []);
+	const cbList = new Set();
 	let stopped = false;
 	/** @type {T} */
 	let value;
@@ -49,6 +49,7 @@ export default function computed(getter, cb) {
 		return
 	}
 	run();
+	if (cb) { cbList.add(cb); }
 
 	return {
 		get value() { return value; },

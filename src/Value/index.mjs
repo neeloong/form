@@ -1,6 +1,7 @@
 import { markChange, markRead } from '../computed/index.mjs';
 import EventEmitter from './EventEmitter.mjs';
-/** @import { ENV, Schema, Component } from '../types.mjs' */
+import runBooleanScript from './runBooleanScript.mjs';
+/** @import { ENV, Schema } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 
 	const regex1 = /^:(index|no|length|state|readonly|disabled|hidden|value)$/
@@ -79,6 +80,9 @@ export default class Value extends EventEmitter {
 			this.#root = parent.#root;
 			// TODO: 事件向上冒泡
 		}
+		/** @type {Set<() => void>} */
+		const destroySet = new Set();
+		this.#destroySet = destroySet;
 
 		if (isNull) {
 			this.#null = true;
@@ -91,20 +95,22 @@ export default class Value extends EventEmitter {
 		this.#length = length || 0;
 		this.#index = index ?? null;
 		this.#selfNew = Boolean(isNew);
-		this.#new = parent && parent.#new || this.#selfNew
+		this.#new = parent && parent.#new || this.#selfNew;
 
 		this.#selfHidden = typeof hidden === 'boolean' ? hidden : null;
-		this.#scriptHidden = Boolean(scriptHidden);
+		this.#scriptHidden = runBooleanScript(scriptHidden, destroySet, v => { this.#updateHidden(v); }, this);
 		this.#hidden = parent && parent.#hidden || this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden;
 
 		this.#selfDisabled = typeof disabled === 'boolean' ? disabled : null;
-		this.#scriptDisabled = Boolean(scriptDisabled);
+		this.#scriptDisabled = runBooleanScript(scriptDisabled, destroySet, v => { this.#updateDisabled(v); }, this);
 		this.#disabled = parent && parent.#disabled || this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled;
 
 		this.#selfReadonly = typeof readonly === 'boolean' ? readonly : null;
-		this.#scriptReadonly = Boolean(scriptReadonly);
+		this.#scriptReadonly = runBooleanScript(scriptReadonly, destroySet, v => { this.#updateReadonly(v); }, this);
 		this.#readonly = parent && parent.#readonly || this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly;
 	}
+	/** @type {Set<() => void>?} */
+	#destroySet
 	/** @type {((value: any) => any)?} */
 	#setValue = null
 	/** @type {((value: any, state: any) => [value: any, state: any])?} */
@@ -182,7 +188,16 @@ export default class Value extends EventEmitter {
 	/** @type {boolean?} */
 	#selfHidden = null;
 	#hidden = false;
-	#updateHidden() {
+	/**
+	 * 
+	 * @param {boolean} [v] 
+	 * @returns 
+	 */
+	#updateHidden(v) {
+		if (typeof v === 'boolean') {
+			if (this.#scriptHidden === v) { return; }
+			this.#scriptHidden = v;
+		}
 		const val = this.#parent && this.#parent.hidden || (this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden);
 		if (val === this.#hidden) { return }
 		this.#hidden = val;
@@ -211,7 +226,16 @@ export default class Value extends EventEmitter {
 	/** @type {boolean?} */
 	#selfDisabled = null;
 	#disabled = false;
-	#updateDisabled() {
+	/**
+	 * 
+	 * @param {boolean} [v] 
+	 * @returns 
+	 */
+	#updateDisabled(v) {
+		if (typeof v === 'boolean') {
+			if (this.#scriptDisabled === v) { return; }
+			this.#scriptDisabled = v;
+		}
 		const val = this.#parent && this.#parent.disabled || (this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled);
 		if (val === this.#disabled) { return }
 		this.#disabled = val;
@@ -239,7 +263,16 @@ export default class Value extends EventEmitter {
 	/** @type {boolean?} */
 	#selfReadonly = null;
 	#readonly = false;
-	#updateReadonly() {
+	/**
+	 * 
+	 * @param {boolean} [v] 
+	 * @returns 
+	 */
+	#updateReadonly(v) {
+		if (typeof v === 'boolean') {
+			if (this.#scriptReadonly === v) { return; }
+			this.#scriptReadonly = v;
+		}
 		const val = this.#parent && this.#parent.readonly || (this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly);
 		if (val === this.#readonly) { return }
 		this.#readonly = val;
@@ -307,7 +340,7 @@ export default class Value extends EventEmitter {
 		return this.#value;
 	}
 	set value(v) {
-		if (this.#destroyed) { return; }
+		if (!this.#destroySet) { return; }
 		const val = this.#setValue?.(v) || v;
 		this.#value = val;
 		this.#set = true;
@@ -323,7 +356,7 @@ export default class Value extends EventEmitter {
 		return this.#state;
 	}
 	set state(v) {
-		if (this.#destroyed) { return; }
+		if (!this.#destroySet) { return; }
 		const val = v;
 		this.#state = val;
 		this.#set = true;
@@ -338,7 +371,7 @@ export default class Value extends EventEmitter {
 	#needUpdate = false;
 	#needUpdateState = false;
 	#toUpdate(value, state) {
-		if (this.#destroyed) { return value; }
+		if (!this.#destroySet) { return value; }
 		const [val,sta] = this.#convert?.(value, state) || [value, state];
 		if(this.#value === val && this.#state === sta) { return [val,sta] }
 		this.#value = val;
@@ -357,7 +390,7 @@ export default class Value extends EventEmitter {
 	#runUpdate(force = false) {
 		let val = this.#value;
 		let states = this.#state;
-		if (this.#destroyed) { return [val, states]; }
+		if (!this.#destroySet) { return [val, states]; }
 		const needUpdate = this.#needUpdate;
 		const needUpdateState = this.#needUpdateState;
 		if (!force && !needUpdate && !needUpdateState) {
@@ -410,11 +443,14 @@ export default class Value extends EventEmitter {
 
 
 
-	#destroyed = false;
-	get destroyed() { return this.#destroyed; }
+	get destroyed() { return !this.#destroySet; }
 	destroy() {
-		if (this.#destroyed) { return; }
-		this.#destroyed = true;
+		if (!this.#destroySet) { return; }
+		const set = this.#destroySet;
+		this.#destroySet = null;
+		for (const f of set) {
+			f();
+		}
 		for (const [, field] of this[Symbol.iterator]()) {
 			field.destroy();
 		}
@@ -425,7 +461,7 @@ export default class Value extends EventEmitter {
 	 * @param {boolean} [isNew] 
 	 */
 	reset(v, isNew = this.#new) {
-		if (this.#destroyed) { return; }
+		if (!this.#destroySet) { return; }
 		if (this.#parent) {
 			if (!this.#set) { return; }
 			this.#new = Boolean(this.#parent.#new || isNew);
@@ -442,7 +478,7 @@ export default class Value extends EventEmitter {
 	 * @param {T?} v
 	 */
 	#reset(v) {
-		if (this.#destroyed || !this.#set) { return; }
+		if (!this.#destroySet || !this.#set) { return; }
 		this.#value = this.#lastValue = this.#initValue = v;
 		this.#set = true;
 		this.#needUpdate = false;
