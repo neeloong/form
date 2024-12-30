@@ -1,4 +1,4 @@
-import { Value, Layout } from '../src/index.mjs';
+import { Value, Layout, render } from '../src/index.mjs';
 
 fetch('./template.xml').then(v => v.text()).then(template => {
 	const layouts = Layout.parse(template);
@@ -37,7 +37,7 @@ fetch('./template.xml').then(v => v.text()).then(template => {
 	/** @type {Element} */
 	// @ts-ignore
 	const app = document.querySelector('#app');
-	s.render(layouts, app)
+	render(s, layouts, app)
 	
 
 })

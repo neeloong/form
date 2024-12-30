@@ -1,4 +1,4 @@
-import { computed } from '../Value/index.mjs';
+import computed from '../computed/index.mjs';
 /** @import { ENV } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value, { ArrayValue } from '../Value/index.mjs' */

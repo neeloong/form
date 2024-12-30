@@ -33,6 +33,12 @@
  * @property {Record<string, Component.Event>} events
  */
 /**
+ * @callback ComponentGetter
+ * @param {string[]} path
+ * @param {() => Component?} [next]
+ * @returns {Component?}
+ */
+/**
  * @typedef {(Schema.Object | Schema.Type) & Schema.Event & Schema.Attr} Schema.Field
  */
 /**

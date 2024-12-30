@@ -1,4 +1,3 @@
-export * from './types.mjs';
 export { default as markChange } from './markChange.mjs';
 export { default as markRead } from './markRead.mjs';
 import observe from './observe.mjs';
@@ -34,7 +33,7 @@ export default function computed(getter, cb) {
 	};
 	function run() {
 		cancel();
-		/** @type {import('./types.mjs').ReadMap} */
+		/** @type {import('./observe.mjs').ReadMap} */
 		const thisRead = new Map();
 		value = observe(thisRead, getter);
 		for (const cb of cbList) {

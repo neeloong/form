@@ -1,8 +1,5 @@
-import markChange from './markChange.mjs';
-import markRead from './markRead.mjs';
+import { markChange, markRead } from '../computed/index.mjs';
 import EventEmitter from './EventEmitter.mjs';
-import render from '../render/index.mjs';
-export { default as computed } from './computed.mjs';
 /** @import { ENV, Schema, Component } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 
@@ -505,15 +502,6 @@ export default class Value extends EventEmitter {
 			field.refresh();
 		}
 		this.emit('refresh');
-	}
-	/**
-	 * 
-	 * @param {(string | Layout.Node)[]} layouts 
-	 * @param {Element} parent 
-	 * @param {((path: string[]) => Component | null)?} [components] 
-	 */
-	render(layouts, parent, components) {
-		return render(this, layouts, parent, components);
 	}
 }
 

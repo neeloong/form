@@ -1,5 +1,5 @@
 /** @import { ENV } from '../types.mjs' */
-import { computed } from '../Value/index.mjs';
+import computed from '../computed/index.mjs';
 /** @import Value from '../Value/index.mjs' */
 
 /** @type {Record<string, string>} */

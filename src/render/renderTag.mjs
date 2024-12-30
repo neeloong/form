@@ -1,4 +1,4 @@
-import { computed } from '../Value/index.mjs';
+import computed from '../computed/index.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
 import renderChildrenDirectives from './renderChildrenDirectives.mjs';

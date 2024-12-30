@@ -1,4 +1,4 @@
-/** @import { Component } from './types.mjs' */ 
+/** @import { Component, ComponentGetter } from './types.mjs' */ 
 
 
 /**
@@ -11,7 +11,7 @@
 /**
  * @param {Record<string, Component>} [defines]
  * @param {{roots: Record<string, DComponent>, common: Record<string, DComponent>}} [components] 
- * @returns {((path: string[]) => Component?)?}
+ * @returns {ComponentGetter?}
  */
 export default function(defines, components) {
 	if (!defines) { return null; }

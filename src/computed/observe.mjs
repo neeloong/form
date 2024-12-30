@@ -1,4 +1,10 @@
-/** @import { ReadMap } from './types.mjs' */
+export {};
+/**
+ * @typedef {Map<
+ * 	object | Function,
+ * 	Set<string | boolean | symbol>
+ * >} ReadMap
+ */
 /**
  * 已被读取的
  * @type {ReadMap?}

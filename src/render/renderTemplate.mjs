@@ -1,4 +1,4 @@
-import { computed } from '../Value/index.mjs';
+import computed from '../computed/index.mjs';
 import toText from './toText.mjs';
 /** @import { ENV } from '../types.mjs' */
 /** @import Value from '../Value/index.mjs' */
