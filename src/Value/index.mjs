@@ -16,7 +16,7 @@ export default class Value extends EventEmitter {
 	 * @param {boolean} [options.new] 
 	 */
 	static create(schema, options = {}) {
-		return new ObjectValue({props: schema}, { ...options, parent: null });
+		return new ObjectValue({type: null, props: schema}, { ...options, parent: null });
 	}
 	/**
 	 * @param {string | Function} value
@@ -370,6 +370,12 @@ export default class Value extends EventEmitter {
 
 	#needUpdate = false;
 	#needUpdateState = false;
+	/**
+	 * 
+	 * @param {T} value 
+	 * @param {*} state 
+	 * @returns 
+	 */
 	#toUpdate(value, state) {
 		if (!this.#destroySet) { return value; }
 		const [val,sta] = this.#convert?.(value, state) || [value, state];
@@ -410,6 +416,7 @@ export default class Value extends EventEmitter {
 				const state = states?.[key];
 				const [newData, newState] = field.#toUpdate(data, state);
 				if (data !== newData) {
+					// @ts-ignore
 					values[key] = newData;
 					updated = true;
 				}
@@ -487,6 +494,7 @@ export default class Value extends EventEmitter {
 		const val = this.#value;
 		if (val && typeof val === 'object') {
 			for (const [key, field] of this[Symbol.iterator]()) {
+				// @ts-ignore
 				field.#reset(val[key]);
 			}
 		}
@@ -571,7 +579,7 @@ export class ObjectValue extends Value {
 		return this.#children[key] || must && this.nullValue || null;
 	}
 	/**
-	 * @param {Record<string, Schema.Field>} schema
+	 * @param {Schema.Object} schema
 	 * @param {object} [options] 
 	 * @param {Value?} [options.parent] 
 	 * @param {string | number} [options.index] 
@@ -591,7 +599,6 @@ export class ObjectValue extends Value {
 					typeof state === 'object' ? state : {},
 				]
 			},
-
 		});
 		const children = Object.create(null);
 		for (const [index, field] of Object.entries(schema.props)) {
@@ -658,7 +665,7 @@ export class ArrayValue extends Value {
 		return children[Number(key)] || must && this.nullValue || null;
 	}
 	/**
-	 * @param {Record<string, Schema.Field>} schema
+	 * @param {Schema.Field} schema
 	 * @param {object} [options] 
 	 * @param {Value?} [options.parent]
 	 * @param {string | number | null} [options.index] 
@@ -666,6 +673,7 @@ export class ArrayValue extends Value {
 	 * @param {(value: any) => void} [options.onUpdate] 
 	 */
 	constructor(schema,  { parent, onUpdate, ...options} = {}) {
+		// @ts-ignore
 		const updateChildren = (list) => {
 			if (this.destroyed) { return; }
 			const length = Array.isArray(list) && list.length || 0;
