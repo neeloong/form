@@ -16,6 +16,7 @@ export default class LayoutNode {
 		this.name = name;
 		this.is = is;
 	}
+	simple = false;
 	/**@type {Record<string, any>} */
 	attrs = Object.create(null);
 	/**@type {Record<string, any>} */
@@ -28,6 +29,10 @@ export default class LayoutNode {
 	classes = Object.create(null);
 	/**@type {Record<string, any>} */
 	styles = Object.create(null);
+	/**@type {Record<string, any>} */
+	vars = Object.create(null);
+	/**@type {Record<string, any>} */
+	aliases = Object.create(null);
 	/** @return {string} */
 	toString() { return toString(this) }
 	

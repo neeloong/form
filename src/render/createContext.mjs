@@ -1,12 +1,11 @@
 /** @import { Component } from '../types.mjs' */
 /**
  * 
- * @param {Component} param0 
+ * @param {Component} component 
+ * @param {any} global 
  * @returns 
  */
-export default function createContext({
-	attrs, events
-}) {
+export default function createContext({ attrs, events }, global) {
 	let removed = false;
 	const removedListeners = new Set();
 	let init = false;
@@ -15,7 +14,7 @@ export default function createContext({
 	const watchAttrs = Object.fromEntries(Object.keys(tagAttrs).map(e => [e, new Set]))
 
 
-	/** @type {Record<string, ((e: any) => void)[]>} */
+	/** @type {Record<string, (($event: any, global: any) => void)[]>} */
 	const listeners = Object.fromEntries(Object.keys(events).map(e => [e, []]))
 	const cContext = {
 		attrs: new Set(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e]) => e)),
@@ -25,7 +24,7 @@ export default function createContext({
 		event: Object.fromEntries(Object.entries(listeners).map(([e, list]) => {
 			return [e, $event => {
 				for (const fn of list) {
-					fn($event);
+					fn($event, global);
 				}
 			}]
 		})),
@@ -65,6 +64,7 @@ export default function createContext({
 			}
 		},
 		addEvent(name, fn) {
+			if (typeof fn !== 'function') { return; }
 			const [e, ...fs] = name.split('.').filter(Boolean);
 			const event = events[e];
 			if (!event) { return; }

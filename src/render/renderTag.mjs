@@ -1,9 +1,9 @@
 import computed from '../computed/index.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
-import renderChildrenDirectives from './renderChildrenDirectives.mjs';
+import renderFillDirectives from './renderFillDirectives.mjs';
 import toAttrValue from './toAttrValue.mjs';
-/** @import { ENV } from '../types.mjs' */
+import ENV from '../ENV.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value from '../Value/index.mjs' */
 
@@ -153,7 +153,7 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
 	bk.add(
-		renderChildrenDirectives(node, schema, envs, layout.directives)
+		renderFillDirectives(node, null, schema, envs, layout.directives)
 		|| render(layout.children || [], node, null)
 	);
 
@@ -175,13 +175,13 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 		}
 		const schemaValue = typeof attr === 'function' ? attr : attr.description || ''
 		if (node instanceof HTMLInputElement && name.toLocaleLowerCase() === 'type') {
-			let value = toAttrValue(schema.exec(schemaValue, envs));
+			let value = toAttrValue(envs.exec(schemaValue));
 			if (value !== null) {
 				node.setAttribute(name, value);
 			}
 			continue;
 		}
-		const result = computed(() => schema.exec(schemaValue, envs));;
+		const result = computed(() => envs.exec(schemaValue));
 		bk.add(() => result.stop());
 		if (prop) {
 			let resValue = result.value
@@ -211,12 +211,9 @@ export default function renderTag(layout, parent, next, schema, envs, render) {
 		}
 	}
 	for (const [name, event] of Object.entries(events)) {
-		if (typeof event === 'string') {
-			// TODO: 事件名
-		} else {
-			// TODO: 事件名
-			node.addEventListener(name, $event => event($event, envs));
-		}
+		const fn = envs.getEvent(event);
+		if (typeof fn !== 'function') { continue; }
+		node.addEventListener(name, $event => fn($event, envs.globalThis));
 	}
 	if (layout.directives.value != null) {
 		for (const [e, f] of getElementModelEvent(node)) {

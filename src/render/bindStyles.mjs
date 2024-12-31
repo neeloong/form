@@ -1,4 +1,4 @@
-/** @import { ENV } from '../types.mjs' */
+import ENV from '../ENV.mjs';
 import computed from '../computed/index.mjs';
 /** @import Value from '../Value/index.mjs' */
 
@@ -79,7 +79,7 @@ export default function bindStyles(node, classes, schema, envs) {
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
 	for (const [name, attr] of Object.entries(classes)) {
-		const result = computed(() => toStyle(name, schema.exec(attr, envs)));
+		const result = computed(() => toStyle(name, envs.exec(attr)));
 		let value = result.value;
 		if (value) { node.style.setProperty(name, ...value); }
 		bk.add(() => result.stop());

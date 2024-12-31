@@ -5,19 +5,15 @@ export { default as toString } from './toString.mjs';
 /**
  * @typedef {object} Directives
  * 
+ * @property {boolean} [fragment]
+ * 
  * @property {string | Function} [if]
- * @property {*} [else]
+ * @property {boolean} [else]
  * 
- * @property {string} [name] 
  * @property {string} [value] 值关联（关联为列表）
- * @property {*} [item] 列表循环的项目名
- * @property {string} [index]
- * @property {string | Function} [for]
- * @property {string} [key]
+ * @property {boolean} [enum] 列表属性枚举
  * 
  * 
- * @property {*} fragment
- * @property {string | Function} [template]
  * @property {string | Function} [text]
  * @property {string | Function} [html]
  */
@@ -26,10 +22,13 @@ export { default as toString } from './toString.mjs';
  * @property {string} name
  * @property {string?} [is]
  * @property {string} [id]
- * @property {Record<string, string | Symbol | ((...any: any) => void)>} attrs
- * @property {Record<string, string | ((...any: any) => void)>} classes
- * @property {Record<string, string | ((...any: any) => void)>} styles
- * @property {Record<string, string | ((...any: any) => void)>} events
+ * @property {boolean} [simple]
+ * @property {Record<string, string | Symbol | ((global: any) => void)>} attrs
+ * @property {Record<string, string | ((global: any) => void)>} classes
+ * @property {Record<string, string | ((global: any) => void)>} styles
+ * @property {Record<string, string | (($event: any, global: any) => void)>} events
+ * @property {Record<string, string | ((global: any) => void)>} vars
+ * @property {Record<string, string>} aliases
  * @property {Directives} directives
  * @property {(Node | string)[]} children
  */

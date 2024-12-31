@@ -1,27 +1,31 @@
-<ul>
+<ul +a=1>
 	<input !value=int />
-	<li !value="a" !item>
+	<li !value="a" !enum>
 		<input !value=b />
 		<ul>
-			<li !value="c" !item>
-			<div !template=":no"/>. <div !template="d">1</div> <div !template>1</div>
+			<li !value="c" !enum +b=1>
+			<button @click="a+=1">a+1:<span !fragment !text=a></span></button>
+			<button @click="b+=1">b+1:<span !fragment !text=b></span></button>
+				<div !fragment !text="$no"/>. <div !fragment !text="d">1</div> <div !fragment !text>1</div>
 			</li>
-			<li !value="x" !item>
-			<div !template=":no"/>. <div !template="d">1</div> <div !template>1</div>
+			<li !value="x" !enum +b=x$length +a=2>
+				<button @click="a+=1">a+1:<span !fragment !text=a></span></button>
+				<button @click="b+=1">b+1:<span !fragment !text=b></span></button>
+				<div !fragment !text="$no"/>. <div !fragment !text="d">1</div> <div !fragment !text>1</div>
 			</li>
 		</ul>
 	</li>
 </ul>
 <ul>
 	<input !value=int />
-	<li !value="a" !item>
+	<li !value="a" !enum>
 		<input !value=b />
 		<ul>
-			<li !value="c" !item>
+			<li !value="c" !enum>
 				<input !value=d />
 				<input !value />
 			</li>
-			<li !value="x" !item>
+			<li !value="x" !enum>
 				<input !value=d />
 				<input !value />
 			</li>

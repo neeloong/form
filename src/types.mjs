@@ -4,10 +4,6 @@
  * @typedef {any} VerifyError
  */
 /**
- * @typedef {any} ENV
- */
-
-/**
  * @typedef {object} Component.Attr
  * @property {string} type
  * @property {boolean} [isAttr]
@@ -15,7 +11,7 @@
  * // TODO: 可否计算，可否关联
  * @property {'value' | 'index' | 'no' | 'length' | 'state' | 'readonly' | 'disabled' | 'hidden'} [bind]
  * @property {string} [event]
- * @property {Function} [set]
+ * @property {($event: any, global: any) => any} [set]
  * @property {*} [default]
  * @property {boolean} [immutable]
  * 

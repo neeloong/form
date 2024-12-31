@@ -3,16 +3,25 @@
 import entityMap from './entityMap.mjs';
 import LayoutNode from './LayoutNode.mjs';
 
-export const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
-export const attrPattern = /^(?<decorator>:|@|!|class:|style:)?(?<name>[-\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
-export const namePattern = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)$/u;
+const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
+const attrPattern = /^(?<decorator>[:@!+*\.]|class:|类名?:|style:|样式：)?(?<name>[-\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
+const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
 
 
-export const computedIdRegex = /^(?<name>[\w\p{Unified_Ideograph}_][\.\d\w\p{Unified_Ideograph}_]*)?(?::(?:index|no|length|state|readonly|hidden|disabled))?$/u
+/**
+ * 
+ * @param {string} c 
+ * @returns 
+ */
 function isSpace(c) {
 	return c === '0x80' || c <= ' ';
 }
-export function isIdCode(c) {
+/**
+ * 
+ * @param {string} c 
+ * @returns 
+ */
+function isIdCode(c) {
 	return c !== '=' && c !== '/' && c !== '>' && c && c !== '\'' && c !== '"' && !isSpace(c);
 }
 
@@ -24,7 +33,7 @@ export function isIdCode(c) {
  * @param {*} closeMap 
  * @returns 
  */
-export function fixSelfClosed(source, elStartEnd, name, closeMap) {
+function fixSelfClosed(source, elStartEnd, name, closeMap) {
 	let pos = closeMap[name];
 	if (pos == null) {
 		pos = source.lastIndexOf('</' + name + '>');
@@ -39,14 +48,17 @@ export function fixSelfClosed(source, elStartEnd, name, closeMap) {
 /**
  *
  * @param {string} source
- * @param {(t: string) => Function} creteExec
- * @param {(t: string) => Function} creteEvent
+ * @param {object} [options]
+ * @param {(t: string) => Function} [options.creteCalc]
+ * @param {(t: string) => Function} [options.creteEvent]
+ * @param {Set<string>} [options.simpleTag]
  * @returns {(Layout.Node | string)[]}
  */
-export default function parse(
-	source,
-	creteExec = value => new Function('$event', 'env', value),
-	creteEvent = value => new Function('$event', 'env', value)) {
+export default function parse(source, {
+	creteCalc = value => new Function('globalThis', `with(globalThis) { return ${value} }`),
+	creteEvent = value => new Function('$event', 'globalThis', `with(globalThis) { ${value} }`),
+	simpleTag = new Set,
+} = {}) {
 	/** @type {(LayoutNode | string)[]} */
 	const list = [];
 
@@ -61,12 +73,20 @@ export default function parse(
 		currentNode = stack.pop() || null;
 		current = currentNode || doc;
 	}
+	/**
+	 * 
+	 * @param {string} chars 
+	 * @returns 
+	 */
 	function characters(chars) {
 		chars = chars.replace(/^\t*\n\t*|\n\t+|\t*\n\t*$/g, '');
 		if (!chars) { return; }
 		current.children.push(chars);
 	}
-
+	/**
+	 * 
+	 * @param {string} error 
+	 */
 	function error(error) {
 		console.error('[xmldom error]\t' + error);
 	}
@@ -86,6 +106,10 @@ export default function parse(
 		error('entity not found:' + a);
 		return a;
 	}
+	/**
+	 * 
+	 * @param {number} end 
+	 */
 	function appendText(end) {
 		if (end > start) {
 			const xt = source.substring(start, end).replace(/&#?\w+;/g, entityReplacer);
@@ -132,6 +156,11 @@ export default function parse(
 			end++;
 		} else {
 			end = tagStart + 1;
+			/**
+			 * 
+			 * @param {string} c 
+			 * @returns 
+			 */
 			function getQu(c) {
 				let start = end + 1;
 				end = source.indexOf(c, start);
@@ -167,29 +196,59 @@ export default function parse(
 			if (!tagRes) { throw new Error('invalid tagName:' + name); }
 			stack.push(currentNode);
 			currentNode = new LayoutNode(tagRes.name, tagRes.is);
+			if (simpleTag.has(name)) {
+				currentNode.simple = true;
+			}
 			current.children.push(currentNode);
 			current = currentNode;
-			const { attrs, directives, events, classes, styles } = currentNode;
+			const { attrs, directives, events, classes, styles, vars, aliases } = currentNode;
 			/**
 			 * @param {string} qName
 			 * @param {string} value
 			 */
 			function addAttribute(qName, value) {
-				const attr = attrPattern.exec(qName)?.groups;
+				const attr = attrPattern.exec(qName
+					.replace(/．/g,'.')
+					.replace(/：/g,':')
+					.replace(/＠/g,'@')
+					.replace(/＋/g,'+')
+					.replace(/－/g,'-')
+					.replace(/[＊×]/g,'*')
+					.replace(/！/g, '!'))?.groups;
 				if (!attr) { throw new Error('无效的属性:' + qName); }
-				const { decorator, name } = attr;
+				const { name } = attr;
+				const decorator = attr.decorator?.toLowerCase();
 				if (!decorator) {
 					attrs[name] = value;
 				} else if (decorator === ':') {
-					attrs[name] = computedIdRegex.test(value) ? Symbol(value) : creteExec(value);
-				} else if (decorator === 'class:') {
-					classes[name] = computedIdRegex.test(value) ? value : creteExec(value);
-				} else if (decorator === 'style:') {
-					styles[name] = computedIdRegex.test(value) ? value : creteExec(value);
-				} else if (decorator === '!') {
-					directives[name] = computedIdRegex.test(value) ? value : creteExec(value);
+					attrs[name] = nameRegex.test(value) ? Symbol(value) : creteCalc(value);
+				} else if (decorator === 'class:' || decorator === '类:' || decorator === '类名:' || decorator === '.') {
+					classes[name] = nameRegex.test(value) ? value : creteCalc(value);
+				} else if (decorator === 'style:' || decorator === '样式:') {
+					styles[name] = nameRegex.test(value) ? value : creteCalc(value);
 				} else if (decorator === '@') {
-					events[name] = namePattern.test(value) ? value : creteEvent(value);
+					events[name] = nameRegex.test(value) ? value : creteEvent(value);
+				} else if (decorator === '+') {
+					vars[name] = nameRegex.test(value) ? value : creteCalc(value);
+				} else if (decorator === '*') {
+					aliases[name] = value;
+				} else if (decorator === '!') {
+					const key = name.toString();
+					switch (key) {
+						case 'fragment':
+						case 'else':
+						case 'enum':
+							directives[key] = true;
+							break;
+						case 'if':
+						case 'text':
+						case 'html':
+							directives[key] = nameRegex.test(value) ? value : creteCalc(value);
+							break;
+						case 'value':
+							directives[key] = value;
+							break;
+					}
 				}
 			}
 			let run = true;
@@ -240,7 +299,7 @@ export default function parse(
 					default: throw new Error("elements closed character '/' and '>' must be connected to");
 				}
 				endElement();
-			} else if (fixSelfClosed(source, end, name, closeMap)) {
+			} else if (currentNode.simple || fixSelfClosed(source, end, name, closeMap)) {
 				endElement();
 			}
 

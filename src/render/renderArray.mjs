@@ -1,5 +1,5 @@
 import computed from '../computed/index.mjs';
-/** @import { ENV } from '../types.mjs' */
+import ENV from '../ENV.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value, { ArrayValue } from '../Value/index.mjs' */
 
@@ -9,10 +9,10 @@ import computed from '../computed/index.mjs';
  * @param {Element} parent
  * @param {Node?} next
  * @param {ArrayValue} schema
- * @param {ENV} envs
- * @param {(layout: Layout.Node, parent: Element, next: Node | null, schema: Value, envs: any) => () => void} renderItem
+ * @param {ENV} env
+ * @param {(layout: Layout.Node, parent: Element, next: Node | null, schema: Value, env: any) => () => void} renderItem
  */
-export default function renderArray(layout, parent, next, schema, envs, renderItem) {
+export default function renderArray(layout, parent, next, schema, env, renderItem) {
 	const start = parent.insertBefore(document.createComment(''), next);
 	const childrenResult = computed(() => schema.children);
 	/** @type {Map<Value, [Comment, Comment, () => void]>} */
@@ -37,7 +37,7 @@ export default function renderArray(layout, parent, next, schema, envs, renderIt
 			if (!old) {
 				const ItemStart = parent.insertBefore(document.createComment(''), nextNode);
 				const itemEnd = parent.insertBefore(document.createComment(''), nextNode);
-				const d = renderItem(layout, parent, itemEnd, child, envs);
+				const d = renderItem(layout, parent, itemEnd, child, env.setValue(child));
 				seMap.set(child, [ItemStart, itemEnd, d]);
 				continue;
 			}

@@ -1,5 +1,5 @@
 import computed from '../computed/index.mjs';
-/** @import { ENV } from '../types.mjs' */
+import ENV from '../ENV.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value from '../Value/index.mjs' */
 
@@ -25,7 +25,7 @@ export default function renderList(layouts, parent, next, schema, envs, renderIt
 		const end = parent.insertBefore(document.createComment(''), next);
 		let result = computed(() => list.findIndex(v => {
 			const ifv = v[0];
-				return ifv === null || Boolean(schema.exec(ifv, envs));
+				return ifv === null || Boolean(envs.exec(ifv));
 		}));
 		let lastIndex = result.value;
 		let destroy = () => { };
@@ -64,7 +64,7 @@ export default function renderList(layouts, parent, next, schema, envs, renderIt
 			bkList.add(() => node.remove());
 			continue;
 		}
-		if (ifList.length && layout.directives.else != null) {
+		if (ifList.length && layout.directives.else) {
 			const ifv = layout.directives.if || null;
 			ifList.push([ifv, layout]);
 			if (!ifv) {

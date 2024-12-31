@@ -1,10 +1,8 @@
 import { markChange, markRead } from '../computed/index.mjs';
 import EventEmitter from './EventEmitter.mjs';
 import runBooleanScript from './runBooleanScript.mjs';
-/** @import { ENV, Schema } from '../types.mjs' */
-/** @import * as Layout from '../Layout/index.mjs' */
+/** @import { Schema } from '../types.mjs' */
 
-	const regex1 = /^:(index|no|length|state|readonly|disabled|hidden|value)$/
 /**
  * @template [T=any]
  * @extends {EventEmitter<Record<string, any[]>>}
@@ -17,23 +15,6 @@ export default class Value extends EventEmitter {
 	 */
 	static create(schema, options = {}) {
 		return new ObjectValue({type: null, props: schema}, { ...options, parent: null });
-	}
-	/**
-	 * @param {string | Function} value
-	 * @param {ENV} envs
-	 */
-	exec(value, envs) {
-		if (!value) { return this.value; }
-		if (typeof value !== 'string') {
-			// TODO: 执行函数
-			return;
-		}
-		const r1 = regex1.exec(value);
-		if (r1) {
-			const key = /** @type {'index'|'no'|'length'|'state'|'readonly'|'disabled'|'hidden'|'value'} */(r1[1]);
-			return this[key];
-		}
-		return this.child(value)?.value;
 	}
 	/** @type {Value?} */
 	#nullValue = null;
@@ -171,7 +152,7 @@ export default class Value extends EventEmitter {
 		const val = this.#parent && this.#parent.#new || this.#selfNew;
 		if (val === this.#new) { return }
 		this.#new = val;
-		for (const [, field] of this[Symbol.iterator]()) {
+		for (const [, field] of this) {
 			field.#updateNew();
 		}
 		markChange(this, 'new');
@@ -201,7 +182,7 @@ export default class Value extends EventEmitter {
 		const val = this.#parent && this.#parent.hidden || (this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden);
 		if (val === this.#hidden) { return }
 		this.#hidden = val;
-		for (const [, field] of this[Symbol.iterator]()) {
+		for (const [, field] of this) {
 			field.#updateHidden();
 		}
 		markChange(this, 'hidden');
@@ -239,7 +220,7 @@ export default class Value extends EventEmitter {
 		const val = this.#parent && this.#parent.disabled || (this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled);
 		if (val === this.#disabled) { return }
 		this.#disabled = val;
-		for (const [, field] of this[Symbol.iterator]()) {
+		for (const [, field] of this) {
 			field.#updateDisabled();
 		}
 		markChange(this, 'disabled');
@@ -276,7 +257,7 @@ export default class Value extends EventEmitter {
 		const val = this.#parent && this.#parent.readonly || (this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly);
 		if (val === this.#readonly) { return }
 		this.#readonly = val;
-		for (const [, field] of this[Symbol.iterator]()) {
+		for (const [, field] of this) {
 			field.#updateReadonly();
 		}
 		markChange(this, 'readonly');
@@ -297,7 +278,7 @@ export default class Value extends EventEmitter {
 
 
 
-	/** @returns {Iterable<[key: string | number, value: Value]>} */
+	/** @returns {IterableIterator<[key: string | number, value: Value]>} */
 	*[Symbol.iterator]() {}
 	/**
 	 * 
@@ -410,7 +391,7 @@ export default class Value extends EventEmitter {
 			let values = Array.isArray(val) ? [...val] : {...val};
 			let newStates = Array.isArray(val) ? Array.isArray(states) ? [...states] : [] : {...states};
 			let updated = false;
-			for (const [key, field] of this[Symbol.iterator]()) {
+			for (const [key, field] of this) {
 				// @ts-ignore
 				const data = val[key];
 				const state = states?.[key];
@@ -458,7 +439,7 @@ export default class Value extends EventEmitter {
 		for (const f of set) {
 			f();
 		}
-		for (const [, field] of this[Symbol.iterator]()) {
+		for (const [, field] of this) {
 			field.destroy();
 		}
 	}
@@ -493,7 +474,7 @@ export default class Value extends EventEmitter {
 		this.#lastState = this.#state;
 		const val = this.#value;
 		if (val && typeof val === 'object') {
-			for (const [key, field] of this[Symbol.iterator]()) {
+			for (const [key, field] of this) {
 				// @ts-ignore
 				field.#reset(val[key]);
 			}
@@ -502,7 +483,7 @@ export default class Value extends EventEmitter {
 	}
 
 	async verify() {
-		return Promise.all([...this[Symbol.iterator]()].map(([,field]) => {
+		return Promise.all([...this].map(([,field]) => {
 			/** @type {import('../types.mjs').VerifyError[]} */
 			const error = [];
 			/** @type {*} */
@@ -542,7 +523,7 @@ export default class Value extends EventEmitter {
 			this.emit('refresh', fields);
 			return;
 		}
-		for (const [, field] of this[Symbol.iterator]()) {
+		for (const [, field] of this) {
 			field.refresh();
 		}
 		this.emit('refresh');
@@ -635,8 +616,9 @@ export class ArrayValue extends Value {
 	#children = [];
 	get children() {
 		markRead(this, 'children');
-		return [...this.#children]; }
-	[Symbol.iterator]() { return [...this.#children.entries()]; }
+		return [...this.#children];
+	}
+	*[Symbol.iterator]() { return yield*[...this.#children.entries()]; }
 	/**
 	 * 
 	 * @overload

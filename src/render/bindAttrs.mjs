@@ -1,5 +1,6 @@
-/** @import { Component, ENV } from '../types.mjs' */
+/** @import { Component } from '../types.mjs' */
 /** @import Value from '../Value/index.mjs' */
+import ENV from '../ENV.mjs';
 import computed from '../computed/index.mjs';
 import createContext from './createContext.mjs';
 
@@ -19,7 +20,7 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 			const bind = attr.bind;
 			if (bind && ['value', 'no', 'length', 'state', 'index', 'hidden','disabled','readonly',].includes(bind)) {
 				// @ts-ignore
-				const result = computed(() => schema.exec(bind));;
+				const result = computed(() => envs.exec(bind));
 				let value = result.value;
 				rContext.set(name, value);
 				bk.add(() => result.stop());
@@ -44,11 +45,11 @@ export default function bindAttrs(rContext, componentAttrs, schema, envs, attrs)
 		const attrSchema = typeof attrValue === 'function' ? attrValue
 		: attrValue.description || '';
 		if (attr.immutable) {
-			rContext.set(name, schema.exec(attrSchema, envs));
+			rContext.set(name, envs.exec(attrSchema));
 			continue;
 
 		}
-		const result = computed(() => schema.exec(attrSchema, envs));;
+		const result = computed(() => envs.exec(attrSchema));;
 		let value = result.value;
 		rContext.set(name, value);
 		bk.add(() => result.stop());
