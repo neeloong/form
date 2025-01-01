@@ -3,6 +3,9 @@ import EventEmitter from '../EventEmitter.mjs';
 import runBooleanScript from './runBooleanScript.mjs';
 /** @import { Schema } from '../types.mjs' */
 
+/** @typedef {'hidden' | 'clearable' | 'required' | 'disabled' | 'readonly'} BoolStateKeys */
+/** @type {BoolStateKeys[]} */
+export const BoolStateKeys = ['hidden', 'clearable', 'required', 'disabled', 'readonly'];
 /**
  * @template [T=any]
  * @extends {EventEmitter<Record<string, any[]>>}
@@ -36,11 +39,16 @@ export default class Value extends EventEmitter {
 	 * @param {boolean} [options.null] 
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.hidden] 
+	 * @param {boolean} [options.clearable] 
+	 * @param {boolean} [options.required] 
 	 * @param {boolean} [options.readonly] 
 	 * @param {boolean} [options.disabled] 
-	 * @param {boolean} [options.scriptHidden] 
-	 * @param {boolean} [options.scriptReadonly] 
-	 * @param {boolean} [options.scriptDisabled] 
+	 * @param {object} [options.script] 
+	 * @param {boolean} [options.script.clearable] 
+	 * @param {boolean} [options.script.required] 
+	 * @param {boolean} [options.script.readonly] 
+	 * @param {boolean} [options.script.disabled] 
+	 * @param {boolean} [options.script.hidden] 
 	 * @param {((value: any) => any)?} [options.setValue] 
 	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
 	 * @param {((index: any, value: T?) => void)?} [options.onUpdate] 
@@ -50,8 +58,8 @@ export default class Value extends EventEmitter {
 		null: isNull,
 		setValue, convert, onUpdate, onUpdateState,
 		index, length, new: isNew, parent: parentNode,
-		hidden, disabled, readonly,
-		scriptHidden, scriptReadonly, scriptDisabled,
+		hidden, clearable, required, disabled, readonly,
+		script = {},
 	}) {
 		super();
 		this.schema = schema;
@@ -78,17 +86,16 @@ export default class Value extends EventEmitter {
 		this.#selfNew = Boolean(isNew);
 		this.#new = parent && parent.#new || this.#selfNew;
 
-		this.#selfHidden = typeof hidden === 'boolean' ? hidden : null;
-		this.#scriptHidden = runBooleanScript(scriptHidden, destroySet, v => { this.#updateHidden(v); }, this);
-		this.#hidden = parent && parent.#hidden || this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden;
+		const stateParams = { hidden, clearable, required, disabled, readonly }
 
-		this.#selfDisabled = typeof disabled === 'boolean' ? disabled : null;
-		this.#scriptDisabled = runBooleanScript(scriptDisabled, destroySet, v => { this.#updateDisabled(v); }, this);
-		this.#disabled = parent && parent.#disabled || this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled;
-
-		this.#selfReadonly = typeof readonly === 'boolean' ? readonly : null;
-		this.#scriptReadonly = runBooleanScript(scriptReadonly, destroySet, v => { this.#updateReadonly(v); }, this);
-		this.#readonly = parent && parent.#readonly || this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly;
+		const selfStates = Object.fromEntries(BoolStateKeys.map(k => [k, typeof stateParams[k] === 'boolean' ? stateParams[k] : null] ));
+		this.#selfStates = selfStates;
+		const scriptStates = Object.fromEntries(BoolStateKeys.map(k => [k, runBooleanScript(script[k], destroySet, v => { this.#updateStates(k, v); }, this)]));
+		this.#scriptStates = scriptStates;
+		const states = Object.fromEntries(parent
+			? BoolStateKeys.map(k => [k, parent && parent.#states[k] || selfStates[k] === null ? scriptStates[k] : selfStates[k]])
+			: BoolStateKeys.map(k => [k, selfStates[k] === null ? scriptStates[k] : selfStates[k]]));
+		this.#states = states;
 	}
 	/** @type {Set<() => void>?} */
 	#destroySet
@@ -165,117 +172,80 @@ export default class Value extends EventEmitter {
 	set new(v) { this.selfNew = v; }
 
 
-	#scriptHidden = false;
-	/** @type {boolean?} */
-	#selfHidden = null;
-	#hidden = false;
+	
+	/** @type {Record<string, boolean?>} */
+	#selfStates = Object.fromEntries(BoolStateKeys.map(k => [k, null]));
+	#scriptStates = Object.fromEntries(BoolStateKeys.map(k => [k, false]));
+	#states = Object.fromEntries(BoolStateKeys.map(k => [k, false]));
 	/**
 	 * 
+	 * @param {BoolStateKeys} name 
 	 * @param {boolean} [v] 
 	 * @returns 
 	 */
-	#updateHidden(v) {
+	#updateStates(name, v) {
 		if (typeof v === 'boolean') {
-			if (this.#scriptHidden === v) { return; }
-			this.#scriptHidden = v;
+			if (this.#scriptStates[name] === v) { return; }
+			this.#scriptStates[name] = v;
 		}
-		const val = this.#parent && this.#parent.hidden || (this.#selfHidden === null ? this.#scriptHidden : this.#selfHidden);
-		if (val === this.#hidden) { return }
-		this.#hidden = val;
+		const val = this.#parent && this.#parent[name] || (this.#selfStates[name] === null ? this.#scriptStates[name] : this.#selfStates[name]);
+		if (val === this.#states[name]) { return }
+		this.#states[name] = val;
 		for (const [, field] of this) {
-			field.#updateHidden();
+			field.#updateStates(name);
 		}
-		markChange(this, 'hidden');
-		this.emit('hidden', val);
+		markChange(this, name);
+		this.emit(name, val);
 	}
-	get selfHidden() { return this.#selfHidden}
-	set selfHidden(v) {
-		const val = v === null ? v : Boolean(v);
-		if (val === this.#selfHidden) { return }
-		this.#selfHidden = val;
-		this.#updateHidden();
-	}
-	get hidden() {
-		markRead(this, 'hidden');
-		return this.#hidden;
-	}
-	set hidden(v) { this.selfHidden = v; }
-
-
-
-	#scriptDisabled = false;
-	/** @type {boolean?} */
-	#selfDisabled = null;
-	#disabled = false;
 	/**
 	 * 
-	 * @param {boolean} [v] 
-	 * @returns 
+	 * @param {BoolStateKeys} name 
+	 * @returns {boolean?}
 	 */
-	#updateDisabled(v) {
-		if (typeof v === 'boolean') {
-			if (this.#scriptDisabled === v) { return; }
-			this.#scriptDisabled = v;
-		}
-		const val = this.#parent && this.#parent.disabled || (this.#selfDisabled === null ? this.#scriptDisabled : this.#selfDisabled);
-		if (val === this.#disabled) { return }
-		this.#disabled = val;
-		for (const [, field] of this) {
-			field.#updateDisabled();
-		}
-		markChange(this, 'disabled');
-		this.emit('disabled', val);
-	}
-	get selfDisabled() { return this.#selfDisabled}
-	set selfDisabled(v) {
-		const val = v === null ? v : Boolean(v);
-		if (val === this.#selfDisabled) { return }
-		this.#selfDisabled = val;
-		this.#updateDisabled();
-	}
-	get disabled() {
-		markRead(this, 'disabled');
-		return this.#disabled;
-	}
-	set disabled(v) { this.selfDisabled = v; }
-
-
-	#scriptReadonly = false;
-	/** @type {boolean?} */
-	#selfReadonly = null;
-	#readonly = false;
+	#getSelfState(name) { return this.#selfStates[name]}
 	/**
 	 * 
-	 * @param {boolean} [v] 
+	 * @param {BoolStateKeys} name 
+	 * @param {boolean?} v 
 	 * @returns 
 	 */
-	#updateReadonly(v) {
-		if (typeof v === 'boolean') {
-			if (this.#scriptReadonly === v) { return; }
-			this.#scriptReadonly = v;
-		}
-		const val = this.#parent && this.#parent.readonly || (this.#selfReadonly === null ? this.#scriptReadonly : this.#selfReadonly);
-		if (val === this.#readonly) { return }
-		this.#readonly = val;
-		for (const [, field] of this) {
-			field.#updateReadonly();
-		}
-		markChange(this, 'readonly');
-		this.emit('readonly', val);
-	}
-	get selfReadonly() { return this.#selfReadonly; }
-	set selfReadonly(v) {
+	#setSelfState(name, v) {
 		const val = v === null ? v : Boolean(v);
-		if (this.#selfReadonly === val) { return; }
-		this.#updateReadonly();
+		if (val === this.#selfStates[name]) { return }
+		this.#selfStates[name] = val;
+		this.#updateStates(name);
 	}
-	get readonly() {
-		markRead(this, 'readonly');
-		return this.#readonly;
-	}
-	set readonly(v) { this.selfReadonly = v; }
+	/**
+	 * 
+	 * @param {BoolStateKeys} name 
+	 * @returns {boolean}
+	 */
+	#getCurrentState(name) { markRead(this, name); return this.#states[name]; }
 
+	get selfHidden() { return this.#getSelfState('hidden'); }
+	set selfHidden(v) { this.#setSelfState('hidden', v); }
+	get hidden() { return this.#getCurrentState('hidden'); }
+	set hidden(v) { this.#setSelfState('hidden', v); }
 
+	get selfClearable() { return this.#getSelfState('clearable'); }
+	set selfClearable(v) { this.#setSelfState('clearable', v); }
+	get clearable() { return this.#getCurrentState('clearable'); }
+	set clearable(v) { this.#setSelfState('clearable', v); }
+
+	get selfRequired() { return this.#getSelfState('required'); }
+	set selfRequired(v) { this.#setSelfState('required', v); }
+	get required() { return this.#getCurrentState('required'); }
+	set required(v) { this.#setSelfState('required', v); }
+
+	get selfDisabled() { return this.#getSelfState('disabled'); }
+	set selfDisabled(v) { this.#setSelfState('disabled', v); }
+	get disabled() { return this.#getCurrentState('disabled'); }
+	set disabled(v) { this.#setSelfState('disabled', v); }
+
+	get selfReadonly() { return this.#getSelfState('readonly'); }
+	set selfReadonly(v) { this.#setSelfState('readonly', v); }
+	get readonly() { return this.#getCurrentState('readonly'); }
+	set readonly(v) { this.#setSelfState('readonly', v); }
 
 
 	/** @returns {IterableIterator<[key: string | number, value: Value]>} */

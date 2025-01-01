@@ -1,6 +1,6 @@
 import markChange from '../computed/markChange.mjs';
 import markRead from '../computed/markRead.mjs';
-import Value, { ArrayValue } from '../Value/index.mjs';
+import Value, { ArrayValue, BoolStateKeys } from '../Value/index.mjs';
 
 
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Value; calc?: null; var?: boolean }} ValueDefine */
@@ -19,9 +19,10 @@ function *toItem(val, key = '', sign = '$') {
 	yield [`${key}${sign}index`, {get: () => val.index}]
 	yield [`${key}${sign}no`, {get: () => val.no}]
 	yield [`${key}${sign}length`, {get: () => val.length}]
-	yield [`${key}${sign}readonly`, {get: () => val.readonly}]
-	yield [`${key}${sign}hidden`, {get: () => val.hidden}]
-	yield [`${key}${sign}disabled`, {get: () => val.disabled}]
+	yield [`${key}${sign}new`, {get: () => val.new}]
+	for (const k of BoolStateKeys) {
+		yield [`${key}${sign}${k}`, {get: () => val[k]}];
+	}
 	if (!(val instanceof ArrayValue)) { return; }
 	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
 	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
