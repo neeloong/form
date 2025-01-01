@@ -54,7 +54,7 @@
 /**
  * @callback ComponentGetter
  * @param {string[]} path
- * @param {() => Component?} [next]
+ * @param {(path: string[]) => Component?} [next]
  * @returns {Component?}
  */
 /**
