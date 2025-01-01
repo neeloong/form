@@ -12,22 +12,61 @@ import Value, { ArrayValue } from '../Value/index.mjs';
  * @param {string | number} [key] 
  * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
  */
-function *toItem(val, key = '') {
+function *toItem(val, key = '', sign = '$') {
 	yield [`${key}`, {get: () => val.value, set: v => val.value = v, value: val}]
-	yield [`${key}$value`, {get: () => val.value, set: v => val.value = v}]
-	yield [`${key}$state`, {get: () => val.state, set: v => val.state = v}]
-	yield [`${key}$index`, {get: () => val.index}]
-	yield [`${key}$no`, {get: () => val.no}]
-	yield [`${key}$length`, {get: () => val.length}]
-	yield [`${key}$readonly`, {get: () => val.readonly}]
-	yield [`${key}$hidden`, {get: () => val.hidden}]
-	yield [`${key}$disabled`, {get: () => val.disabled}]
+	yield [`${key}${sign}value`, {get: () => val.value, set: v => val.value = v}]
+	yield [`${key}${sign}state`, {get: () => val.state, set: v => val.state = v}]
+	yield [`${key}${sign}index`, {get: () => val.index}]
+	yield [`${key}${sign}no`, {get: () => val.no}]
+	yield [`${key}${sign}length`, {get: () => val.length}]
+	yield [`${key}${sign}readonly`, {get: () => val.readonly}]
+	yield [`${key}${sign}hidden`, {get: () => val.hidden}]
+	yield [`${key}${sign}disabled`, {get: () => val.disabled}]
 	if (!(val instanceof ArrayValue)) { return; }
-	yield [`${key}$insert`, {exec: (index, value) => val.insert(index, value)}]
-	yield [`${key}$add`, {exec: (v) => val.add(v)}]
-	yield [`${key}$remove`, {exec: (index) => val.remove(index)}]
-	yield [`${key}$move`, {exec: (from, to) => val.move(from, to)}]
-	yield [`${key}$exchange`, {exec: (a, b) => val.exchange(a, b)}]
+	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
+	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
+	yield [`${key}${sign}remove`, {exec: (index) => val.remove(index)}]
+	yield [`${key}${sign}move`, {exec: (from, to) => val.move(from, to)}]
+	yield [`${key}${sign}exchange`, {exec: (a, b) => val.exchange(a, b)}]
+}
+/**
+ * 
+ * @param {Value?} parent 
+ * @param {Value} val 
+ * @param {string | number} [key] 
+ * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
+ */
+function *toParentItem(parent, val, key = '', sign = '$') {
+	if (!(parent instanceof ArrayValue)) {
+		yield [`${key}${sign}upMovable`, {get: () => false}];
+		yield [`${key}${sign}downMovable`, {get: () => false}]
+		return
+	}
+	yield [`${key}${sign}upMovable`, {get: () => {
+		const s = val.index;
+		if (typeof s !== 'number') { return false; }
+		if (s <= 0) { return false; }
+		return true;
+	}}];
+	yield [`${key}${sign}downMovable`, {get: () => {
+		const s = val.index;
+		if (typeof s !== 'number') { return false; }
+		if (s >= parent.length - 1) { return false; }
+		return true;
+	}}]
+	yield [`${key}${sign}remove`, {exec: () => parent.remove(Number(val.index))}]
+	yield [`${key}${sign}upMove`, {exec: () => {
+		const s = val.index;
+		if (typeof s !== 'number') { return; }
+		if (s <= 0) { return; }
+		parent.move(s, s - 1);
+	}}];
+	yield [`${key}${sign}downMove`, {exec: () => {
+		const s = val.index;
+		if (typeof s !== 'number') { return; }
+		if (s >= parent.length - 1) { return; }
+		parent.move(s, s + 1);
+	}}]
 }
 export default class Environment {
 	/**
@@ -58,7 +97,7 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Environment | Record<string, Value | {get?(): any; set?(v: any): void; exec(...p: any[]): any; calc(...p: any[]): any }>} [global] 
+	 * @param {Environment | Record<string, Value | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
 	 */
 	constructor(global) {
 		if (global instanceof Environment) {
@@ -109,6 +148,8 @@ export default class Environment {
 	#explicit = Object.create(null);
 	/** @type {Value?} */
 	#schema = null
+	/** @type {Value?} */
+	#parent = null
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>?} */
 	#allItems = null
 	get #items() {
@@ -121,8 +162,12 @@ export default class Environment {
 			...this.#explicit,
 		}));
 		const schema = this.#schema;
+		const parent = this.#parent;
 		if (schema) {
 			for (const [key, item] of toItem(schema)) {
+				ais[key] = item;
+			}
+			for (const [key, item] of toParentItem(parent, schema)) {
 				ais[key] = item;
 			}
 		}
@@ -132,16 +177,24 @@ export default class Environment {
 	/**
 	 * 
 	 * @param {Value} schema 
+	 * @param {Value} [parent] 
 	 */
-	setValue(schema) {
+	setValue(schema, parent) {
 		const cloned = new Environment(this);
 		cloned.#schema = schema;
+		if (parent) { cloned.#parent = parent; }
 		if (schema instanceof ArrayValue) { return cloned; }
 		const items = cloned.#schemaItems;
 		for (const [name, val] of schema) {
-			for (const [b,x] of toItem(val, name)) {
+			for (const [b, x] of toItem(val, name)) {
 				items[b] = x;
 			}
+			for (const [b, x] of toItem(val, name, '$$')) {
+				items[b] = x;
+			}
+		}
+		if (parent instanceof ArrayValue) {
+
 		}
 		return cloned;
 	}
@@ -154,41 +207,34 @@ export default class Environment {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
 		const cloned = new Environment(this);
 		cloned.#schema = this.#schema;
+		cloned.#parent = this.#parent;
 		const explicit = cloned.#explicit;
 		const items = this.#items;
-		/**
-		 * 
-		 * @param {string} key 
-		 * @param {ValueDefine | ExecDefine | CalcDefine} item 
-		 */
-		const add = (key, item) => {
+		for (const [key, name] of Object.entries(aliases)) {
+			const item = this.#items[name];
+			if (!item) { continue; }
 			if (!item.get || !item.value) {
 				explicit[key] = item;
 				items[key] = item;
-				return;
+				continue;
 			}
 			for (const [k, it] of toItem(item.value, key)) {
 				explicit[k] = it;
 				items[k] = it;
 			}
 		}
-		for (const [k,v] of Object.entries(aliases)) {
-			const item = this.#items[v];
-			if (!item) { continue; }
-			add(k, item);
-		}
 		for (const [k,v] of Object.entries(vars)) {
 			/** @type {any} */
 			let val = null;
 			if (typeof v === 'function') {
-				val = v(this.getters);
+				val = v(this.settable);
 			} else if (v && typeof v === 'string') {
 				const item = this.#items[v];
 				if (item.get) {
 					val = item.get();
 				}
 			}
-			add(k, {
+			explicit[k] = items[k] = {
 				get: () => { markRead(explicit, k); return val; },
 				set: (v) => {
 					if (v === val) { return; }
@@ -196,7 +242,7 @@ export default class Environment {
 					markChange(explicit, k);
 				},
 				var: true,
-			});
+			};
 		}
 		return cloned;
 	}
@@ -226,6 +272,31 @@ export default class Environment {
 			} else {
 				Object.defineProperty(ngt, key, {
 					value: item.exec,
+					writable: false,
+					configurable: true,
+					enumerable: false,
+				});
+			}
+		}
+		this.#all = ngt;
+		return ngt;
+	}
+	get settable() {
+		const gt = this.#all;
+		if (gt) { return gt; }
+		/** @type {Record<string, any>} */
+		const ngt = {};
+		for (const [key, item] of Object.entries(this.#items)) {
+			if (item.get) {
+				Object.defineProperty(ngt, key, {
+					get: item.get,
+					set: item.set,
+					configurable: true,
+					enumerable: true,
+				});
+			} else if (item.calc) {
+				Object.defineProperty(ngt, key, {
+					value: item.calc,
 					writable: false,
 					configurable: true,
 					enumerable: false,

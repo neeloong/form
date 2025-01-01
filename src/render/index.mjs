@@ -114,13 +114,31 @@ function render(layout, parent, next, schema, env, componentPath, getComponent) 
 }
 
 /**
+ * @overload
  * @param {Value} schema
  * @param {(Layout.Node | string)[]} layouts 
  * @param {Element} parent 
- * @param {Record<string, Value | {get?(): any; set?(v: any): void; exec(...p: any[]): any; calc(...p: any[]): any }>?} [global] 
- * @param {((path: string[]) => Component?)?} [components] 
+ * @param {Record<string, Value | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [global] 
+ * @param {(path: string[]) => Component?} [components] 
+ * @returns {() => void}
  */
-export default function (schema, layouts, parent, global, components) {
+/**
+ * @overload
+ * @param {Value} schema
+ * @param {(Layout.Node | string)[]} layouts 
+ * @param {Element} parent 
+ * @param {((path: string[]) => Component?)?} [components] 
+ * @returns {() => void}
+ */
+/**
+ * @param {Value} schema
+ * @param {(Layout.Node | string)[]} layouts 
+ * @param {Element} parent 
+ * @param {...((path: string[]) => Component?) | Record<string, Value | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} options 
+ */
+export default function (schema, layouts, parent, ...options) {
+	const components = options.find(v => typeof v === 'function')
+	const global = options.find(v => typeof v === 'object')
 	// TODO: 全局环境
 	const env = new Environment(global).setValue(schema);
 	return renderList(layouts, parent, null, schema, env, l => {

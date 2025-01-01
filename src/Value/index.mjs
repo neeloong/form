@@ -43,8 +43,8 @@ export default class Value extends EventEmitter {
 	 * @param {boolean} [options.scriptDisabled] 
 	 * @param {((value: any) => any)?} [options.setValue] 
 	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
-	 * @param {((value: T?) => void)?} [options.onUpdate] 
-	 * @param {((value: T?) => void)?} [options.onUpdateState] 
+	 * @param {((index: any, value: T?) => void)?} [options.onUpdate] 
+	 * @param {((index: any, value: T?) => void)?} [options.onUpdateState] 
 	 */
 	constructor(schema, {
 		null: isNull,
@@ -96,9 +96,9 @@ export default class Value extends EventEmitter {
 	#setValue = null
 	/** @type {((value: any, state: any) => [value: any, state: any])?} */
 	#convert = null
-	/** @type {((value: any) => void)?} */
+	/** @type {((index: any, value: any) => void)?} */
 	#onUpdate = null
-	/** @type {((value: any) => void)?} */
+	/** @type {((index: any, value: any) => void)?} */
 	#onUpdateState = null
 	/** @readonly @type {Value?} */
 	#parent = null;
@@ -325,7 +325,7 @@ export default class Value extends EventEmitter {
 		const val = this.#setValue?.(v) || v;
 		this.#value = val;
 		this.#set = true;
-		this.#onUpdate?.(this.#value);
+		this.#onUpdate?.(this.#index, this.#value);
 		if (this.#needUpdate) { return; }
 		this.#needUpdate = true;
 		if (this.#needUpdateState) { return; }
@@ -341,7 +341,7 @@ export default class Value extends EventEmitter {
 		const val = v;
 		this.#state = val;
 		this.#set = true;
-		this.#onUpdateState?.(this.#state);
+		this.#onUpdateState?.(this.#index, this.#state);
 		if (this.#needUpdateState) { return; }
 		this.#needUpdateState = true;
 		if (this.#needUpdate) { return; }
@@ -565,7 +565,7 @@ export class ObjectValue extends Value {
 	 * @param {Value?} [options.parent] 
 	 * @param {string | number} [options.index] 
 	 * @param {boolean} [options.new] 
-	 * @param {(value: any) => void} [options.onUpdate] 
+	 * @param {(index: any, value: any) => void} [options.onUpdate] 
 	 */
 	constructor(schema,{ ...options } = {}) {
 		super(schema, {
@@ -583,8 +583,8 @@ export class ObjectValue extends Value {
 		});
 		const children = Object.create(null);
 		for (const [index, field] of Object.entries(schema.props)) {
-			/** @param {*} value */
-			const onUpdate = (value) => {
+			/** @param {*} index @param {*} value */
+			const onUpdate = (index, value) => {
 				this.value = {...this.value, [index]: value};
 			}
 			let child;
@@ -652,7 +652,7 @@ export class ArrayValue extends Value {
 	 * @param {Value?} [options.parent]
 	 * @param {string | number | null} [options.index] 
 	 * @param {boolean} [options.new] 
-	 * @param {(value: any) => void} [options.onUpdate] 
+	 * @param {(index: any, value: any) => void} [options.onUpdate] 
 	 */
 	constructor(schema,  { parent, onUpdate, ...options} = {}) {
 		// @ts-ignore
@@ -685,9 +685,9 @@ export class ArrayValue extends Value {
 					(Array.isArray(state) ? state : v == null ? [] : [state]),
 				];
 			},
-			onUpdate:(value) => {
+			onUpdate:(index, value) => {
 				updateChildren(value);
-				onUpdate?.(value);
+				onUpdate?.(index, value);
 			},
 		});
 		/**
@@ -705,13 +705,13 @@ export class ArrayValue extends Value {
 		}
 		if (typeof schema.type === 'string') {
 			this.#create = index => {
-				const child = new Value(schema, {parent: this, index, onUpdate: (value) => childUpdated(value, index) });;
+				const child = new Value(schema, {parent: this, index, onUpdate: (index, value) => childUpdated(value, index) });;
 				child.index = index;
 				return child
 			}
 		} else if (!Array.isArray(schema.props)) {
 			this.#create = index =>  {
-				const child = new ObjectValue(schema, { parent: this, index, onUpdate: (value) => childUpdated(value, index)});
+				const child = new ObjectValue(schema, { parent: this, index, onUpdate: (index, value) => childUpdated(value, index)});
 				child.index = index;
 				return child
 			}
@@ -769,7 +769,7 @@ export class ArrayValue extends Value {
 		for (let i = index; i < children.length; i++) {
 			children[i].index = i;
 		}
-		item.value.destroy();
+		item.destroy();
 		const val = [...data];
 		const [value] = val.splice(insertIndex, 1);
 		this.value = val;
