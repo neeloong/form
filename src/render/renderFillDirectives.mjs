@@ -1,7 +1,7 @@
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value from '../Value/index.mjs' */
 import computed from '../computed/index.mjs';
-import Environment from '../Environment.mjs';
+import Environment from './Environment.mjs';
 /**
  *
  * @param {any} val

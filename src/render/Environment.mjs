@@ -1,6 +1,6 @@
-import markChange from './computed/markChange.mjs';
-import markRead from './computed/markRead.mjs';
-import Value, { ArrayValue } from './Value/index.mjs';
+import markChange from '../computed/markChange.mjs';
+import markRead from '../computed/markRead.mjs';
+import Value, { ArrayValue } from '../Value/index.mjs';
 
 
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Value; calc?: null; var?: boolean }} ValueDefine */

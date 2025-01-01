@@ -1,6 +1,6 @@
 /** @import { Component } from '../types.mjs' */
 /** @import Value from '../Value/index.mjs' */
-import Environment from '../Environment.mjs';
+import Environment from './Environment.mjs';
 import computed from '../computed/index.mjs';
 
 /**

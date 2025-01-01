@@ -1,5 +1,5 @@
 /** @import Value from '../Value/index.mjs' */
-import Environment from '../Environment.mjs';
+import Environment from './Environment.mjs';
 import { ArrayValue } from '../Value/index.mjs';
 /** @import { Component } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
