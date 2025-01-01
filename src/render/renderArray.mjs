@@ -1,5 +1,5 @@
 import computed from '../computed/index.mjs';
-import ENV from '../ENV.mjs';
+import Environment from '../Environment.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value, { ArrayValue } from '../Value/index.mjs' */
 
@@ -9,7 +9,7 @@ import ENV from '../ENV.mjs';
  * @param {Element} parent
  * @param {Node?} next
  * @param {ArrayValue} schema
- * @param {ENV} env
+ * @param {Environment} env
  * @param {(layout: Layout.Node, parent: Element, next: Node | null, schema: Value, env: any) => () => void} renderItem
  */
 export default function renderArray(layout, parent, next, schema, env, renderItem) {

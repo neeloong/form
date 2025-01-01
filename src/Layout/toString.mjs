@@ -51,7 +51,7 @@ export default function toString(node) {
 			buf.push(' ', name, '="', value.replace(/[<&"]/g, _xmlEncoder), '"');
 			continue;
 		}
-		const val = typeof value === 'function' ? String(value) : typeof value === 'symbol' ? value.description : value;
+		const val = typeof value === 'function' ? String(value) : typeof value === 'object' ? value.name : value;
 		if (typeof val === 'string') {
 			buf.push(' :', name, '="', val.replace(/[<&"]/g, _xmlEncoder) || '', '"');
 		}

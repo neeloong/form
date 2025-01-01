@@ -9,24 +9,47 @@
  * @property {boolean} [isAttr]
  * @property {boolean} [isProp]
  * // TODO: 可否计算，可否关联
- * @property {'value' | 'index' | 'no' | 'length' | 'state' | 'readonly' | 'disabled' | 'hidden'} [bind]
- * @property {string} [event]
- * @property {($event: any, global: any) => any} [set]
+ * @property {[event: string, set: ($event: any, global: any) => any]} [bind]
  * @property {*} [default]
  * @property {boolean} [immutable]
  * 
  */
 /**
+ * @typedef {object} Component.Handler
+ * @property {(name: string, value: any) => void} set
+ * @property {(event: string, listener: ($event: any, global: any) => any) => void} addEvent
+ * @property {() => void} destroy
+ * @property {any} tag
+ * @property {() => void} init
+ */
+/**
+ * @typedef {object} Component.Context.Events
+ * @property {[value: {events: [string, ($event: any) => void, AddEventListenerOptions][]}]} init
+ * @property {[]} destroy
+ */
+/**
+ * @typedef {object} Component.Context
+ * @property {Set<string>?} [attrs]
+ * @property {Set<string>?} [props]
+ * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events
+ * @property {Record<string, any>} tagAttrs
+ * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watchAttr
+ * @property {boolean} destroyed
+ * @property {boolean} init
+ * @property {<K extends keyof Component.Context.Events>(event: K, listener: (...p: Component.Context.Events[K]) => void) => () => void} listen
+ */
+
+/**
  * @typedef {object} Component.Event
- * @property {Record<string, any>} filters 过滤器
+ * @property {Record<string, (($event: any, param: string[], env: any) => boolean | null | void) | string>} filters 过滤器
  * 
  */
 /**
  * @typedef {object} Component
  * @property {string | ((ctx: any) => Element)} tag
  * @property {string} [is]
- * @property {Record<string, Component.Attr>} attrs
- * @property {Record<string, Component.Event>} events
+ * @property {Record<string, Component.Attr>} [attrs]
+ * @property {Record<string, Component.Event>} [events]
  */
 /**
  * @callback ComponentGetter

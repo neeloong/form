@@ -1,105 +1,212 @@
 /** @import { Component } from '../types.mjs' */
+/** @import Environment from '../Environment.mjs' */
+
+import EventEmitter from '../EventEmitter.mjs';
+
+/** @type {Record<string, (evt: any, param: string[], global: any) => boolean | null | void>} */
+const eventFilters = {
+	stop(evt) {
+		if (evt instanceof Event) { evt.stopPropagation(); }
+	},
+	prevent(evt) {
+		if (evt instanceof Event) { evt.preventDefault(); }
+	},
+	self(evt) {
+		if (evt instanceof Event) { return evt.target === evt.currentTarget; }
+	},
+	enter(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Enter'; }
+	},
+	tab(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Tab'; }
+	},
+	esc(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Escape'; }
+	},
+	space(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === ' '; }
+	},
+	backspace(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Backspace'; }
+	},
+	delete(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Delete'; }
+	},
+	delBack(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Delete' || evt.key === 'Backspace'; }
+	},
+	'del-back'(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Delete' || evt.key === 'Backspace'; }
+	},
+	insert(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.key === 'Insert'; }
+	},
+	repeat(evt) {
+		if (evt instanceof KeyboardEvent) { return evt.repeat; }
+	},
+
+	key(evt, param) {
+		if (evt instanceof KeyboardEvent) {
+			const key = evt.code.toLowerCase().replace(/-/g, '');
+			for (const k of param) {
+				if (key === k.toLowerCase().replace(/-/g, '')) { return true }
+			}
+			return false;
+		}
+	},
+	main(evt) {
+		if (evt instanceof MouseEvent) { return evt.button === 0; }
+	},
+	auxiliary(evt) {
+		if (evt instanceof MouseEvent) { return evt.button === 1; }
+	},
+	secondary(evt) {
+		if (evt instanceof MouseEvent) { return evt.button === 2; }
+	},
+	left(evt) {
+		if (evt instanceof MouseEvent) { return evt.button === 0; }
+	},
+	middle(evt) {
+		if (evt instanceof MouseEvent) { return evt.button === 1; }
+	},
+	right(evt) {
+		if (evt instanceof MouseEvent) { return evt.button === 2; }
+	},
+	primary(evt) {
+		if (evt instanceof PointerEvent) { return evt.isPrimary; }
+	},
+	mouse(evt) {
+		if (evt instanceof PointerEvent) { return evt.pointerType === 'mouse'; }
+	},
+	pen(evt) {
+		if (evt instanceof PointerEvent) { return evt.pointerType === 'pen'; }
+	},
+	touch(evt) {
+		if (evt instanceof PointerEvent) { return evt.pointerType === 'touch'; }
+	},
+
+// TODO: 指针事件
+	ctrl(evt) {
+		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+			return evt.ctrlKey;
+		}
+	},
+	alt(evt) {
+		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+			return evt.altKey;
+		}
+	},
+	shift(evt) {
+		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+			return evt.shiftKey;
+		}
+	},
+	meta(evt) {
+		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+			return evt.metaKey;
+		}
+	},
+	cmd(evt) {
+		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+			return evt.ctrlKey || evt.metaKey;
+		}
+	},
+};
 /**
  * 
- * @param {Component} component 
- * @param {any} global 
+ * @param {Component | string} component 
+ * @param {Environment} env 
  * @returns 
  */
-export default function createContext({ attrs, events }, global) {
-	let removed = false;
-	const removedListeners = new Set();
+export default function createContext(component, env) {
+	const tag = typeof component === 'string' ? component : component.tag;
+	const { attrs, events } = typeof component !== 'string' && component || {attrs: null, events: null };
+
+	let destroyed = false;
 	let init = false;
-	const initListeners = new Set();
-	const tagAttrs = Object.fromEntries(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e, attr]) => [e, undefined]));
-	const watchAttrs = Object.fromEntries(Object.keys(tagAttrs).map(e => [e, new Set]))
+	const tagAttrs = Object.create(null);
 
-
-	/** @type {Record<string, (($event: any, global: any) => void)[]>} */
-	const listeners = Object.fromEntries(Object.keys(events).map(e => [e, []]))
-	const cContext = {
-		attrs: new Set(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e]) => e)),
-		props: new Set(Object.entries(attrs).filter(([,a]) => a.isProp).map(([e]) => e)),
-		// TODO: 触发事件
-		// TODO: 属性及监听属性
-		event: Object.fromEntries(Object.entries(listeners).map(([e, list]) => {
-			return [e, $event => {
-				for (const fn of list) {
-					fn($event, global);
-				}
-			}]
-		})),
-		tagAttrs: Object.defineProperties({}, Object.fromEntries(Object.keys(attrs).map(e => [e, {
-			configurable: true,
-			enumerable: true,
-			get() { return tagAttrs[e]},
-		}]))),
-		watchAttr(name, fn) {
-			const list = watchAttrs[name];
-			if (!(list instanceof Set)) { return () => {}}
-			list.add(fn);
-			return () => {list.delete(fn)};
-		},
-		get removed() { return removed},
-		listenRemove(fn) {
-			removedListeners.add(fn);
-			return () => {removedListeners.delete(fn)};
-
-		},
+	/** @type {[string, ($event: any) => void, AddEventListenerOptions][]} */
+	const allEvents = [];
+	const stateEmitter = new EventEmitter();
+	/** @type {EventEmitter<Record<string, [any, any, string]>>} */
+	const attrEmitter = new EventEmitter();
+	/** @type {Component.Context} */
+	const context = {
+		events: allEvents,
+		attrs: attrs ? new Set(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e]) => e)) : null,
+		props: attrs ? new Set(Object.entries(attrs).filter(([,a]) => a.isProp).map(([e]) => e)) : null,
+		tagAttrs,
+		watchAttr(name, fn) { return attrEmitter.listen(name, fn); },
+		get destroyed() { return destroyed},
 		get init() { return init},
-		listenInit(fn) {
-			initListeners.add(fn);
-			return () => {initListeners.delete(fn)};
-
-		}
+		listen(name, listener) { return stateEmitter.listen(name, listener); },
 	};
-	const rContext = {
+	/** @type {Component.Handler} */
+	const handler = {
+		tag,
 		set(name, value) {
+			if (attrs && !(name in attrs)) { return; }
+			if (!(name in tagAttrs)) { tagAttrs[name] = void 0; }
 			const old = tagAttrs[name];
 			if (old === value) { return; }
 			tagAttrs[name] = value;
-			const list = watchAttrs[name];
-			if (!(list instanceof Set)) { return; }
-			for (const f of list) {
-				f(value, old, name);
-			}
+			attrEmitter.emit(name, value, old, name);
 		},
 		addEvent(name, fn) {
 			if (typeof fn !== 'function') { return; }
 			const [e, ...fs] = name.split('.').filter(Boolean);
-			const event = events[e];
-			if (!event) { return; }
-			const filters = event.filters;
-			const list = listeners[e];
-			if (!Array.isArray(list)) { return; }
-			let l = fn;
-			if (filters) for (let f = fs.pop();f;f = fs.pop()) {
-				const filter = filters[f];
-				if (typeof filter !== 'function') { continue; }
-				const fn = l;
-				l = (...args) => {
-					if (filter(...args) === false) { return}
-					fn(...args);
+			const filters = events ? events[e].filters : {};
+			if (!filters) { return; }
+			/** @type {AddEventListenerOptions} */
+			const options = {}
+			/** @type {[($event: any, param: string[], env: any) => boolean | null | void, string[], boolean][]} */
+			const filterFns = [];
+			if (filters) for (let f = fs.shift();f;f = fs.shift()) {
+				const paramIndex = f.indexOf(':');
+				const noParamName = paramIndex >= 0 ? f.slice(0, paramIndex) : f;
+				const param = paramIndex >= 0 ? f.slice(paramIndex + 1).split(':') : [];
+				const filterName = noParamName.replace(/^-+/, '');
+				const sub = (noParamName.length - filterName.length) % 2 === 1;
+				let filter = filters[filterName] || filterName;
+				switch(filter) {
+					case 'once':
+						options.once = !sub;
+						break;
+					case 'passive':
+						options.passive = !sub;
+						break;
+					case 'capture':
+						options.capture = !sub;
+						break;
+					default:
+						if (typeof filter === 'string') {
+							filter = eventFilters[filter];
+						}
 				}
+				if (typeof filter !== 'function') { continue; }
+				filterFns.push([filter, param, sub]);
 			}
-			list.push(l);
+			allEvents.push([e, $event => {
+				const global = env.all;
+				for (const [filter, param, sub] of filterFns) {
+					if (filter($event, param, global) === sub) { return}
+				}
+				fn($event, global);
+			}, options]);
 		},
-		remove() {
-			if (removed) { return }
-			removed = true;
-			for (const f of removedListeners) {
-				f();
-			}
-
+		destroy() {
+			if (destroyed) { return }
+			destroyed = true;
+			stateEmitter.emit('destroy');
 		},
 		init() {
 			if (init) { return }
 			init = true;
-			for (const f of initListeners) {
-				f();
-			}
-
+			stateEmitter.emit('init', {events: allEvents});
 		},
 
 	};
-	return {cContext, rContext};
+	return { context, handler };
 }
+// return {cContext, rContext};

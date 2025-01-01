@@ -1,9 +1,10 @@
 /** @import Value from '../Value/index.mjs' */
-import ENV from '../ENV.mjs';
+import Environment from '../Environment.mjs';
 import { ArrayValue } from '../Value/index.mjs';
 /** @import { Component } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 import bindAttrs from './bindAttrs.mjs';
+import bindBaseAttrs from './bindBaseAttrs.mjs';
 import bindClasses from './bindClasses.mjs';
 import bindStyles from './bindStyles.mjs';
 import createContext from './createContext.mjs';
@@ -11,14 +12,13 @@ import createTagComponent from './createTagComponent.mjs';
 import renderArray from './renderArray.mjs';
 import renderFillDirectives from './renderFillDirectives.mjs';
 import renderList from './renderList.mjs';
-import renderTag from './renderTag.mjs';
 
 /**
  * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {ENV} env
+ * @param {Environment} env
  * @param {(layout: Layout.Node) => () => void} renderItem
  * @returns {() => void}
  */
@@ -32,35 +32,38 @@ function renderFragment(layout, parent, next, schema, env, renderItem) {
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {ENV} env
+ * @param {Environment} env
  * @param {string[]} componentPath
  * @param {((path: string[]) => Component?)?} [getComponent]
  */
 function renderItem(layout, parent, next, schema, env, componentPath, getComponent) {
 	env = env.set(layout.aliases, layout.vars);
-	const path = [...componentPath, layout.name];
 	if (!layout.name || layout.directives.fragment) {
 		return renderFragment(layout, parent, next, schema, env, l => {
 			return render(l, parent, next, schema, env, componentPath, getComponent);
 		});
 	}
-	if (!getComponent) {
-		return renderTag(layout, parent, next, schema, env, (l, p) => {
-			return renderList(l, p, null, schema, env, l => {
-				return render(l, p, null, schema, env, path, getComponent);
-			});
-		});
+	const path = [...componentPath, layout.name];
+	const component = getComponent?.(path);
+	if (getComponent && !component) { return () => { }; }
+	const { context, handler } = createContext(component ? component : layout.name, env);
 
+
+	const componentAttrs = component?.attrs
+	const attrs = componentAttrs
+		? bindAttrs(handler, schema, env, layout.attrs, componentAttrs, layout.directives.bind)
+		: bindBaseAttrs(handler, schema, env, layout.attrs, layout.directives.bind)
+
+	for (const [name, event] of Object.entries(layout.events)) {
+		const fn = env.getEvent(event);
+		if (fn) { handler.addEvent(name, fn); }
 	}
-	const component = getComponent(path);
-	if (!component) { return () => { }; }
-	const { cContext, rContext } = createContext(component);
 
-
-
-	const r = typeof component.tag === 'function'
-		? component.tag(cContext)
-		: createTagComponent(cContext, component.tag, component.is);
+	const r = component ?
+		typeof component.tag === 'function'
+			? component.tag(context)
+			: createTagComponent(context, component.tag, component.is)
+		: createTagComponent(context, layout.name, layout.is);
 	const root = Array.isArray(r) ? r[0] : r;
 	const slot = Array.isArray(r) && r[1] || root;
 	parent.insertBefore(root, next);
@@ -71,18 +74,14 @@ function renderItem(layout, parent, next, schema, env, componentPath, getCompone
 		});
 
 
-	const attrs = bindAttrs(rContext, component.attrs, schema, env, layout.attrs);
-	for (const [name, event] of Object.entries(layout.events)) {
-		rContext.addEvent(name, env.getEvent(event));
-	}
 	bindClasses(root, layout.classes, schema, env);
 	bindStyles(root, layout.styles, schema, env);
 
-	rContext.init();
+	handler.init();
 	// TODO: 创建组件
 	return () => {
 		root.remove();
-		rContext.remove();
+		handler.destroy();
 		attrs();
 		children();
 	};
@@ -93,7 +92,7 @@ function renderItem(layout, parent, next, schema, env, componentPath, getCompone
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {ENV} env
+ * @param {Environment} env
  * @param {string[]} componentPath
  * @param {((path: string[]) => Component?)?} [getComponent]
  * @returns {() => void}
@@ -123,7 +122,7 @@ function render(layout, parent, next, schema, env, componentPath, getComponent) 
  */
 export default function (schema, layouts, parent, global, components) {
 	// TODO: 全局环境
-	const env = new ENV(global).setValue(schema);
+	const env = new Environment(global).setValue(schema);
 	return renderList(layouts, parent, null, schema, env, l => {
 		return render(l, parent, null, schema, env, [], components);
 	});

@@ -1,5 +1,5 @@
 import { markChange, markRead } from '../computed/index.mjs';
-import EventEmitter from './EventEmitter.mjs';
+import EventEmitter from '../EventEmitter.mjs';
 import runBooleanScript from './runBooleanScript.mjs';
 /** @import { Schema } from '../types.mjs' */
 

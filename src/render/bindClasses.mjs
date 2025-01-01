@@ -1,11 +1,11 @@
-import ENV from '../ENV.mjs';
+import Environment from '../Environment.mjs';
 import computed from '../computed/index.mjs';
 /** @import Value from '../Value/index.mjs' */
 
 /**
  * @param {Node} node
  * @param {Value} schema
- * @param {ENV} envs
+ * @param {Environment} envs
  * @param {Record<string, string | ((...any: any) => void)>} classes
  */
 export default function bindClasses(node, classes, schema, envs) {

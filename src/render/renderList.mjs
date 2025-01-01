@@ -1,5 +1,5 @@
 import computed from '../computed/index.mjs';
-import ENV from '../ENV.mjs';
+import Environment from '../Environment.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value from '../Value/index.mjs' */
 
@@ -8,7 +8,7 @@ import ENV from '../ENV.mjs';
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {ENV} envs
+ * @param {Environment} envs
  * @param {(layout: Layout.Node) => () => void} renderItem
  * @returns {() => void}
  */

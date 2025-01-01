@@ -2,7 +2,7 @@
  * @template {Record<string, any[]>} T
  */
 export default class EventEmitter {
-	/** @type {Map<string | symbol | number, Set<(...p: any[]) => void>>} */
+	/** @type {Map<keyof T, Set<(...p: any[]) => void>>} */
 	#events = new Map()
 	/**
 	 * 
@@ -16,7 +16,6 @@ export default class EventEmitter {
 		for (const d of [...events.get(key) || []]) {
 			d(...p);
 		}
-
 	}
 	/**
 	 * 

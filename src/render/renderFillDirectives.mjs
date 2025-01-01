@@ -1,14 +1,25 @@
-import computed from '../computed/index.mjs';
-import ENV from '../ENV.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Value from '../Value/index.mjs' */
-import toText from './toText.mjs';
+import computed from '../computed/index.mjs';
+import Environment from '../Environment.mjs';
+/**
+ *
+ * @param {any} val
+ * @returns
+ */
+function toText(val) {
+	if ((val ?? null) === null) {
+		return "";
+	}
+	return String(val);
+}
+
 
 /**
  * @param {Element} parent
  * @param {Node?} next
  * @param {Value} schema
- * @param {ENV} envs
+ * @param {Environment} envs
  * @param {Layout.Directives} layout
  */
 export default function renderFillDirectives(parent, next, schema, envs, { text, html }) {

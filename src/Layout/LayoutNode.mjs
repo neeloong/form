@@ -17,21 +17,21 @@ export default class LayoutNode {
 		this.is = is;
 	}
 	simple = false;
-	/**@type {Record<string, any>} */
+	/**@type {Node['attrs']} */
 	attrs = Object.create(null);
-	/**@type {Record<string, any>} */
+	/**@type {Node['events']} */
 	events = Object.create(null);
-	/**@type {Directives} */
+	/**@type {Node['directives']} */
 	directives = Object.create(null);
 	/** @type {(Node | string)[]} */
 	children = [];
-	/**@type {Record<string, any>} */
+	/**@type {Node['classes']} */
 	classes = Object.create(null);
-	/**@type {Record<string, any>} */
+	/**@type {Node['styles']} */
 	styles = Object.create(null);
-	/**@type {Record<string, any>} */
+	/**@type {Node['vars']} */
 	vars = Object.create(null);
-	/**@type {Record<string, any>} */
+	/**@type {Node['aliases']} */
 	aliases = Object.create(null);
 	/** @return {string} */
 	toString() { return toString(this) }

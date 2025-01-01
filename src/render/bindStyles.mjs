@@ -1,4 +1,4 @@
-import ENV from '../ENV.mjs';
+import Environment from '../Environment.mjs';
 import computed from '../computed/index.mjs';
 /** @import Value from '../Value/index.mjs' */
 
@@ -68,7 +68,7 @@ function toStyle(name, value) {
 /**
  * @param {Element} node
  * @param {Value} schema
- * @param {ENV} envs
+ * @param {Environment} envs
  * @param {Record<string, string | ((...any: any) => void)>} classes
  */
 export default function bindStyles(node, classes, schema, envs) {

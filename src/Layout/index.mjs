@@ -13,7 +13,7 @@ export { default as toString } from './toString.mjs';
  * @property {string} [value] 值关联（关联为列表）
  * @property {boolean} [enum] 列表属性枚举
  * 
- * 
+ * @property {string} [bind]
  * @property {string | Function} [text]
  * @property {string | Function} [html]
  */
@@ -23,7 +23,7 @@ export { default as toString } from './toString.mjs';
  * @property {string?} [is]
  * @property {string} [id]
  * @property {boolean} [simple]
- * @property {Record<string, string | Symbol | ((global: any) => void)>} attrs
+ * @property {Record<string, string | {name: string} | ((global: any) => void)>} attrs
  * @property {Record<string, string | ((global: any) => void)>} classes
  * @property {Record<string, string | ((global: any) => void)>} styles
  * @property {Record<string, string | (($event: any, global: any) => void)>} events

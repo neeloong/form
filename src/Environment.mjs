@@ -29,13 +29,13 @@ function *toItem(val, key = '') {
 	yield [`${key}$move`, {exec: (from, to) => val.move(from, to)}]
 	yield [`${key}$exchange`, {exec: (a, b) => val.exchange(a, b)}]
 }
-export default class ENV {
+export default class Environment {
 	/**
 	 * @param {string | Function} value
 	 */
 	exec(value) {
 		if (typeof value === 'string') {
-			const item = this.#all[value];
+			const item = this.#items[value];
 			if (typeof item?.get !== 'function') { return }
 			return item.get();
 		}
@@ -44,26 +44,41 @@ export default class ENV {
 		}
 	}
 	/**
-	 * @param {string | Function} event
+	 * @param {string | (($event: any, global: any) => any)} event
+	 * @returns {(($event: any, global: any) => any)?}
 	 */
 	getEvent(event) {
 		if (typeof event === 'function') { return event }
-		const item = this.#all[event];
-		if (!item) { return }
+		const item = this.#items[event];
+		if (!item) { return null }
 		const {exec} = item;
-		if (typeof exec !== 'function') { return }
+		if (typeof exec !== 'function') { return null }
 		return exec
 
 	}
 	/**
 	 * 
-	 * @param {Record<string, Value | {get?(): any; set?(v: any): void; exec(...p: any[]): any; calc(...p: any[]): any }>?} [global] 
+	 * @param {Environment | Record<string, Value | {get?(): any; set?(v: any): void; exec(...p: any[]): any; calc(...p: any[]): any }>} [global] 
 	 */
 	constructor(global) {
+		if (global instanceof Environment) {
+			this.#global = global.#global;
+			const schemaItems = this.#schemaItems;
+			for (const [k, v] of Object.entries(global.#schemaItems)) {
+				schemaItems[k] = v;
+			}
+			const explicit = this.#explicit;
+			for (const [k, v] of Object.entries(global.#explicit)) {
+				explicit[k] = v;
+			}
+			return;
+		}
+		const items = Object.create(null);
+		this.#global = items;
 		if (!global) { return }
 		if (typeof global !== 'object') { return; }
-		const items = this.#items;
-		for (const [key,value] of Object.entries(global)) {
+		for (const [key, value] of Object.entries(global)) {
+			if (!key || key.includes('$')) { continue; }
 			if (!value || typeof value !== 'object') { return; }
 			if (value instanceof Value) {
 				for (const [k, v] of toItem(value, key)) {
@@ -87,16 +102,24 @@ export default class ENV {
 		}
 	}
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
-	#items = Object.create(null);
+	#global
+	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
+	#schemaItems = Object.create(null);
+	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
+	#explicit = Object.create(null);
 	/** @type {Value?} */
 	#schema = null
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>?} */
 	#allItems = null
-	get #all() {
+	get #items() {
 		const ai = this.#allItems;
 		if (ai) { return ai; }
 		/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
-		const ais = Object.create(null, Object.getOwnPropertyDescriptors(this.#items));
+		const ais = Object.create(null, Object.getOwnPropertyDescriptors({
+			...this.#schemaItems,
+			...this.#global,
+			...this.#explicit,
+		}));
 		const schema = this.#schema;
 		if (schema) {
 			for (const [key, item] of toItem(schema)) {
@@ -108,25 +131,13 @@ export default class ENV {
 	}
 	/**
 	 * 
-	 * @param {Value?} [schema] 
-	 */
-	#clone(schema) {
-		const cloned = new ENV();
-		if (schema) { cloned.#schema = schema; }
-		const clonedItems = cloned.#items;
-		for (const [k, v] of Object.entries(this.#items)) {
-			clonedItems[k] = v;
-		}
-		return cloned;
-	}
-	/**
-	 * 
 	 * @param {Value} schema 
 	 */
 	setValue(schema) {
-		const cloned = this.#clone(schema);
+		const cloned = new Environment(this);
+		cloned.#schema = schema;
 		if (schema instanceof ArrayValue) { return cloned; }
-		const items = cloned.#items;
+		const items = cloned.#schemaItems;
 		for (const [name, val] of schema) {
 			for (const [b,x] of toItem(val, name)) {
 				items[b] = x;
@@ -141,15 +152,30 @@ export default class ENV {
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
-		const cloned = this.#clone(this.#schema);
-		const closedItems = cloned.#items;
-		const items = this.#all;
-		/** @type {[string, ValueDefine | ExecDefine | CalcDefine][]} */
-		const newSet = [];
+		const cloned = new Environment(this);
+		cloned.#schema = this.#schema;
+		const explicit = cloned.#explicit;
+		const items = this.#items;
+		/**
+		 * 
+		 * @param {string} key 
+		 * @param {ValueDefine | ExecDefine | CalcDefine} item 
+		 */
+		const add = (key, item) => {
+			if (!item.get || !item.value) {
+				explicit[key] = item;
+				items[key] = item;
+				return;
+			}
+			for (const [k, it] of toItem(item.value, key)) {
+				explicit[k] = it;
+				items[k] = it;
+			}
+		}
 		for (const [k,v] of Object.entries(aliases)) {
-			const item = items[v];
-			if (item) { continue; }
-			newSet.push([k,item]);
+			const item = this.#items[v];
+			if (!item) { continue; }
+			add(k, item);
 		}
 		for (const [k,v] of Object.entries(vars)) {
 			/** @type {any} */
@@ -157,41 +183,32 @@ export default class ENV {
 			if (typeof v === 'function') {
 				val = v(this.getters);
 			} else if (v && typeof v === 'string') {
-				const item = this.#all[v];
+				const item = this.#items[v];
 				if (item.get) {
 					val = item.get();
 				}
 			}
-			newSet.push([k,{
-				get: () => { markRead(closedItems, k); return val; },
+			add(k, {
+				get: () => { markRead(explicit, k); return val; },
 				set: (v) => {
 					if (v === val) { return; }
 					val = v;
-					markChange(closedItems, k);
+					markChange(explicit, k);
 				},
 				var: true,
-			}]);
-		}
-		for (const [name, item] of newSet) {
-			if (!item.get || !item.value) {
-				closedItems[name] = item;
-				continue;
-			}
-			for (const [key, it] of toItem(item.value, name)) {
-				closedItems[key] = it;
-			}
+			});
 		}
 		return cloned;
 	}
 
 	/** @type {Record<string, any>?} */
-	#globalThis = null;
-	get globalThis() {
-		const gt = this.#globalThis;
+	#all = null;
+	get all() {
+		const gt = this.#all;
 		if (gt) { return gt; }
 		/** @type {Record<string, any>} */
 		const ngt = {};
-		for (const [key, item] of Object.entries(this.#all)) {
+		for (const [key, item] of Object.entries(this.#items)) {
 			if (item.get) {
 				Object.defineProperty(ngt, key, {
 					get: item.get,
@@ -215,7 +232,7 @@ export default class ENV {
 				});
 			}
 		}
-		this.#globalThis = ngt;
+		this.#all = ngt;
 		return ngt;
 	}
 	/** @type {Record<string, any>?} */
@@ -225,7 +242,7 @@ export default class ENV {
 		if (gt) { return gt; }
 		/** @type {Record<string, any>} */
 		const ngt = {};
-		for (const [key, item] of Object.entries(this.#all)) {
+		for (const [key, item] of Object.entries(this.#items)) {
 			if (item.get) {
 				Object.defineProperty(ngt, key, {
 					get: item.get,

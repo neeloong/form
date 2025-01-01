@@ -4,7 +4,7 @@ import entityMap from './entityMap.mjs';
 import LayoutNode from './LayoutNode.mjs';
 
 const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
-const attrPattern = /^(?<decorator>[:@!+*\.]|class:|类名?:|style:|样式：)?(?<name>[-\w\p{Unified_Ideograph}_][-\.\d\w\p{Unified_Ideograph}_:]*)$/u;
+const attrPattern = /^(?<decorator>[:@!+*\.]|class:|类名?:|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
 const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
 
 
@@ -49,14 +49,20 @@ function fixSelfClosed(source, elStartEnd, name, closeMap) {
  *
  * @param {string} source
  * @param {object} [options]
- * @param {(t: string) => Function} [options.creteCalc]
- * @param {(t: string) => Function} [options.creteEvent]
+ * @param {(t: string) => (vars: Record<string, any>) => any} [options.creteCalc]
+ * @param {(t: string) => ($event: any, vars: Record<string, any>) => any} [options.creteEvent]
  * @param {Set<string>} [options.simpleTag]
  * @returns {(Layout.Node | string)[]}
  */
 export default function parse(source, {
-	creteCalc = value => new Function('globalThis', `with(globalThis) { return ${value} }`),
-	creteEvent = value => new Function('$event', 'globalThis', `with(globalThis) { ${value} }`),
+	creteCalc = value => {
+		const calc = new Function('globalThis', `with(globalThis) { return ${value} }`);
+		return /** @type {*} */(calc);
+	},
+	creteEvent = value => {
+		const calc = new Function('$event', 'globalThis', `with(globalThis) { ${value} }`);
+		return /** @type {*} */(calc);
+	},
 	simpleTag = new Set,
 } = {}) {
 	/** @type {(LayoutNode | string)[]} */
@@ -221,10 +227,10 @@ export default function parse(source, {
 				if (!decorator) {
 					attrs[name] = value;
 				} else if (decorator === ':') {
-					attrs[name] = nameRegex.test(value) ? Symbol(value) : creteCalc(value);
-				} else if (decorator === 'class:' || decorator === '类:' || decorator === '类名:' || decorator === '.') {
+					attrs[name] = nameRegex.test(value) ? {name: value} : creteCalc(value);
+				} else if (decorator === 'class:' || decorator === '.') {
 					classes[name] = nameRegex.test(value) ? value : creteCalc(value);
-				} else if (decorator === 'style:' || decorator === '样式:') {
+				} else if (decorator === 'style:') {
 					styles[name] = nameRegex.test(value) ? value : creteCalc(value);
 				} else if (decorator === '@') {
 					events[name] = nameRegex.test(value) ? value : creteEvent(value);
@@ -245,6 +251,7 @@ export default function parse(source, {
 						case 'html':
 							directives[key] = nameRegex.test(value) ? value : creteCalc(value);
 							break;
+						case 'bind':
 						case 'value':
 							directives[key] = value;
 							break;
