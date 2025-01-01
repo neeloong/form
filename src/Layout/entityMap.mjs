@@ -1,3 +1,4 @@
+/** @type {Record<string, string>} */
 export default {
        lt: '<',
        gt: '>',

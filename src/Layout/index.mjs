@@ -16,6 +16,8 @@ export { default as toString } from './toString.mjs';
  * @property {string} [bind]
  * @property {string | Function} [text]
  * @property {string | Function} [html]
+ * 
+ * @property {string | Function} [comment] 注释
  */
 
 
@@ -32,7 +34,7 @@ export { default as toString } from './toString.mjs';
  * @property {string?} [is]
  * @property {string} [id]
  * @property {Record<string, string | {name: string} | ((global: any) => void)>} attrs
- * @property {Record<string, string | ((global: any) => void)>} classes
+ * @property {Record<string, string | boolean | ((global: any) => void)>} classes
  * @property {Record<string, string | ((global: any) => void)>} styles
  * @property {Record<string, string | (($event: any, global: any) => void)>} events
  * @property {Record<string, string | ((global: any) => void)>} vars

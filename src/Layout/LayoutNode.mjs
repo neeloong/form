@@ -34,7 +34,7 @@ export default class LayoutNode {
 	aliases = Object.create(null);
 	/** @param {number} [level]  @return {string} */
 	toString(level) { return [
-		...nodeToString(this, typeof level === 'number' && Math.max(Math.floor(level), 0) || 0)
+		...nodeToString(this, typeof level === 'number' && Math.floor(level) || 0)
 	].join(''); }
 	
 }

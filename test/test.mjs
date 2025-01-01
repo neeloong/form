@@ -31,6 +31,7 @@ const dataValues = {
 }
 fetch('./template.xml').then(v => v.text()).then(template => {
 	const layouts = Layout.parse(template, layoutOptions);
+	console.log(Layout.toString(layouts, true))
 	console.log(Layout.toString(layouts))
 
 	const data = Value.create(schema);

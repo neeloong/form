@@ -4,7 +4,7 @@ import entityMap from './entityMap.mjs';
 import LayoutNode from './LayoutNode.mjs';
 
 const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
-const attrPattern = /^(?<decorator>[:@!+*\.]|class:|类名?:|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
+const attrPattern = /^(?<decorator>[:@!+*\.]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
 const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
 
 
@@ -216,14 +216,14 @@ export default function parse(source, {
 					attrs[name] = value;
 				} else if (decorator === ':') {
 					attrs[name] = nameRegex.test(value) ? {name: value} : creteCalc(value);
-				} else if (decorator === 'class:' || decorator === '.') {
-					classes[name] = nameRegex.test(value) ? value : creteCalc(value);
+				} else if (decorator === '.') {
+					classes[name] = !value ? true : nameRegex.test(value) ? value : creteCalc(value);
 				} else if (decorator === 'style:') {
 					styles[name] = nameRegex.test(value) ? value : creteCalc(value);
 				} else if (decorator === '@') {
 					events[name] = nameRegex.test(value) ? value : creteEvent(value);
 				} else if (decorator === '+') {
-					vars[name] = nameRegex.test(value) ? value : creteCalc(value);
+					vars[name] = !value ? '' : nameRegex.test(value) ? value : creteCalc(value);
 				} else if (decorator === '*') {
 					aliases[name] = value;
 				} else if (decorator === '!') {
@@ -241,6 +241,7 @@ export default function parse(source, {
 							break;
 						case 'bind':
 						case 'value':
+						case 'comment':
 							directives[key] = value;
 							break;
 					}
@@ -302,7 +303,6 @@ export default function parse(source, {
 		if (end > start) {
 			start = end;
 		} else {
-			//TODO: 这里有可能sax回退，有位置错误风险
 			appendText(Math.max(tagStart, start) + 1);
 		}
 	}
