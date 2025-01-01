@@ -1,7 +1,7 @@
 
 /** @import { Directives, Node } from './index.mjs' */
 
-import toString from './toString.mjs';
+import { nodeToString } from './toString.mjs';
 
 /**
  * @implements {Node}
@@ -16,12 +16,11 @@ export default class LayoutNode {
 		this.name = name;
 		this.is = is;
 	}
-	simple = false;
 	/**@type {Node['attrs']} */
 	attrs = Object.create(null);
 	/**@type {Node['events']} */
 	events = Object.create(null);
-	/**@type {Node['directives']} */
+	/**@type {Directives} */
 	directives = Object.create(null);
 	/** @type {(Node | string)[]} */
 	children = [];
@@ -33,7 +32,9 @@ export default class LayoutNode {
 	vars = Object.create(null);
 	/**@type {Node['aliases']} */
 	aliases = Object.create(null);
-	/** @return {string} */
-	toString() { return toString(this) }
+	/** @param {number} [level]  @return {string} */
+	toString(level) { return [
+		...nodeToString(this, typeof level === 'number' && Math.max(Math.floor(level), 0) || 0)
+	].join(''); }
 	
 }

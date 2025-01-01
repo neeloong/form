@@ -48,21 +48,12 @@ function fixSelfClosed(source, elStartEnd, name, closeMap) {
 /**
  *
  * @param {string} source
- * @param {object} [options]
- * @param {(t: string) => (vars: Record<string, any>) => any} [options.creteCalc]
- * @param {(t: string) => ($event: any, vars: Record<string, any>) => any} [options.creteEvent]
- * @param {Set<string>} [options.simpleTag]
+ * @param {Layout.Options} [options]
  * @returns {(Layout.Node | string)[]}
  */
 export default function parse(source, {
-	creteCalc = value => {
-		const calc = new Function('globalThis', `with(globalThis) { return ${value} }`);
-		return /** @type {*} */(calc);
-	},
-	creteEvent = value => {
-		const calc = new Function('$event', 'globalThis', `with(globalThis) { ${value} }`);
-		return /** @type {*} */(calc);
-	},
+	creteCalc = () => { throw new Error('无 creteCalc 选项,不支持表达式解析') },
+	creteEvent = () => { throw new Error('无 creteEvent 选项,不支持事件解析') },
 	simpleTag = new Set,
 } = {}) {
 	/** @type {(LayoutNode | string)[]} */
@@ -85,7 +76,7 @@ export default function parse(source, {
 	 * @returns 
 	 */
 	function characters(chars) {
-		chars = chars.replace(/^\t*\n\t*|\n\t+|\t*\n\t*$/g, '');
+		chars = chars.replace(/^\n|(?<=\n)\t+|\n\t*$/g, '');
 		if (!chars) { return; }
 		current.children.push(chars);
 	}
@@ -202,9 +193,6 @@ export default function parse(source, {
 			if (!tagRes) { throw new Error('invalid tagName:' + name); }
 			stack.push(currentNode);
 			currentNode = new LayoutNode(tagRes.name, tagRes.is);
-			if (simpleTag.has(name)) {
-				currentNode.simple = true;
-			}
 			current.children.push(currentNode);
 			current = currentNode;
 			const { attrs, directives, events, classes, styles, vars, aliases } = currentNode;
@@ -306,7 +294,7 @@ export default function parse(source, {
 					default: throw new Error("elements closed character '/' and '>' must be connected to");
 				}
 				endElement();
-			} else if (currentNode.simple || fixSelfClosed(source, end, name, closeMap)) {
+			} else if (simpleTag.has(name) || fixSelfClosed(source, end, name, closeMap)) {
 				endElement();
 			}
 

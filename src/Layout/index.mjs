@@ -17,12 +17,20 @@ export { default as toString } from './toString.mjs';
  * @property {string | Function} [text]
  * @property {string | Function} [html]
  */
+
+
+
+/**
+ * @typedef {object} Options
+ * @property {(t: string) => (vars: Record<string, any>) => any} [options.creteCalc]
+ * @property {(t: string) => ($event: any, vars: Record<string, any>) => any} [options.creteEvent]
+ * @property {Set<string>} [options.simpleTag]
+ */
 /**
  * @typedef {object} Node
  * @property {string} name
  * @property {string?} [is]
  * @property {string} [id]
- * @property {boolean} [simple]
  * @property {Record<string, string | {name: string} | ((global: any) => void)>} attrs
  * @property {Record<string, string | ((global: any) => void)>} classes
  * @property {Record<string, string | ((global: any) => void)>} styles
