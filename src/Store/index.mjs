@@ -299,7 +299,7 @@ export default class Store extends EventEmitter {
 		if (this.#needUpdate) { return; }
 		this.#needUpdate = true;
 		if (this.#needUpdateState) { return; }
-		requestAnimationFrame(() => { this.#runUpdate(); });
+		this.#requestUpdate();
 	}
 
 	get state() {
@@ -314,8 +314,14 @@ export default class Store extends EventEmitter {
 		this.#onUpdateState?.(this.#index, this.#state);
 		if (this.#needUpdateState) { return; }
 		this.#needUpdateState = true;
-		if (this.#needUpdate) { return; }
-		requestAnimationFrame(() => { this.#runUpdate(); });
+		this.#requestUpdate();
+	}
+	#requestUpdate() {
+		requestAnimationFrame(() => {
+			const oldValue = this.#value;
+			const oldState = this.#state;
+			return this.#runUpdate(oldValue, oldState, true);
+		});
 	}
 
 
@@ -331,6 +337,8 @@ export default class Store extends EventEmitter {
 		if (!this.#destroySet) { return value; }
 		const [val,sta] = this.#convert?.(value, state) || [value, state];
 		if(this.#value === val && this.#state === sta) { return [val,sta] }
+		const oldValue = this.#value;
+		const oldState = this.#state;
 		this.#value = val;
 		this.#state = sta;
 		if (!this.#set) {
@@ -338,37 +346,46 @@ export default class Store extends EventEmitter {
 			this.#initValue = val;
 		}
 		try {
-			return this.#runUpdate(true);
+			return this.#runUpdate(val, sta, true);
 		} finally {
-			markChange(this, 'value');
-			markChange(this, 'state');
+			if (oldValue !== this.#value) {
+				markChange(this, 'value');
+			}
+			if (oldState !== this.#state) {
+				markChange(this, 'state');
+			}
 		}
 	}
-	#runUpdate(force = false) {
-		let val = this.#value;
-		let states = this.#state;
-		if (!this.#destroySet) { return [val, states]; }
+	/**
+	 * 
+	 * @param {*} val 
+	 * @param {*} sta 
+	 * @param {boolean} [force] 
+	 * @returns 
+	 */
+	#runUpdate(val, sta, force = false) {
+		if (!this.#destroySet) { return [val, sta]; }
 		const needUpdate = this.#needUpdate;
 		const needUpdateState = this.#needUpdateState;
 		if (!force && !needUpdate && !needUpdateState) {
-			return [val, states];
+			return [val, sta];
 		}
 		this.#needUpdate = false;
 		this.#needUpdateState = false;
 		if (val && typeof val === 'object') {
 			/** @type {T} */
 			// @ts-ignore
-			let values = Array.isArray(val) ? [...val] : {...val};
-			let newStates = Array.isArray(val) ? Array.isArray(states) ? [...states] : [] : {...states};
+			let newValues = Array.isArray(val) ? [...val] : {...val};
+			let newStates = Array.isArray(val) ? Array.isArray(sta) ? [...sta] : [] : {...sta};
 			let updated = false;
 			for (const [key, field] of this) {
 				// @ts-ignore
 				const data = val[key];
-				const state = states?.[key];
+				const state = sta?.[key];
 				const [newData, newState] = field.#toUpdate(data, state);
 				if (data !== newData) {
 					// @ts-ignore
-					values[key] = newData;
+					newValues[key] = newData;
 					updated = true;
 				}
 				if (state !== newState) {
@@ -377,21 +394,21 @@ export default class Store extends EventEmitter {
 				}
 			}
 			if (updated) {
-				val = values;
-				states = newStates;
+				val = newValues;
+				sta = newStates;
 				this.#value = val;
 				this.#state = newStates;
 			}
 		}
 		try {
 
-			if (this.#lastValue === val && this.#lastState === states) {
-				return [val, states];
+			if (this.#lastValue === val && this.#lastState === sta) {
+				return [val, sta];
 			}
 			this.#lastValue = val;
-			this.#lastState = states;
-			this.emit('update', val, states);
-			return [val, states];
+			this.#lastState = sta;
+			this.emit('update', val, sta);
+			return [val, sta];
 		} finally {
 			if (needUpdate) { markChange(this, 'value'); }
 			if (needUpdateState) { markChange(this, 'state'); }
