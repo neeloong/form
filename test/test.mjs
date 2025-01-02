@@ -1,4 +1,4 @@
-import { Value, Layout, render } from '../src/index.mjs';
+import { Store, Layout, render } from '../src/index.mjs';
 /** @import { Schema } from '../src/types.mjs'; */
 /**
  * @type {Record<string, Schema.Field>}
@@ -26,7 +26,7 @@ const layoutOptions = {
 	},
 }
 
-const dataValues = {
+const defaultValue = {
 	a: {b: 2, c: [{d:1},{d:2},{d:3},{d: 4},{d: 5}], x: [1, 2, 3, 4, 5]}
 }
 fetch('./template.xml').then(v => v.text()).then(template => {
@@ -34,8 +34,8 @@ fetch('./template.xml').then(v => v.text()).then(template => {
 	console.log(Layout.toString(layouts, true))
 	console.log(Layout.toString(layouts))
 
-	const data = Value.create(schema);
-	data.value = dataValues
+	const data = Store.create(schema);
+	data.value = defaultValue
 	setTimeout(() => {
 		const it = data.child('a')?.child(0)?.child('c')?.child(0);
 		if (it)

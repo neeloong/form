@@ -1,17 +1,15 @@
 /** @import { Component } from '../types.mjs' */
-/** @import Value from '../Value/index.mjs' */
 import Environment from './Environment.mjs';
 import computed from '../computed/index.mjs';
 
 /**
  * @param {Component.Handler} handler
- * @param {Value} schema
  * @param {Environment} envs
  * @param {Record<string, string | {name: string} | ((...any: any) => void)>} attrs
  * @param {Record<string, Component.Attr>} componentAttrs
  * @param {string?} [bindValue]
  */
-export default function bindAttrs(handler, schema, envs, attrs, componentAttrs, bindValue) {
+export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValue) {
 
 	let bk = new Set();
 	for (const [name, attr] of Object.entries(componentAttrs)) {

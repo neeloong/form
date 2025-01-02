@@ -1,6 +1,5 @@
 import Environment from './Environment.mjs';
 import computed from '../computed/index.mjs';
-/** @import Value from '../Value/index.mjs' */
 
 /** @type {Record<string, string>} */
 const unit = {
@@ -67,11 +66,10 @@ function toStyle(name, value) {
 
 /**
  * @param {Element} node
- * @param {Value} schema
  * @param {Environment} envs
  * @param {Record<string, string | ((...any: any) => void)>} classes
  */
-export default function bindStyles(node, classes, schema, envs) {
+export default function bindStyles(node, classes, envs) {
 	if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {
 		return () => {};
 	}

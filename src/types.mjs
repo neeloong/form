@@ -1,4 +1,4 @@
-
+/** @import Store from './Store/index.mjs' */
 
 /**
  * @typedef {any} VerifyError
@@ -74,7 +74,7 @@
 /**
  * @typedef {object} Schema.Object
  * @property {null} [type]
- * @property {Record<string, Schema.Field>} props
+ * @property {Record<string, Schema.Field>} [props]
  * @property {boolean} [array] 
  * @property {any} [meta]
  */
@@ -88,18 +88,6 @@
 
 /**
  * @typedef {object} Schema.Event
- * @property {any} change
- * @property {any} input
- * @property {any} click
- * @property {any} focus
- * @property {any} blur
- * @property {Function?} [input]
- * @property {Function?} [change]
- * @property {Function?} [beforeCreate]
- * @property {Function?} [beforeUpdate]
- * @property {Function?} [beforeSave]
- * @property {Function?} [beforeDestroy]
- * @property {Function?} [beforeUpsert]
  * 
  * @property {Function?} [input]
  * @property {Function?} [change]
@@ -113,15 +101,17 @@
  */
 /**
  * @typedef {object} Schema.Attr
- * @typedef {boolean} [immutable]
- * @typedef {boolean} [creatable]
- * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [hidden]
- * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [clearable]
- * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [required]
- * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [disabled]
- * @property {boolean | ((document: any, form: import('../types.mjs').FormLike, field: string, ...fields: (string | number)[]) => boolean)?} [readonly]
+ * @property {boolean} [immutable]
+ * @property {boolean} [creatable]
+ * @property {boolean | ((value: Store) => boolean)?} [hidden]
+ * @property {boolean | ((value: Store) => boolean)?} [clearable]
+ * @property {boolean | ((value: Store) => boolean)?} [required]
+ * @property {boolean | ((value: Store) => boolean)?} [disabled]
+ * @property {boolean | ((value: Store) => boolean)?} [readonly]
+ * 
+ * 
  * @property {any} [default] 默认值
- * @property {(Schema.Value.Group | Schema.Value | string | number)[]} values 可选值
+ * @property {(Schema.Value.Group | Schema.Value | string | number)[]} [values] 可选值
  * @property {string} [label] 字段标签
  * @property {string} [description] 字段描述
  * @property {number} [min] 日期、时间、数字的最小值

@@ -1,39 +1,29 @@
 import { markChange, markRead } from '../computed/index.mjs';
 import EventEmitter from '../EventEmitter.mjs';
+import { BoolStateKeys, stateInParent, stateInScript } from './BoolStateKeys.mjs';
 import runBooleanScript from './runBooleanScript.mjs';
 /** @import { Schema } from '../types.mjs' */
 
-/** @typedef {'hidden' | 'clearable' | 'required' | 'disabled' | 'readonly'} BoolStateKeys */
-/** @type {BoolStateKeys[]} */
-export const BoolStateKeys = ['hidden', 'clearable', 'required', 'disabled', 'readonly'];
 /**
  * @template [T=any]
  * @extends {EventEmitter<Record<string, any[]>>}
  */
-export default class Value extends EventEmitter {
+export default class Store extends EventEmitter {
 	/**
 	 * @param {Record<string, Schema.Field>} schema
 	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
 	 */
 	static create(schema, options = {}) {
-		return new ObjectValue({type: null, props: schema}, { ...options, parent: null });
-	}
-	/** @type {Value?} */
-	#nullValue = null;
-	get nullValue() {
-		const v = this.#nullValue;
-		if (v) { return v; }
-		const val = new Value({type: null}, {parent: this});
-		this.#nullValue = val;
-		return val;
+		return new ObjectStore({type: null, props: schema}, { ...options, parent: null });
 	}
 	#null = false;
 	get null() { return this.#null; }
 	/**
-	 * @param {any} schema
+	 * @param {Schema.Field} schema
 	 * @param {object} options 
 	 * @param {*} [options.parent] 
+	 * @param {*} [options.state] 
 	 * @param {number | string | null} [options.index] 
 	 * @param {number} [options.length] 
 	 * @param {boolean} [options.null] 
@@ -43,27 +33,23 @@ export default class Value extends EventEmitter {
 	 * @param {boolean} [options.required] 
 	 * @param {boolean} [options.readonly] 
 	 * @param {boolean} [options.disabled] 
-	 * @param {object} [options.script] 
-	 * @param {boolean} [options.script.clearable] 
-	 * @param {boolean} [options.script.required] 
-	 * @param {boolean} [options.script.readonly] 
-	 * @param {boolean} [options.script.disabled] 
-	 * @param {boolean} [options.script.hidden] 
+	 * @param {Partial<Record<BoolStateKeys, boolean?>>} [options.script] 
 	 * @param {((value: any) => any)?} [options.setValue] 
+	 * @param {((value: any) => any)?} [options.setState] 
 	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
-	 * @param {((index: any, value: T?) => void)?} [options.onUpdate] 
-	 * @param {((index: any, value: T?) => void)?} [options.onUpdateState] 
+	 * @param {((value: T?, index: any) => void)?} [options.onUpdate] 
+	 * @param {((value: T?, index: any) => void)?} [options.onUpdateState] 
 	 */
 	constructor(schema, {
-		null: isNull,
-		setValue, convert, onUpdate, onUpdateState,
+		null: isNull, state,
+		setValue, setState, convert, onUpdate, onUpdateState,
 		index, length, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
-		script = {},
 	}) {
 		super();
 		this.schema = schema;
-		const parent = parentNode instanceof Value ? parentNode : null;
+		this.state = typeof state === 'object' && state || {};
+		const parent = parentNode instanceof Store ? parentNode : null;
 		if (parent) {
 			this.#parent = parent;
 			this.#root = parent.#root;
@@ -80,20 +66,32 @@ export default class Value extends EventEmitter {
 		this.#onUpdate = onUpdate || null;
 		this.#onUpdateState = onUpdateState || null;
 		this.#setValue = typeof setValue === 'function' ? setValue : null;
+		this.#setState = typeof setState === 'function' ? setState : null;
 		this.#convert = typeof convert === 'function' ? convert : null;
 		this.#length = length || 0;
 		this.#index = index ?? null;
+
 		this.#selfNew = Boolean(isNew);
 		this.#new = parent && parent.#new || this.#selfNew;
+		this.#immutable = Boolean(schema.immutable);
+		this.#creatable = schema.creatable !== false;
+		this.#editable = this.#new ? this.#creatable : !this.#immutable;
 
 		const stateParams = { hidden, clearable, required, disabled, readonly }
-
+		/** @type {Partial<Record<BoolStateKeys, boolean | ((value: Store) => boolean) | null>>} */
+		const script = {
+			hidden: schema.hidden,
+			clearable: schema.clearable,
+			required: schema.required,
+			disabled: schema.disabled,
+			readonly: schema.readonly,
+		}
 		const selfStates = Object.fromEntries(BoolStateKeys.map(k => [k, typeof stateParams[k] === 'boolean' ? stateParams[k] : null] ));
 		this.#selfStates = selfStates;
-		const scriptStates = Object.fromEntries(BoolStateKeys.map(k => [k, runBooleanScript(script[k], destroySet, v => { this.#updateStates(k, v); }, this)]));
+		const scriptStates = Object.fromEntries(BoolStateKeys.map(k => [k, stateInScript[k] && runBooleanScript(script[k], destroySet, v => { this.#updateStates(k, v); }, this)]));
 		this.#scriptStates = scriptStates;
 		const states = Object.fromEntries(parent
-			? BoolStateKeys.map(k => [k, parent && parent.#states[k] || selfStates[k] === null ? scriptStates[k] : selfStates[k]])
+			? BoolStateKeys.map(k => [k, stateInParent[k] &&parent && parent.#states[k] || selfStates[k] === null ? scriptStates[k] : selfStates[k]])
 			: BoolStateKeys.map(k => [k, selfStates[k] === null ? scriptStates[k] : selfStates[k]]));
 		this.#states = states;
 	}
@@ -101,15 +99,17 @@ export default class Value extends EventEmitter {
 	#destroySet
 	/** @type {((value: any) => any)?} */
 	#setValue = null
+	/** @type {((value: any) => any)?} */
+	#setState = null
 	/** @type {((value: any, state: any) => [value: any, state: any])?} */
 	#convert = null
-	/** @type {((index: any, value: any) => void)?} */
+	/** @type {((value: any, index: any) => void)?} */
 	#onUpdate = null
-	/** @type {((index: any, value: any) => void)?} */
+	/** @type {((value: any, index: any) => void)?} */
 	#onUpdateState = null
-	/** @readonly @type {Value?} */
+	/** @readonly @type {Store?} */
 	#parent = null;
-	/** @readonly @type {Value} */
+	/** @readonly @type {Store} */
 	#root = this;
 	get parent() { return this.#parent; }
 	get root() { return this.#root; }
@@ -146,7 +146,11 @@ export default class Value extends EventEmitter {
 		return typeof index === 'number' ? index + 1 : index;
 	}
 
+	#creatable = true;
+	#immutable = false;
+	#editable = false;
 	#selfNew = false;
+	#new = false;
 	get selfNew() { return this.#selfNew; }
 	set selfNew(v) {
 		const val = Boolean(v);
@@ -154,13 +158,17 @@ export default class Value extends EventEmitter {
 		this.#selfNew = val;
 		this.#updateNew();
 	}
-	#new = false;
 	#updateNew() {
 		const val = this.#parent && this.#parent.#new || this.#selfNew;
 		if (val === this.#new) { return }
 		this.#new = val;
 		for (const [, field] of this) {
 			field.#updateNew();
+		}
+		const editable = val ? this.#creatable : !this.#immutable;
+		if (this.#editable !== editable) {
+			this.#editable = editable;
+			markChange(this, 'editable');
 		}
 		markChange(this, 'new');
 		this.emit('new', val);
@@ -170,7 +178,7 @@ export default class Value extends EventEmitter {
 		return this.#new;
 	}
 	set new(v) { this.selfNew = v; }
-
+	get editable() { return this.#editable; }
 
 	
 	/** @type {Record<string, boolean?>} */
@@ -188,7 +196,11 @@ export default class Value extends EventEmitter {
 			if (this.#scriptStates[name] === v) { return; }
 			this.#scriptStates[name] = v;
 		}
-		const val = this.#parent && this.#parent[name] || (this.#selfStates[name] === null ? this.#scriptStates[name] : this.#selfStates[name]);
+		const val = stateInParent[name] && this.#parent && this.#parent[name] || (
+			stateInScript[name] && this.#selfStates[name] === null
+				? this.#scriptStates[name]
+				: Boolean(this.#selfStates[name])
+		);
 		if (val === this.#states[name]) { return }
 		this.#states[name] = val;
 		for (const [, field] of this) {
@@ -248,29 +260,14 @@ export default class Value extends EventEmitter {
 	set readonly(v) { this.#setSelfState('readonly', v); }
 
 
-	/** @returns {IterableIterator<[key: string | number, value: Value]>} */
+	/** @returns {IterableIterator<[key: string | number, value: Store]>} */
 	*[Symbol.iterator]() {}
 	/**
 	 * 
-	 * @overload
 	 * @param {string | number} key 
-	 * @param {true} must
-	 * @returns {Value}
+	 * @returns {Store?}
 	 */
-	/**
-	 * 
-	 * @overload
-	 * @param {string | number} key 
-	 * @param {boolean?} [must]
-	 * @returns {Value?}
-	 */
-	/**
-	 * 
-	 * @param {string | number} key 
-	 * @param {boolean?} [must]
-	 * @returns {Value?}
-	 */
-	child(key, must) { return must && this.nullValue || null; }
+	child(key) { return null; }
 
 	#set = false;
 	/** @type {T?} */
@@ -294,8 +291,11 @@ export default class Value extends EventEmitter {
 		if (!this.#destroySet) { return; }
 		const val = this.#setValue?.(v) || v;
 		this.#value = val;
-		this.#set = true;
-		this.#onUpdate?.(this.#index, this.#value);
+		if (!this.#set) {
+			this.#set = true;
+			this.#initValue = v;
+		}
+		this.#onUpdate?.(this.#value, this.#index);
 		if (this.#needUpdate) { return; }
 		this.#needUpdate = true;
 		if (this.#needUpdateState) { return; }
@@ -308,7 +308,7 @@ export default class Value extends EventEmitter {
 	}
 	set state(v) {
 		if (!this.#destroySet) { return; }
-		const val = v;
+		const val = this.#setState?.(v) || v;
 		this.#state = val;
 		this.#set = true;
 		this.#onUpdateState?.(this.#index, this.#state);
@@ -416,17 +416,14 @@ export default class Value extends EventEmitter {
 
 	/**
 	 * @param {T} v
-	 * @param {boolean} [isNew] 
 	 */
-	reset(v, isNew = this.#new) {
+	reset(v) {
 		if (!this.#destroySet) { return; }
 		if (this.#parent) {
 			if (!this.#set) { return; }
-			this.#new = Boolean(this.#parent.#new || isNew);
 			this.#reset(this.#initValue);
 		} else if (arguments.length) {
 			this.#set = true;
-			this.#new = Boolean(isNew);
 			this.#reset(v);
 		} else if (this.#set) {
 			this.#reset(this.#initValue);
@@ -502,45 +499,33 @@ export default class Value extends EventEmitter {
 
 
 
-export class ObjectValue extends Value {
-	/** @type {Record<string, Value>} */
+export class ObjectStore extends Store {
+	/** @type {Record<string, Store>} */
 	#children
 	*[Symbol.iterator]() {yield* Object.entries(this.#children);}
 	/**
 	 * 
-	 * @overload
 	 * @param {string | number} key 
-	 * @param {true} must
-	 * @returns {Value}
+	 * @returns {Store?}
 	 */
+	child(key) { return this.#children[key] || null; }
 	/**
-	 * 
-	 * @overload
-	 * @param {string | number} key 
-	 * @param {boolean?} [must]
-	 * @returns {Value?}
-	 */
-	/**
-	 * 
-	 * @param {string | number} key 
-	 * @param {boolean?} [must]
-	 * @returns {Value?}
-	 */
-	child(key, must) {
-		return this.#children[key] || must && this.nullValue || null;
-	}
-	/**
-	 * @param {Schema.Object} schema
+	 * @param {Schema.Object & Schema.Event & Schema.Attr} schema
 	 * @param {object} [options] 
-	 * @param {Value?} [options.parent] 
+	 * @param {Store?} [options.parent] 
 	 * @param {string | number} [options.index] 
 	 * @param {boolean} [options.new] 
-	 * @param {(index: any, value: any) => void} [options.onUpdate] 
+	 * @param {(value: any, index: any) => void} [options.onUpdate] 
+	 * @param {(value: any, index: any) => void} [options.onUpdateState] 
 	 */
-	constructor(schema,{ ...options } = {}) {
+	constructor(schema,{ parent, index, new: isNew, onUpdate, onUpdateState } = {}) {
 		super(schema, {
-			...options,
+			parent, index, new: isNew, onUpdate, onUpdateState,
 			setValue(v) {
+				if (typeof v !== 'object') { return {}; }
+				return v;
+			},
+			setState(v) {
 				if (typeof v !== 'object') { return {}; }
 				return v;
 			},
@@ -552,22 +537,30 @@ export class ObjectValue extends Value {
 			},
 		});
 		const children = Object.create(null);
-		for (const [index, field] of Object.entries(schema.props)) {
-			/** @param {*} index @param {*} value */
-			const onUpdate = (index, value) => {
+		const childCommonOptions = {
+			parent: this,
+			/** @param {*} value @param {*} index */
+			onUpdate: (value, index) => {
 				this.value = {...this.value, [index]: value};
+			},
+			/** @param {*} state @param {*} index */
+			onUpdateState: (state, index) => {
+				this.state = {...this.state, [index]: state};
 			}
+		}
+
+		for (const [index, field] of Object.entries(schema.props || {})) {
 			let child;
 			if (typeof field.type === 'string') {
 				if (field.array) {
-					child = new ArrayValue(field, {parent: this, index, onUpdate});
+					child = new ArrayStore(field, {...childCommonOptions, index});
 				} else {
-					child = new Value(field, {parent: this, index, onUpdate});
+					child = new Store(field, {...childCommonOptions, index});
 				}
 			} else if (field.array) {
-				child = new ArrayValue(field, {parent: this, index, onUpdate});
+				child = new ArrayStore(field, {...childCommonOptions, index});
 			} else {
-				child = new ObjectValue(field, { parent: this, index, onUpdate});
+				child = new ObjectStore(field, { ...childCommonOptions, index});
 			}
 			children[index] = child;
 		}
@@ -577,12 +570,12 @@ export class ObjectValue extends Value {
 
 /**
  * @template [T=any]
- * @extends {Value<(T | null)[]>}
+ * @extends {Store<(T | null)[]>}
  */
-export class ArrayValue extends Value {
-	/** @type {(index: number) => Value} */
+export class ArrayStore extends Store {
+	/** @type {(index: number, isNew?: boolean) => Store} */
 	#create = () => {throw new Error}
-	/** @type {Value[]} */
+	/** @type {Store[]} */
 	#children = [];
 	get children() {
 		markRead(this, 'children');
@@ -591,40 +584,26 @@ export class ArrayValue extends Value {
 	*[Symbol.iterator]() { return yield*[...this.#children.entries()]; }
 	/**
 	 * 
-	 * @overload
 	 * @param {string | number} key 
-	 * @param {true} must
-	 * @returns {Value}
+	 * @returns {Store?}
 	 */
-	/**
-	 * 
-	 * @overload
-	 * @param {string | number} key 
-	 * @param {boolean?} [must]
-	 * @returns {Value?}
-	 */
-	/**
-	 * 
-	 * @param {string | number} key 
-	 * @param {boolean?} [must]
-	 * @returns {Value?}
-	 */
-	child(key, must) {
+	child(key) {
 		const children = this.#children;
 		if (typeof key === 'number' && key < 0) {
-			return children[children.length + key] || must && this.nullValue || null;
+			return children[children.length + key] || null;
 		}
-		return children[Number(key)] || must && this.nullValue || null;
+		return children[Number(key)] || null;
 	}
 	/**
 	 * @param {Schema.Field} schema
 	 * @param {object} [options] 
-	 * @param {Value?} [options.parent]
+	 * @param {Store?} [options.parent]
 	 * @param {string | number | null} [options.index] 
 	 * @param {boolean} [options.new] 
-	 * @param {(index: any, value: any) => void} [options.onUpdate] 
+	 * @param {(value: any, index: any) => void} [options.onUpdate] 
+	 * @param {(value: any, index: any) => void} [options.onUpdateState] 
 	 */
-	constructor(schema,  { parent, onUpdate, ...options} = {}) {
+	constructor(schema,  { parent, onUpdate, onUpdateState, index, new: isNew} = {}) {
 		// @ts-ignore
 		const updateChildren = (list) => {
 			if (this.destroyed) { return; }
@@ -644,9 +623,10 @@ export class ArrayValue extends Value {
 
 		}
 		super(schema, {
-			...options,
-			parent,
+			index, new: isNew, parent,
+			state: [],
 			setValue(v) { return Array.isArray(v) ? v : v == null ? [] : [v] },
+			setState(v) { return Array.isArray(v) ? v : v == null ? [] : [v] },
 			convert(v, state) {
 				const val = Array.isArray(v) ? v : v == null ? [] : [v];
 				updateChildren(val);
@@ -655,33 +635,42 @@ export class ArrayValue extends Value {
 					(Array.isArray(state) ? state : v == null ? [] : [state]),
 				];
 			},
-			onUpdate:(index, value) => {
+			onUpdate:(value, index) => {
 				updateChildren(value);
-				onUpdate?.(index, value);
+				onUpdate?.(value, index);
 			},
+			onUpdateState,
 		});
-		/**
-		 * 
-		 * @param {any} value 
-		 * @param {number} index 
-		 */
-		const childUpdated = (value, index) => {
-			const val = [...this.value || []];
-			if (val.length < index) {
-				val.length = index;
-			}
-			val[index] = value;
-			this.value = val;
+		const childCommonOptions = {
+			parent: this,
+			/** @param {*} value @param {*} index */
+			onUpdate: (value, index) => {
+				const val = [...this.value || []];
+				if (val.length < index) {
+					val.length = index;
+				}
+				val[index] = value;
+				this.value = val;
+			},
+			/** @param {*} state @param {*} index */
+			onUpdateState: (state, index) => {
+				const sta = [...this.state || []];
+				if (sta.length < index) {
+					sta.length = index;
+				}
+				sta[index] = state;
+				this.state = sta;
+			},
 		}
 		if (typeof schema.type === 'string') {
-			this.#create = index => {
-				const child = new Value(schema, {parent: this, index, onUpdate: (index, value) => childUpdated(value, index) });;
+			this.#create = (index, isNew) =>  {
+				const child = new Store(schema, {...childCommonOptions, index, new: isNew });
 				child.index = index;
 				return child
 			}
 		} else if (!Array.isArray(schema.props)) {
-			this.#create = index =>  {
-				const child = new ObjectValue(schema, { parent: this, index, onUpdate: (index, value) => childUpdated(value, index)});
+			this.#create = (index, isNew) =>  {
+				const child = new ObjectStore(schema, { ...childCommonOptions, index, new: isNew});
 				child.index = index;
 				return child
 			}
@@ -694,22 +683,29 @@ export class ArrayValue extends Value {
 	 * 
 	 * @param {number} index 
 	 * @param {T} value 
+	 * @param {boolean} [isNew] 
 	 * @returns 
 	 */
-	insert(index, value) {
+	insert(index, value, isNew) {
 		if (this.destroyed) { return false; }
 		const data = this.value;
 		if (!Array.isArray(data)) { return false; }
 		const children = this.#children;
 		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
-		const item = this.#create(insertIndex);
+		const item = this.#create(insertIndex, isNew);
 		item.new = true;
 		children.splice(insertIndex, 0, item);
 		for (let i = index + 1; i < children.length; i++) {
 			children[i].index = i;
 		}
-		let val = [...data];
+		const val = [...data];
 		val.splice(insertIndex, 0, value);
+		const state = this.state;
+		if (Array.isArray(state)) {
+			const sta = [...state];
+			sta.splice(insertIndex, 0, {});
+			this.state = sta;
+		}
 		this.value = val;
 		this.length = children.length;
 		markChange(this, 'children');
@@ -733,15 +729,21 @@ export class ArrayValue extends Value {
 		const data = this.value;
 		if (!Array.isArray(data)) { return; }
 		const children = this.#children;
-		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
-		const [item] = children.splice(insertIndex, 1);
+		const removeIndex = Math.max(0, Math.min(Math.floor(index), children.length));
+		const [item] = children.splice(removeIndex, 1);
 		if (!item) { return; }
 		for (let i = index; i < children.length; i++) {
 			children[i].index = i;
 		}
 		item.destroy();
 		const val = [...data];
-		const [value] = val.splice(insertIndex, 1);
+		const [value] = val.splice(removeIndex, 1);
+		const state = this.state;
+		if (Array.isArray(state)) {
+			const sta = [...this.state];
+			sta.splice(removeIndex, 1);
+			this.state = sta;
+		}
 		this.value = val;
 		this.length = children.length;
 		markChange(this, 'children');
@@ -770,6 +772,17 @@ export class ArrayValue extends Value {
 		const val = [...data];
 		const [value] = val.splice(from, 1);
 		val.splice(to, 0, value);
+		const state = this.state;
+		if (Array.isArray(state)) {
+			const sta = [...state];
+			const [value = {}] = sta.splice(from, 1);
+			if (to <= sta.length) {
+				sta.splice(to, 0, value);
+			} else {
+				sta[to] = value;
+			}
+			this.state = sta;
+		}
 		this.value = val;
 		markChange(this, 'children');
 		return true;
@@ -798,6 +811,15 @@ export class ArrayValue extends Value {
 		const bValue = val[b];
 		val[b] = aValue;
 		val[a] = bValue;
+		const state = this.state;
+		if (Array.isArray(state)) {
+			const sta = [...state];
+			const aValue = sta[a];
+			const bValue = sta[b];
+			sta[b] = aValue;
+			sta[a] = bValue;
+			this.state = sta;
+		}
 		this.value = val;
 		markChange(this, 'children');
 		return true;

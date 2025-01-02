@@ -1,18 +1,16 @@
 import computed from '../computed/index.mjs';
 import Environment from './Environment.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
-/** @import Value from '../Value/index.mjs' */
 
 /**
  * @param {(Layout.Node | string)[]} layouts
  * @param {Element} parent
  * @param {Node?} next
- * @param {Value} schema
  * @param {Environment} envs
  * @param {(layout: Layout.Node) => () => void} renderItem
  * @returns {() => void}
  */
-export default function renderList(layouts, parent, next, schema, envs, renderItem) {
+export default function renderList(layouts, parent, next, envs, renderItem) {
 
 	/** @type {Set<() => void>?} */
 	let bkList = new Set();

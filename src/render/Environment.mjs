@@ -1,14 +1,15 @@
 import markChange from '../computed/markChange.mjs';
 import markRead from '../computed/markRead.mjs';
-import Value, { ArrayValue, BoolStateKeys } from '../Value/index.mjs';
+import { BoolStateKeys } from '../Store/BoolStateKeys.mjs';
+import Store, { ArrayStore } from '../Store/index.mjs';
 
 
-/** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Value; calc?: null; var?: boolean }} ValueDefine */
+/** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Store; calc?: null; var?: boolean }} ValueDefine */
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
 /** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
 /**
  * 
- * @param {Value} val 
+ * @param {Store} val 
  * @param {string | number} [key] 
  * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
  */
@@ -19,11 +20,10 @@ function *toItem(val, key = '', sign = '$') {
 	yield [`${key}${sign}index`, {get: () => val.index}]
 	yield [`${key}${sign}no`, {get: () => val.no}]
 	yield [`${key}${sign}length`, {get: () => val.length}]
-	yield [`${key}${sign}new`, {get: () => val.new}]
 	for (const k of BoolStateKeys) {
 		yield [`${key}${sign}${k}`, {get: () => val[k]}];
 	}
-	if (!(val instanceof ArrayValue)) { return; }
+	if (!(val instanceof ArrayStore)) { return; }
 	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
 	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
 	yield [`${key}${sign}remove`, {exec: (index) => val.remove(index)}]
@@ -32,13 +32,13 @@ function *toItem(val, key = '', sign = '$') {
 }
 /**
  * 
- * @param {Value?} parent 
- * @param {Value} val 
+ * @param {Store?} parent 
+ * @param {Store} val 
  * @param {string | number} [key] 
  * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
  */
 function *toParentItem(parent, val, key = '', sign = '$') {
-	if (!(parent instanceof ArrayValue)) {
+	if (!(parent instanceof ArrayStore)) {
 		yield [`${key}${sign}upMovable`, {get: () => false}];
 		yield [`${key}${sign}downMovable`, {get: () => false}]
 		return
@@ -91,14 +91,15 @@ export default class Environment {
 		if (typeof event === 'function') { return event }
 		const item = this.#items[event];
 		if (!item) { return null }
-		const {exec} = item;
-		if (typeof exec !== 'function') { return null }
-		return exec
+		const {exec, calc} = item;
+		if (typeof exec === 'function') { return exec }
+		if (typeof calc === 'function') { return calc }
+		return null
 
 	}
 	/**
 	 * 
-	 * @param {Environment | Record<string, Value | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
+	 * @param {Environment | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
 	 */
 	constructor(global) {
 		if (global instanceof Environment) {
@@ -120,7 +121,7 @@ export default class Environment {
 		for (const [key, value] of Object.entries(global)) {
 			if (!key || key.includes('$')) { continue; }
 			if (!value || typeof value !== 'object') { return; }
-			if (value instanceof Value) {
+			if (value instanceof Store) {
 				for (const [k, v] of toItem(value, key)) {
 					items[k] = v;
 				}
@@ -147,9 +148,9 @@ export default class Environment {
 	#schemaItems = Object.create(null);
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
 	#explicit = Object.create(null);
-	/** @type {Value?} */
-	#schema = null
-	/** @type {Value?} */
+	/** @type {Store?} */
+	#store = null
+	/** @type {Store?} */
 	#parent = null
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>?} */
 	#allItems = null
@@ -162,13 +163,13 @@ export default class Environment {
 			...this.#global,
 			...this.#explicit,
 		}));
-		const schema = this.#schema;
+		const store = this.#store;
 		const parent = this.#parent;
-		if (schema) {
-			for (const [key, item] of toItem(schema)) {
+		if (store) {
+			for (const [key, item] of toItem(store)) {
 				ais[key] = item;
 			}
-			for (const [key, item] of toParentItem(parent, schema)) {
+			for (const [key, item] of toParentItem(parent, store)) {
 				ais[key] = item;
 			}
 		}
@@ -177,16 +178,16 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Value} schema 
-	 * @param {Value} [parent] 
+	 * @param {Store} store 
+	 * @param {Store} [parent] 
 	 */
-	setValue(schema, parent) {
+	setValue(store, parent) {
 		const cloned = new Environment(this);
-		cloned.#schema = schema;
+		cloned.#store = store;
 		if (parent) { cloned.#parent = parent; }
-		if (schema instanceof ArrayValue) { return cloned; }
+		if (store instanceof ArrayStore) { return cloned; }
 		const items = cloned.#schemaItems;
-		for (const [name, val] of schema) {
+		for (const [name, val] of store) {
 			for (const [b, x] of toItem(val, name)) {
 				items[b] = x;
 			}
@@ -194,7 +195,7 @@ export default class Environment {
 				items[b] = x;
 			}
 		}
-		if (parent instanceof ArrayValue) {
+		if (parent instanceof ArrayStore) {
 
 		}
 		return cloned;
@@ -207,7 +208,7 @@ export default class Environment {
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
 		const cloned = new Environment(this);
-		cloned.#schema = this.#schema;
+		cloned.#store = this.#store;
 		cloned.#parent = this.#parent;
 		const explicit = cloned.#explicit;
 		const items = this.#items;

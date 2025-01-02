@@ -1,12 +1,12 @@
 import computed from '../computed/index.mjs';
-/** @import Value from './index.mjs'; */
+/** @import Store from './index.mjs'; */
 
 /**
  * 
- * @param {*} fn 
+ * @param {((value: Store) => boolean) | boolean | null | void} fn 
  * @param {Set<() => void>} set 
  * @param {(value: boolean) => void} cb 
- * @param {Value} value 
+ * @param {Store} value 
  * @returns 
  */
 export default function runBooleanScript(fn, set, cb, value) {

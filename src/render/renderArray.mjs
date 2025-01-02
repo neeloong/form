@@ -1,23 +1,23 @@
 import computed from '../computed/index.mjs';
 import Environment from './Environment.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
-/** @import Value, { ArrayValue } from '../Value/index.mjs' */
+/** @import Store, { ArrayStore } from '../Store/index.mjs' */
 
 /**
  *
  * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {ArrayValue} schema
+ * @param {ArrayStore} store
  * @param {Environment} env
- * @param {(layout: Layout.Node, parent: Element, next: Node | null, schema: Value, env: any) => () => void} renderItem
+ * @param {(layout: Layout.Node, parent: Element, next: Node | null, store: Store, env: any) => () => void} renderItem
  */
-export default function renderArray(layout, parent, next, schema, env, renderItem) {
+export default function renderArray(layout, parent, next, store, env, renderItem) {
 	const start = parent.insertBefore(document.createComment(''), next);
-	const childrenResult = computed(() => schema.children);
-	/** @type {Map<Value, [Comment, Comment, () => void]>} */
+	const childrenResult = computed(() => store.children);
+	/** @type {Map<Store, [Comment, Comment, () => void]>} */
 	let seMap = new Map();
-	/** @param {Map<Value, [Comment, Comment, () => void]>} map */
+	/** @param {Map<Store, [Comment, Comment, () => void]>} map */
 	function destroyMap(map) {
 		for (const [s, e, d] of map.values()) {
 			d();
@@ -37,7 +37,7 @@ export default function renderArray(layout, parent, next, schema, env, renderIte
 			if (!old) {
 				const ItemStart = parent.insertBefore(document.createComment(''), nextNode);
 				const itemEnd = parent.insertBefore(document.createComment(''), nextNode);
-				const d = renderItem(layout, parent, itemEnd, child, env.setValue(child, schema));
+				const d = renderItem(layout, parent, itemEnd, child, env.setValue(child, store));
 				seMap.set(child, [ItemStart, itemEnd, d]);
 				continue;
 			}

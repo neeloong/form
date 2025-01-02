@@ -1,5 +1,4 @@
 /** @import { Component } from '../types.mjs' */
-/** @import Value from '../Value/index.mjs' */
 import Environment from './Environment.mjs';
 import computed from '../computed/index.mjs';
 
@@ -30,12 +29,11 @@ function *getElementModel(el, attrValues) {
 }
 /**
  * @param {Component.Handler} handler
- * @param {Value} schema
  * @param {Environment} envs
  * @param {Record<string, string | {name: string} | ((...any: any) => void)>} attrs
  * @param {string?} [bindValue]
  */
-export default function bindBaseAttrs(handler, schema, envs, attrs, bindValue) {
+export default function bindBaseAttrs(handler, envs, attrs, bindValue) {
 	const tag = handler.tag;
 	let bk = new Set();
 	/** @type {Record<string, string?>} */

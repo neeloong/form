@@ -64,8 +64,8 @@ export default function(defines, components) {
 		const component = {...main};
 		const attrs = new Set(components.flatMap(v => v.attrs));
 		const events = new Set(components.flatMap(v => v.events));
-		component.attrs = Object.fromEntries(Object.entries(component.attrs).filter(v => attrs.has(v[0])))
-		component.events = Object.fromEntries(Object.entries(component.events).filter(v => events.has(v[0])))
+		component.attrs = Object.fromEntries(Object.entries(component.attrs || {}).filter(v => attrs.has(v[0])))
+		component.events = Object.fromEntries(Object.entries(component.events || {}).filter(v => events.has(v[0])))
 		return component;
 	}
 

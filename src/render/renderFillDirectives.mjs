@@ -1,5 +1,4 @@
 /** @import * as Layout from '../Layout/index.mjs' */
-/** @import Value from '../Value/index.mjs' */
 import computed from '../computed/index.mjs';
 import Environment from './Environment.mjs';
 /**
@@ -18,11 +17,10 @@ function toText(val) {
 /**
  * @param {Element} parent
  * @param {Node?} next
- * @param {Value} schema
  * @param {Environment} envs
  * @param {Layout.Directives} layout
  */
-export default function renderFillDirectives(parent, next, schema, envs, { text, html }) {
+export default function renderFillDirectives(parent, next, envs, { text, html }) {
 	if (text != null) {
 		const result = computed(() => envs.exec(text));
 		let value = toText(result.value);
