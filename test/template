@@ -1,7 +1,7 @@
 <ul +a=1 +x=0>
 	<input !value="int" !bind="$value" />
 	<li !value="a" !enum>
-		<input !value="b" !bind="$value" />
+		<input !bind="b" />
 		<ul>
 			<li !value="c" !fragment>
 				<li !enum +b="1" +k="++x">

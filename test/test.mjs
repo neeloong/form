@@ -6,7 +6,7 @@ import { Store, Layout, render } from '../src/index.mjs';
 const schema = {
 	int: { type: 'int' },
 	a: { array: true, props: {
-			b: { type: 'int' },
+			b: { type: 'int', disabled: true },
 			c: { array: true, props: { d: {type: 'int'}, } },
 			x: { array: true, type: 'int' },
 		},
