@@ -1,7 +1,7 @@
 import { Store, Layout, render } from '../src/index.mjs';
 /** @import { Schema } from '../src/types.mjs'; */
 /**
- * @type {Record<string, Schema.Field>}
+ * @type {Schema}
  */
 const schema = {
 	int: { type: 'int' },
@@ -29,7 +29,7 @@ const layoutOptions = {
 const defaultValue = {
 	a: {b: 2, c: [{d:1},{d:2},{d:3},{d: 4},{d: 5}], x: [1, 2, 3, 4, 5]}
 }
-fetch('./template.xml').then(v => v.text()).then(template => {
+fetch('./template').then(v => v.text()).then(template => {
 	const layouts = Layout.parse(template, layoutOptions);
 	console.log(Layout.toString(layouts, true))
 	console.log(Layout.toString(layouts))

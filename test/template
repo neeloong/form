@@ -9,8 +9,8 @@
 					<button @click="a+=1" @keydown.key:KeyQ:KeyA.-repeat="a+=1">a+1:<span !fragment !text="a"></span></button>
 					<button @click="b+=1">b+1:<span !fragment !text="b"></span></button>
 					<div !fragment !text="$no"/>. <div !fragment !text="d">1</div> <div !fragment !text>1</div>
-					<button @click="$remove()">移除</button>
-					<button @click="$upMove()" :disabled="!$upMovable">上移</button>
+					<button @click="$remove">移除</button>
+					<button @click="$upMove" :disabled="!$upMovable">上移</button>
 					<button @click="$downMove()" :disabled="!$downMovable">下移</button>
 				</li>
 				<li><button @click="$add()">添加</button><button @click="$add({d: $length + 1})">添加(<span !fragment !text="$length + 1"></span>)</button></li>

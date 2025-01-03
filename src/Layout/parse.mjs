@@ -225,7 +225,7 @@ export default function parse(source, {
 				} else if (decorator === '+') {
 					vars[name] = !value ? '' : nameRegex.test(value) ? value : creteCalc(value);
 				} else if (decorator === '*') {
-					aliases[name] = value;
+					aliases[name] = nameRegex.test(value) ? value : creteEvent(value);
 				} else if (decorator === '!') {
 					const key = name.toString();
 					switch (key) {

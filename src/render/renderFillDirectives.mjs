@@ -1,5 +1,4 @@
 /** @import * as Layout from '../Layout/index.mjs' */
-import computed from '../computed/index.mjs';
 import Environment from './Environment.mjs';
 /**
  *
@@ -22,23 +21,14 @@ function toText(val) {
  */
 export default function renderFillDirectives(parent, next, envs, { text, html }) {
 	if (text != null) {
-		const result = computed(() => envs.exec(text));
-		let value = toText(result.value);
-		const node = parent.insertBefore(document.createTextNode(value), next);
-		result.listen((val) => {
-			if (!node.parentNode) { return; }
-			const newVal = toText(val);
-			if (newVal === value) { return; }
-			value = newVal;
-			node.textContent = value;
-		});
+		const node = parent.insertBefore(document.createTextNode(''), next);
+		const stop = envs.watch(text, val => node.textContent = toText(val));
 		return () => {
 			node.remove();
-			result.stop();
+			stop();
 		};
 	}
 	if (html == null) { return; }
-	const result = computed(() => envs.exec(html));
 	const start = parent.insertBefore(document.createComment(''), next);
 	const end = parent.insertBefore(document.createComment(''), next);
 	const div = document.createElement('div');
@@ -54,20 +44,12 @@ export default function renderFillDirectives(parent, next, envs, { text, html })
 			node.remove();
 		}
 	}
-	let value = toText(result.value);
-	add(value);
-	let stopped = false;
-	result.listen((val) => {
-		if (stopped) { return; }
-		const newVal = toText(val);
-		if (newVal === value) { return; }
-		value = newVal;
+	const result = envs.watch(html, val => {
 		remove();
-		add(value);
+		add(toText(val));
 	});
 	return () => {
-		stopped = true;
-		result.stop();
+		result();
 		remove();
 		start.remove();
 		end.remove();

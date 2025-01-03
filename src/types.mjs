@@ -6,10 +6,9 @@
 /**
  * @typedef {object} Component.Attr
  * @property {string} type
- * @property {boolean} [isAttr]
  * @property {boolean} [isProp]
  * // TODO: 可否计算，可否关联
- * @property {[event: string, set: ($event: any, global: any) => any]} [bind]
+ * @property {[event: string, set: ($event: any, global: any) => any, boolean?] | 'hidden' | 'clearable' | 'readonly' | 'disabled' | 'required'} [bind]
  * @property {*} [default]
  * @property {boolean} [immutable]
  * 
@@ -29,7 +28,6 @@
  */
 /**
  * @typedef {object} Component.Context
- * @property {Set<string>?} [attrs]
  * @property {Set<string>?} [props]
  * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events
  * @property {Record<string, any>} tagAttrs
@@ -59,6 +57,9 @@
  */
 /**
  * @typedef {(Schema.Object | Schema.Type) & Schema.Event & Schema.Attr} Schema.Field
+ */
+/**
+ * @typedef {Record<string, Schema.Field>} Schema
  */
 /**
  * @typedef {object} Schema.Value

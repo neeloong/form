@@ -38,7 +38,7 @@ export { default as toString } from './toString.mjs';
  * @property {Record<string, string | ((global: any) => void)>} styles
  * @property {Record<string, string | (($event: any, global: any) => void)>} events
  * @property {Record<string, string | ((global: any) => void)>} vars
- * @property {Record<string, string>} aliases
+ * @property {Record<string, string | Function>} aliases
  * @property {Directives} directives
  * @property {(Node | string)[]} children
  */

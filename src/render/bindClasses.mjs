@@ -1,5 +1,5 @@
 import Environment from './Environment.mjs';
-import computed from '../computed/index.mjs';
+import watch from '../watch.mjs';
 
 /**
  * @param {Node} node
@@ -19,20 +19,13 @@ export default function bindClasses(node, classes, envs) {
 			node.classList.add(name);
 			continue;
 		}
-		const result = computed(() => Boolean(envs.exec(attr)));
-		let value = result.value;
-		if (value) { node.classList.add(name); }
-		bk.add(() => result.stop());
-		result.listen((val) => {
-			if (!bk) { return; }
-			if (val === value) { return; }
-			value = val;
+		bk.add(watch(() => Boolean(envs.exec(attr)), value => {
 			if (value) {
 				node.classList.add(name);
 			} else {
 				node.classList.remove(name);
 			}
-		});
+		}));
 	}
 	// TODO: 创建组件
 	return ()=> {

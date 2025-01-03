@@ -1,4 +1,4 @@
-import computed from '../computed/index.mjs';
+import watch from '../watch.mjs';
 import Environment from './Environment.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 
@@ -21,11 +21,9 @@ export default function renderList(layouts, parent, next, envs, renderItem) {
 	function renderIf(list) {
 		if (!list.length || !bkList) { return; }
 		const end = parent.insertBefore(document.createComment(''), next);
-		let result = computed(() => list.findIndex(v => {
-			const ifv = v[0];
-				return ifv === null || Boolean(envs.exec(ifv));
-		}));
-		let lastIndex = result.value;
+		
+		
+		let lastIndex = -1;
 		let destroy = () => { };
 		/**
 		 *
@@ -38,20 +36,20 @@ export default function renderList(layouts, parent, next, envs, renderItem) {
 			destroy = renderItem(layout);
 		}
 		bkList.add(() => {
-			result.stop();
 			destroy();
 			destroy = () => { };
 			end.remove();
 		});
-		renderIndex(lastIndex);
-		result.listen((index) => {
-			if (!bkList) { return; }
-			if (index === lastIndex) { return; }
-			lastIndex = index;
-			destroy();
-			destroy = () => { };
-			renderIndex(lastIndex);
-		});
+		bkList.add(watch(
+			() => list.findIndex(([ifv]) => ifv === null || envs.exec(ifv)),
+			index => {
+				if (index === lastIndex) { return; }
+				lastIndex = index;
+				destroy();
+				destroy = () => { };
+				renderIndex(lastIndex);
+			},
+		));
 	}
 	for (const layout of layouts) {
 		if (typeof layout === 'string') {

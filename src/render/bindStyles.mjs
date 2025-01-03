@@ -1,5 +1,5 @@
 import Environment from './Environment.mjs';
-import computed from '../computed/index.mjs';
+import watch from '../watch.mjs';
 
 /** @type {Record<string, string>} */
 const unit = {
@@ -77,19 +77,13 @@ export default function bindStyles(node, classes, envs) {
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
 	for (const [name, attr] of Object.entries(classes)) {
-		const result = computed(() => toStyle(name, envs.exec(attr)));
-		let value = result.value;
-		if (value) { node.style.setProperty(name, ...value); }
-		bk.add(() => result.stop());
-		result.listen((val) => {
-			if (!bk) { return; }
-			value = val;
+		bk.add(watch(() => toStyle(name, envs.exec(attr)), value => {
 			if (value) {
 				node.style.setProperty(name, ...value);
 			} else {
 				node.style.removeProperty(name);
 			}
-		});
+		}));
 	}
 	// TODO: 创建组件
 	return ()=> {

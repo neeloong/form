@@ -1,32 +1,6 @@
 /** @import { Component } from '../types.mjs' */
 import Environment from './Environment.mjs';
-import computed from '../computed/index.mjs';
 
-/**
- * 
- * @param {string} el 
- * @param {Record<string, string?>} attrValues 
- * @returns {Iterable<[string, string, (e: Event) => any]>}
- */
-function *getElementModel(el, attrValues) {
-	if (el.toLowerCase() === 'input') {
-		switch (attrValues.type?.toLowerCase()) {
-			case 'checkbox':
-			case 'radio':
-				return yield ['checked', 'change', (e) => /** @type {*} */(e.currentTarget).checked];
-			case 'number':
-				return yield ['value', 'input', (e) => Number(/** @type {*} */(e.currentTarget).value)];
-		}
-		return yield ['value', 'input', (e) => /** @type {*} */(e.currentTarget).value];
-		
-	}
-	if (el.toLowerCase() === 'textarea') {
-		return yield ['value', 'input', e => /** @type {*} */(e.currentTarget).value];
-	}
-	if (el.toLowerCase() === 'select') {
-		return yield ['value', 'change', e => /** @type {*} */(e.currentTarget).value];
-	}
-}
 /**
  * @param {Component.Handler} handler
  * @param {Environment} envs
@@ -51,34 +25,19 @@ export default function bindBaseAttrs(handler, envs, attrs, bindValue) {
 			handler.set(name, value);
 			continue;
 		}
-		const result = computed(() => envs.exec(attrSchema));
-		let value = result.value;
-		handler.set(name, value);
-		bk.add(() => result.stop());
-		result.listen((val) => {
-			if (val === value) { return; }
-			value = val;
-			handler.set(name, value);
-		});
+		bk.add(envs.watch(attrSchema, val => handler.set(name, val)));
 	}
-
-	if (bindValue && typeof tag === 'string') {
-		for (const [name, e, set] of getElementModel(tag, attrValues)) {
-			if (name in attrValues) { continue; }
-			handler.addEvent(e, $event => {envs.all[bindValue] = set($event)});
-			const result = computed(() => envs.exec(bindValue));
-			let value = result.value;
-			handler.set(name, value);
-			bk.add(() => result.stop());
-			result.listen((val) => {
-				if (val === value) { return; }
-				value = val;
-				handler.set(name, value);
-			});
+	if (bindValue) {
+		for (const [key, effect] of Object.entries(envs.bindAll(bindValue) || {})) {
+			if (typeof effect !== 'function') { continue; }
+			bk.add(effect(val => handler.set(key, val)));
+		}
+		for (const [key, setter] of Object.entries(envs.bindStateAllSet(bindValue) || {})) {
+			if (typeof setter !== 'function') { continue; }
+			handler.addEvent(key, $event => setter($event));
 		}
 	}
 
-	// TODO: 创建组件
 	return ()=> {
 		const list = bk;
 		bk = new Set();

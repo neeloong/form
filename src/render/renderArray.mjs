@@ -1,4 +1,4 @@
-import computed from '../computed/index.mjs';
+import watch from '../watch.mjs';
 import Environment from './Environment.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Store, { ArrayStore } from '../Store/index.mjs' */
@@ -14,7 +14,6 @@ import Environment from './Environment.mjs';
  */
 export default function renderArray(layout, parent, next, store, env, renderItem) {
 	const start = parent.insertBefore(document.createComment(''), next);
-	const childrenResult = computed(() => store.children);
 	/** @type {Map<Store, [Comment, Comment, () => void]>} */
 	let seMap = new Map();
 	/** @param {Map<Store, [Comment, Comment, () => void]>} map */
@@ -26,9 +25,8 @@ export default function renderArray(layout, parent, next, store, env, renderItem
 		}
 
 	}
-	function render() {
+	const childrenResult = watch(() => store.children, function render(children) {
 		if (!start.parentNode) { return; }
-		const children = childrenResult.value;
 		let nextNode = start.nextSibling;
 		const oldSeMap = seMap;
 		seMap = new Map();
@@ -57,12 +55,10 @@ export default function renderArray(layout, parent, next, store, env, renderItem
 			parent.insertBefore(old[1], nextNode);
 		}
 		destroyMap(oldSeMap);
-	}
-	render();
-	childrenResult.listen(() => render());
+	});
 
 	return () => {
 		start.remove();
-		childrenResult.stop();
+		childrenResult();
 	};
 }

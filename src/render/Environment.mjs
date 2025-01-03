@@ -1,10 +1,8 @@
-import markChange from '../computed/markChange.mjs';
-import markRead from '../computed/markRead.mjs';
-import { BoolStateKeys } from '../Store/BoolStateKeys.mjs';
+import { Signal } from 'signal-polyfill';
 import Store, { ArrayStore } from '../Store/index.mjs';
+import watch from '../watch.mjs';
 
-
-/** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Store; calc?: null; var?: boolean }} ValueDefine */
+/** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Store; calc?: null; }} ValueDefine */
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
 /** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
 /**
@@ -17,12 +15,19 @@ function *toItem(val, key = '', sign = '$') {
 	yield [`${key}`, {get: () => val.value, set: v => val.value = v, value: val}]
 	yield [`${key}${sign}value`, {get: () => val.value, set: v => val.value = v}]
 	yield [`${key}${sign}state`, {get: () => val.state, set: v => val.state = v}]
+	yield [`${key}${sign}null`, {get: () => val.null}]
 	yield [`${key}${sign}index`, {get: () => val.index}]
 	yield [`${key}${sign}no`, {get: () => val.no}]
 	yield [`${key}${sign}length`, {get: () => val.length}]
-	for (const k of BoolStateKeys) {
-		yield [`${key}${sign}${k}`, {get: () => val[k]}];
-	}
+	yield [`${key}${sign}creatable`, {get: () => val.creatable}]
+	yield [`${key}${sign}immutable`, {get: () => val.immutable}]
+	yield [`${key}${sign}new`, {get: () => val.new}]
+	yield [`${key}${sign}editable`, {get: () => val.editable}]
+	yield [`${key}${sign}hidden`, {get: () => val.hidden}]
+	yield [`${key}${sign}clearable`, {get: () => val.clearable}]
+	yield [`${key}${sign}required`, {get: () => val.required}]
+	yield [`${key}${sign}disabled`, {get: () => val.disabled}]
+	yield [`${key}${sign}readonly`, {get: () => val.readonly}]
 	if (!(val instanceof ArrayStore)) { return; }
 	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
 	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
@@ -83,6 +88,89 @@ export default class Environment {
 			return value(this.getters);
 		}
 	}
+	/**
+	 * @param {string | Function} value
+	 * @param {(value: any) => void} cb 
+	 */
+	watch(value, cb) { return watch(() => this.exec(value), cb); }
+
+	/**
+	 * @param {string} name
+	 * @param {string} type
+	 * @param {(value: any) => void} cb 
+	 */
+	bind(name, type, cb) {
+		const item = this.#items[name];
+		if (!item?.get) { return; }
+		const {value} = item;
+		if (!value) { return; }
+		switch(type) {
+			case 'value': return watch(() => value.value, cb);
+			case 'state': return watch(() => value.state, cb);
+			case 'required': return watch(() => value.required, cb);
+			case 'clearable': return watch(() => value.clearable, cb);
+			case 'hidden': return watch(() => value.hidden, cb);
+			case 'disabled': return watch(() => value.disabled, cb);
+			case 'readonly': return watch(() => value.readonly || !value.editable, cb);
+		}
+	}
+	/**
+	 * @param {string} name
+	 * @returns {Record<string, ((cb: (value: any) => void) => () => void) | void> | void}
+	 */
+	bindAll(name) {
+		const item = this.#items[name];
+		if (!item?.get) { return; }
+		const {value} = item;
+		if (!value) {
+			const get = item.get;
+			if (typeof get !== 'function') { return; }
+			return { '$value': cb => watch(get, cb) }
+		}
+		return {
+			'$value': cb => watch(() => value.value, cb),
+			'$state': cb => watch(() => value.state, cb),
+			'$required': cb => watch(() => value.required, cb),
+			'$clearable': cb => watch(() => value.clearable, cb),
+			'$hidden': cb => watch(() => value.hidden, cb),
+			'$disabled': cb => watch(() => value.disabled, cb),
+			'$readonly': cb => watch(() => value.readonly || !value.editable, cb),
+		}
+	}
+	/**
+	 * @param {string} name
+	 * @param {string} type
+	 * @returns {((value: any) => void) | void} 
+	 */
+	bindSet(name, type) {
+		const item = this.#items[name];
+		if (!item?.get) { return; }
+		const {value} = item;
+		if (!value) { return; }
+		switch(type) {
+			case 'value': return v => {value.value = v; };
+			case 'state': return v => {value.state = v; };
+		}
+	}
+	/**
+	 * @param {string} name
+	 * @returns {Record<string, ((value: any) => void) | void> | void} 
+	 */
+	bindStateAllSet(name) {
+		const item = this.#items[name];
+		if (!item?.get) { return; }
+		const {value} = item;
+		if (!value) { 
+			const set = item.set;
+			if (typeof set !== 'function') { return; }
+			return { '$value': set }
+		 }
+		return {
+			'$value': v => {value.value = v; },
+			'$state': v => {value.state = v; },
+		}
+	}
+
 	/**
 	 * @param {string | (($event: any, global: any) => any)} event
 	 * @returns {(($event: any, global: any) => any)?}
@@ -202,7 +290,7 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Record<string, string>} aliases 
+	 * @param {Record<string, string | Function>} aliases 
 	 * @param {Record<string, any>} vars 
 	 */
 	set(aliases, vars) {
@@ -211,39 +299,42 @@ export default class Environment {
 		cloned.#store = this.#store;
 		cloned.#parent = this.#parent;
 		const explicit = cloned.#explicit;
-		const items = this.#items;
+		const items = cloned.#items;
 		for (const [key, name] of Object.entries(aliases)) {
-			const item = this.#items[name];
+			if (typeof name === 'function') {
+				const getters = cloned.getters;
+				cloned.#getters = null;
+				const val = new Signal.Computed(() => name(getters));
+				explicit[key] = items[key] = {
+					get: () => { return val.get(); },
+				};
+				continue;
+			}
+			const item = items[name];
 			if (!item) { continue; }
 			if (!item.get || !item.value) {
-				explicit[key] = item;
-				items[key] = item;
+				explicit[key] = items[key] = item;
 				continue;
 			}
 			for (const [k, it] of toItem(item.value, key)) {
-				explicit[k] = it;
-				items[k] = it;
+				explicit[k] = items[k] = it;
 			}
 		}
 		for (const [k,v] of Object.entries(vars)) {
-			/** @type {any} */
-			let val = null;
+			
+			const val = new Signal.State(/** @type {any} */(null));
 			if (typeof v === 'function') {
-				val = v(this.settable);
+				const settable = cloned.settable;
+				cloned.#settable = null;
+				val.set(v(settable));
 			} else if (v && typeof v === 'string') {
-				const item = this.#items[v];
-				if (item.get) {
-					val = item.get();
-				}
+				const item = items[v];
+				if (!item.get) { continue }
+				val.set(item.get());
 			}
 			explicit[k] = items[k] = {
-				get: () => { markRead(explicit, k); return val; },
-				set: (v) => {
-					if (v === val) { return; }
-					val = v;
-					markChange(explicit, k);
-				},
-				var: true,
+				get: () => { return val.get(); },
+				set: (v) => { val.set(v) },
 			};
 		}
 		return cloned;
@@ -283,8 +374,10 @@ export default class Environment {
 		this.#all = ngt;
 		return ngt;
 	}
+	/** @type {Record<string, any>?} */
+	#settable = null;
 	get settable() {
-		const gt = this.#all;
+		const gt = this.#settable;
 		if (gt) { return gt; }
 		/** @type {Record<string, any>} */
 		const ngt = {};
@@ -305,7 +398,7 @@ export default class Environment {
 				});
 			}
 		}
-		this.#all = ngt;
+		this.#settable = ngt;
 		return ngt;
 	}
 	/** @type {Record<string, any>?} */

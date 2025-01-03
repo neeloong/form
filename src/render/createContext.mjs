@@ -84,8 +84,16 @@ const eventFilters = {
 	touch(evt) {
 		if (evt instanceof PointerEvent) { return evt.pointerType === 'touch'; }
 	},
+	pointer(evt, param) {
+		if (evt instanceof PointerEvent) {
+			const pointerType = evt.pointerType.toLowerCase().replace(/-/g, '');
+			for (const k of param) {
+				if (pointerType === k.toLowerCase().replace(/-/g, '')) { return true }
+			}
+			return false;
+		}
+	},
 
-// TODO: 指针事件
 	ctrl(evt) {
 		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
 			return evt.ctrlKey;
@@ -134,7 +142,6 @@ export default function createContext(component, env) {
 	/** @type {Component.Context} */
 	const context = {
 		events: allEvents,
-		attrs: attrs ? new Set(Object.entries(attrs).filter(([,a]) => a.isAttr || !a.isProp).map(([e]) => e)) : null,
 		props: attrs ? new Set(Object.entries(attrs).filter(([,a]) => a.isProp).map(([e]) => e)) : null,
 		tagAttrs,
 		watchAttr(name, fn) { return attrEmitter.listen(name, fn); },
@@ -209,4 +216,3 @@ export default function createContext(component, env) {
 	};
 	return { context, handler };
 }
-// return {cContext, rContext};

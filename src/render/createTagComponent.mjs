@@ -22,6 +22,18 @@ function toAttrValue(val) {
 	}
 	return String(val);
 }
+/**
+ *
+ * @param {any} val
+ * @returns
+ */
+function toText(val) {
+	if ((val ?? null) === null) {
+		return "";
+	}
+	return String(val);
+}
+
 
 /**
  * 
@@ -33,7 +45,7 @@ function getAttrs(el, attr) {
 		switch (el.type.toLowerCase()) {
 			case 'checkbox':
 			case 'radio':
-				return true;
+				return Boolean;
 		}
 	}
 	if ((
@@ -41,17 +53,17 @@ function getAttrs(el, attr) {
 		|| el instanceof HTMLInputElement
 		|| el instanceof HTMLTextAreaElement
 	) && 'value' === attr) {
-		return true;
+		return toText;
 	}
 	if ((el instanceof HTMLDetailsElement) && 'open' === attr) {
-		return true;
+		return Boolean;
 	}
 	if (el instanceof HTMLMediaElement) {
 		if ('muted' === attr) {
-			return true;
+			return Boolean;
 		}
 		if ('paused' === attr) {
-			return true;
+			return Boolean;
 		}
 		if ('currentTime' === attr) {
 			return true;
@@ -65,46 +77,78 @@ function getAttrs(el, attr) {
 	}
 	return false;
 }
+
 /**
- * 
- * @param {Element} el 
- * @returns {Iterable<[string, boolean]>}
+ * @typedef {object} TagBind
+ * @property {Record<string, (value: any, el: any) => void>} attrs
+ * @property {Record<string, [name: string, set: (event: any, el: any) => any]>} events
  */
-function *getElementModel(el) {
-	if (el instanceof HTMLInputElement) {
-		switch (el.type.toLowerCase()) {
-			case 'checkbox':
-			case 'radio':
-				return yield ['checked', true];
-		}
-		return yield ['value', true];
-	}
-	if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
-		return yield ['value', true];
-	}
+/** @type {Record<string, TagBind>} */
+const tagBindMap = {
+	input: {
+		attrs: {
+			/** @param {any} v @param {HTMLInputElement} e */
+			$disabled: (v, e) => {e.disabled = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$readonly: (v, e) => {e.readOnly = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$required: (v, e) => {e.required = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$value: (v, e) => {
+				switch(e.type) {
+					case 'checkbox':
+					case 'radio':
+						e.checked = Boolean(v);
+						break;
+				}
+				e.value = toText(v);
+			},
+		},
+		events: {
+			$value: ['input', (v, e) => {
+				switch(e.type) {
+					case 'checkbox':
+					case 'radio':
+						return e.checked;
+					case 'number':
+						return Number(e.value);
+				}
+				return e.value;
+			}],
+		},
+	},
+	textarea: {
+		attrs: {
+			/** @param {any} v @param {HTMLInputElement} e */
+			$disabled: (v, e) => {e.disabled = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$readonly: (v, e) => {e.readOnly = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$required: (v, e) => {e.required = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$value: (v, e) => { e.value = toText(v); },
+		},
+		events: {
+			$value: ['input', (v, e) => { return e.value; }],
+		},
+	},
+	select: {
+		attrs: {
+			/** @param {any} v @param {HTMLInputElement} e */
+			$disabled: (v, e) => {e.disabled = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$readonly: (v, e) => {e.readOnly = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$required: (v, e) => {e.required = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$value: (v, e) => { e.value = toText(v); },
+		},
+		events: {
+			$value: ['change', (v, e) => { return e.value; }],
+		},
+	},
 }
-/**
- * 
- * @param {Element} el 
- * @returns {Iterable<[string, (e: Event) => any]>}
- */
-function *getElementModelEvent(el) {
-	if (el instanceof HTMLInputElement) {
-		switch (el.type.toLowerCase()) {
-			case 'checkbox':
-			case 'radio':
-				yield ['change',(e) => /** @type {*} */(e.currentTarget).checked];
-		}
-		yield ['input',(e) => /** @type {*} */(e.currentTarget).value];
-		return
-	}
-	if (el instanceof HTMLTextAreaElement) {
-		return yield ['input', e => /** @type {*} */(e.currentTarget).value];
-	}
-	if (el instanceof HTMLSelectElement) {
-		return yield ['change', e => /** @type {*} */(e.currentTarget).value];
-	}
-}
+
 /**
  * 
  * @param {Element} el 
@@ -162,16 +206,28 @@ function *getElementModel2(el, attr) {
  */
 export default function (context, name, is) {
 	const node = document.createElement(name, {is: is || undefined});
-	const { watchAttr, attrs, props } = context;
+	const { watchAttr, props } = context;
 
 	context.listen('init', ({events})=> {
+		const e = tagBindMap[name.toLowerCase()];
+		const eAttrs = e?.attrs || {};
+		const eEvents = e?.events || {};
 		for (const [type, listener, options] of events) {
+			if (type[0] === '$') {
+				const e = eEvents[type];
+				if (e) {
+					const [evt, set] = e;
+					node.addEventListener(evt, e => listener(set(e, node)), options);
+				}
+				continue;
+			}
 			node.addEventListener(type, listener, options);
 		}
-		if (props && attrs) {
+		if (props) {
 			for (const [name, attr] of Object.entries(context.tagAttrs)) {
 				watchAttr(name, v => {
-					if (attrs.has(name)) {
+					// @ts-ignore
+					if (props.has(name)) { node[name] = v; } else {
 						const val = toAttrValue(v);
 						if (val == null) {
 							node.removeAttribute(name);
@@ -179,12 +235,9 @@ export default function (context, name, is) {
 							node.setAttribute(name, val);
 						}
 					}
-					// @ts-ignore
-					if (props.has(name)) { node[name] = v; }
 				});
 				// @ts-ignore
-				if (props.has(name)) { node[name] = attr; }
-				if (attrs.has(name)) {
+				if (props.has(name)) { node[name] = attr; } else {
 					const val = toAttrValue(attr);
 					if (val !== null) {
 						node.setAttribute(name, val);
@@ -202,7 +255,30 @@ export default function (context, name, is) {
 				}
 				continue;
 			}
+			if (name === '$hidden') {
+				if (attr) { node.hidden = attr; }
+				watchAttr(name, (val) => { node.hidden = val; });
+				continue;
+			}
+
+			if (name[0] === '$') {
+				const e = eAttrs[name];
+				if (e) {
+					e(attr, node);
+					watchAttr(name, (attr) => e(attr, node));
+				}
+				continue;
+			}
 			const prop = getAttrs(node, name);
+			if (typeof prop === 'function') {
+				// @ts-ignore
+				node[name] = prop(attr);
+				watchAttr(name, (attr) => {
+					// @ts-ignore
+					node[name] = prop(attr);
+				});
+				continue;
+			}
 			if (prop) {
 				// @ts-ignore
 				node[name] = attr;

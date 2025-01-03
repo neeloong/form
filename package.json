@@ -1,11 +1,13 @@
 {
-  "name": "form",
-  "version": "1.0.0",
+  "name": "@neeloong/form",
+  "version": "0.0.1",
+  "private": true,
   "description": "",
   "main": "index.js",
   "keywords": [],
   "author": "Fierflame",
   "license": "ISC",
   "dependencies": {
+    "signal-polyfill": "^0.2.1"
   }
 }

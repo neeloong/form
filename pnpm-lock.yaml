@@ -6,4 +6,17 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      signal-polyfill:
+        specifier: ^0.2.1
+        version: 0.2.1
+
+packages:
+
+  signal-polyfill@0.2.1:
+    resolution: {integrity: sha512-HtchWosT4UT1i6yIMmxjg7gqkDT9lXvQtJRGVppi2TDwVjgs8cS+7ATVFqBvgJGThludjxrxJFOvmzzGSAc8OA==}
+
+snapshots:
+
+  signal-polyfill@0.2.1: {}

@@ -1,9 +1,8 @@
-import { markChange, markRead } from '../computed/index.mjs';
 import EventEmitter from '../EventEmitter.mjs';
-import { BoolStateKeys, stateInParent, stateInScript } from './BoolStateKeys.mjs';
-import runBooleanScript from './runBooleanScript.mjs';
-/** @import { Schema } from '../types.mjs' */
+import { Signal } from "signal-polyfill";
+import { createBooleanStates } from './createBooleanStates.mjs';
 
+/** @import { Schema } from '../types.mjs' */
 /**
  * @template [T=any]
  * @extends {EventEmitter<Record<string, any[]>>}
@@ -33,7 +32,6 @@ export default class Store extends EventEmitter {
 	 * @param {boolean} [options.required] 
 	 * @param {boolean} [options.readonly] 
 	 * @param {boolean} [options.disabled] 
-	 * @param {Partial<Record<BoolStateKeys, boolean?>>} [options.script] 
 	 * @param {((value: any) => any)?} [options.setValue] 
 	 * @param {((value: any) => any)?} [options.setState] 
 	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
@@ -48,16 +46,33 @@ export default class Store extends EventEmitter {
 	}) {
 		super();
 		this.schema = schema;
-		this.state = typeof state === 'object' && state || {};
+		this.#stateSignal.set(typeof state === 'object' && state || {});
 		const parent = parentNode instanceof Store ? parentNode : null;
 		if (parent) {
 			this.#parent = parent;
 			this.#root = parent.#root;
 			// TODO: 事件向上冒泡
 		}
-		/** @type {Set<() => void>} */
-		const destroySet = new Set();
-		this.#destroySet = destroySet;
+
+		const selfNewState = new Signal.State(Boolean(isNew));
+		this.#selfNew = selfNewState;
+		/** @type {Signal.Computed<boolean>} */
+		const newState = parent
+			? new Signal.Computed(() => parent.#new.get() || selfNewState.get())
+			: new Signal.Computed(() => selfNewState.get());
+
+		this.#new = newState;
+		const immutable = Boolean(schema.immutable);
+		const creatable = schema.creatable !== false;
+		this.#immutable = immutable;
+		this.#creatable = creatable;
+		this.#editable = new Signal.Computed(() => newState.get() ? creatable : !immutable);
+
+		[this.#selfHidden, this.#hidden] = createBooleanStates(this, hidden, schema.hidden, parent ? parent.#hidden : null);
+		[this.#selfClearable, this.#clearable] = createBooleanStates(this, clearable, schema.clearable, parent ? parent.#clearable : null);
+		[this.#selfRequired, this.#required] = createBooleanStates(this, required, schema.required, parent ? parent.#required : null);
+		[this.#selfDisabled, this.#disabled] = createBooleanStates(this, disabled, schema.disabled, parent ? parent.#disabled : null);
+		[this.#selfReadonly, this.#readonly] = createBooleanStates(this, readonly, schema.readonly, parent ? parent.#readonly : null);
 
 		if (isNull) {
 			this.#null = true;
@@ -68,35 +83,11 @@ export default class Store extends EventEmitter {
 		this.#setValue = typeof setValue === 'function' ? setValue : null;
 		this.#setState = typeof setState === 'function' ? setState : null;
 		this.#convert = typeof convert === 'function' ? convert : null;
-		this.#length = length || 0;
-		this.#index = index ?? null;
+		this.#length.set(length || 0);
+		this.#index.set(index ?? '');
 
-		this.#selfNew = Boolean(isNew);
-		this.#new = parent && parent.#new || this.#selfNew;
-		this.#immutable = Boolean(schema.immutable);
-		this.#creatable = schema.creatable !== false;
-		this.#editable = this.#new ? this.#creatable : !this.#immutable;
-
-		const stateParams = { hidden, clearable, required, disabled, readonly }
-		/** @type {Partial<Record<BoolStateKeys, boolean | ((value: Store) => boolean) | null>>} */
-		const script = {
-			hidden: schema.hidden,
-			clearable: schema.clearable,
-			required: schema.required,
-			disabled: schema.disabled,
-			readonly: schema.readonly,
-		}
-		const selfStates = Object.fromEntries(BoolStateKeys.map(k => [k, typeof stateParams[k] === 'boolean' ? stateParams[k] : null] ));
-		this.#selfStates = selfStates;
-		const scriptStates = Object.fromEntries(BoolStateKeys.map(k => [k, stateInScript[k] && runBooleanScript(script[k], destroySet, v => { this.#updateStates(k, v); }, this)]));
-		this.#scriptStates = scriptStates;
-		const states = Object.fromEntries(parent
-			? BoolStateKeys.map(k => [k, stateInParent[k] &&parent && parent.#states[k] || selfStates[k] === null ? scriptStates[k] : selfStates[k]])
-			: BoolStateKeys.map(k => [k, selfStates[k] === null ? scriptStates[k] : selfStates[k]]));
-		this.#states = states;
 	}
-	/** @type {Set<() => void>?} */
-	#destroySet
+	#destroyed = false;
 	/** @type {((value: any) => any)?} */
 	#setValue = null
 	/** @type {((value: any) => any)?} */
@@ -114,32 +105,12 @@ export default class Store extends EventEmitter {
 	get parent() { return this.#parent; }
 	get root() { return this.#root; }
 
-	/** @type {number} */
-	#length = 0;
-	get length() {
-		markRead(this, 'length');
-		return this.#length;
-	}
-	set length(v) {
-		const val = v;
-		if (val === this.#length) { return }
-		this.#length = val;
-		markChange(this, 'length');
-		this.emit('length', val);
-	}
-	/** @type {string | number | null} */
-	#index = '';
-	get index() {
-		markRead(this, 'index');
-		return this.#index;
-	}
-	set index(v) {
-		const val = v;
-		if (val === this.#index) { return }
-		this.#index = val;
-		markChange(this, 'index');
-		this.emit('index', val);
-	}
+	#length = new Signal.State(0);
+	get length() { return this.#length.get(); }
+	set length(v) { this.#length.set(v); }
+	#index = new Signal.State(/** @type {string | number} */(''));
+	get index() { return this.#index.get(); }
+	set index(v) { this.#index.set(v); }
 	get no() {
 		if (this.#null) { return ''; }
 		const index = this.index;
@@ -147,117 +118,69 @@ export default class Store extends EventEmitter {
 	}
 
 	#creatable = true;
+	get creatable() { return this.#creatable; }
 	#immutable = false;
-	#editable = false;
-	#selfNew = false;
-	#new = false;
-	get selfNew() { return this.#selfNew; }
-	set selfNew(v) {
-		const val = Boolean(v);
-		if (val === this.#selfNew) { return }
-		this.#selfNew = val;
-		this.#updateNew();
-	}
-	#updateNew() {
-		const val = this.#parent && this.#parent.#new || this.#selfNew;
-		if (val === this.#new) { return }
-		this.#new = val;
-		for (const [, field] of this) {
-			field.#updateNew();
-		}
-		const editable = val ? this.#creatable : !this.#immutable;
-		if (this.#editable !== editable) {
-			this.#editable = editable;
-			markChange(this, 'editable');
-		}
-		markChange(this, 'new');
-		this.emit('new', val);
-	}
-	get new() {
-		markRead(this, 'new');
-		return this.#new;
-	}
-	set new(v) { this.selfNew = v; }
-	get editable() { return this.#editable; }
+	get immutable() { return this.#immutable; }
 
-	
-	/** @type {Record<string, boolean?>} */
-	#selfStates = Object.fromEntries(BoolStateKeys.map(k => [k, null]));
-	#scriptStates = Object.fromEntries(BoolStateKeys.map(k => [k, false]));
-	#states = Object.fromEntries(BoolStateKeys.map(k => [k, false]));
-	/**
-	 * 
-	 * @param {BoolStateKeys} name 
-	 * @param {boolean} [v] 
-	 * @returns 
-	 */
-	#updateStates(name, v) {
-		if (typeof v === 'boolean') {
-			if (this.#scriptStates[name] === v) { return; }
-			this.#scriptStates[name] = v;
-		}
-		const val = stateInParent[name] && this.#parent && this.#parent[name] || (
-			stateInScript[name] && this.#selfStates[name] === null
-				? this.#scriptStates[name]
-				: Boolean(this.#selfStates[name])
-		);
-		if (val === this.#states[name]) { return }
-		this.#states[name] = val;
-		for (const [, field] of this) {
-			field.#updateStates(name);
-		}
-		markChange(this, name);
-		this.emit(name, val);
-	}
-	/**
-	 * 
-	 * @param {BoolStateKeys} name 
-	 * @returns {boolean?}
-	 */
-	#getSelfState(name) { return this.#selfStates[name]}
-	/**
-	 * 
-	 * @param {BoolStateKeys} name 
-	 * @param {boolean?} v 
-	 * @returns 
-	 */
-	#setSelfState(name, v) {
-		const val = v === null ? v : Boolean(v);
-		if (val === this.#selfStates[name]) { return }
-		this.#selfStates[name] = val;
-		this.#updateStates(name);
-	}
-	/**
-	 * 
-	 * @param {BoolStateKeys} name 
-	 * @returns {boolean}
-	 */
-	#getCurrentState(name) { markRead(this, name); return this.#states[name]; }
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#new
+	/** @readonly @type {Signal.State<boolean>} */
+	#selfNew
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#editable
+	get selfNew() { return this.#selfNew.get(); }
+	set selfNew(v) { this.#selfNew.set(Boolean(v)); }
+	get new() { return this.#new.get(); }
+	set new(v) { this.#selfNew.set(Boolean(v)); }
+	get editable() { return this.#editable.get(); }
 
-	get selfHidden() { return this.#getSelfState('hidden'); }
-	set selfHidden(v) { this.#setSelfState('hidden', v); }
-	get hidden() { return this.#getCurrentState('hidden'); }
-	set hidden(v) { this.#setSelfState('hidden', v); }
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfHidden
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#hidden
+	get selfHidden() { return this.#selfHidden.get(); }
+	set selfHidden(v) { this.#selfHidden.set(typeof v === 'boolean' ? v : null); }
+	get hidden() { return this.#hidden.get(); }
+	set hidden(v) { this.#selfHidden.set(typeof v === 'boolean' ? v : null); }
 
-	get selfClearable() { return this.#getSelfState('clearable'); }
-	set selfClearable(v) { this.#setSelfState('clearable', v); }
-	get clearable() { return this.#getCurrentState('clearable'); }
-	set clearable(v) { this.#setSelfState('clearable', v); }
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfClearable
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#clearable
+	get selfClearable() { return this.#selfClearable.get(); }
+	set selfClearable(v) { this.#selfClearable.set(typeof v === 'boolean' ? v : null); }
+	get clearable() { return this.#clearable.get(); }
+	set clearable(v) { this.#selfClearable.set(typeof v === 'boolean' ? v : null); }
 
-	get selfRequired() { return this.#getSelfState('required'); }
-	set selfRequired(v) { this.#setSelfState('required', v); }
-	get required() { return this.#getCurrentState('required'); }
-	set required(v) { this.#setSelfState('required', v); }
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfRequired
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#required
+	get selfRequired() { return this.#selfRequired.get(); }
+	set selfRequired(v) { this.#selfRequired.set(typeof v === 'boolean' ? v : null); }
+	get required() { return this.#required.get(); }
+	set required(v) { this.#selfRequired.set(typeof v === 'boolean' ? v : null); }
 
-	get selfDisabled() { return this.#getSelfState('disabled'); }
-	set selfDisabled(v) { this.#setSelfState('disabled', v); }
-	get disabled() { return this.#getCurrentState('disabled'); }
-	set disabled(v) { this.#setSelfState('disabled', v); }
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfDisabled
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#disabled
+	get selfDisabled() { return this.#selfDisabled.get(); }
+	set selfDisabled(v) { this.#selfDisabled.set(typeof v === 'boolean' ? v : null); }
+	get disabled() { return this.#disabled.get(); }
+	set disabled(v) { this.#selfDisabled.set(typeof v === 'boolean' ? v : null); }
 
-	get selfReadonly() { return this.#getSelfState('readonly'); }
-	set selfReadonly(v) { this.#setSelfState('readonly', v); }
-	get readonly() { return this.#getCurrentState('readonly'); }
-	set readonly(v) { this.#setSelfState('readonly', v); }
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfReadonly
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#readonly
+	get selfReadonly() { return this.#selfReadonly.get(); }
+	set selfReadonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
+	get readonly() { return this.#readonly.get(); }
+	set readonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
+
+
+
 
 
 	/** @returns {IterableIterator<[key: string | number, value: Store]>} */
@@ -272,61 +195,51 @@ export default class Store extends EventEmitter {
 	#set = false;
 	/** @type {T?} */
 	#initValue = null;
-	#value = this.#initValue;
-	#lastValue = this.#value;
+	#lastValue = this.#initValue;
+	#valueSignal = new Signal.State(this.#initValue);
 
-	/** @type {any} */
-	#state = null;
-	#lastState = this.#state;
+	
+	#stateSignal = new Signal.State(/** @type {any} */(null));
+	#lastState = this.#stateSignal.get();
 
 
-	get changed() { return this.#value === this.#lastValue; }
-	get saved() { return this.#value === this.#initValue; }
+	get changed() { return this.#valueSignal.get() === this.#lastValue; }
+	get saved() { return this.#valueSignal.get() === this.#initValue; }
 
-	get value() {
-		markRead(this, 'value');
-		return this.#value;
-	}
+	get value() { return this.#valueSignal.get(); }
 	set value(v) {
-		if (!this.#destroySet) { return; }
+		if (this.#destroyed) { return; }
 		const val = this.#setValue?.(v) || v;
-		this.#value = val;
+		this.#valueSignal.set(val);
 		if (!this.#set) {
 			this.#set = true;
 			this.#initValue = v;
 		}
-		this.#onUpdate?.(this.#value, this.#index);
-		if (this.#needUpdate) { return; }
-		this.#needUpdate = true;
-		if (this.#needUpdateState) { return; }
+		this.#onUpdate?.(this.#valueSignal.get(), this.#index.get());
 		this.#requestUpdate();
 	}
 
-	get state() {
-		markRead(this, 'value');
-		return this.#state;
-	}
+	get state() { return this.#stateSignal.get(); }
 	set state(v) {
-		if (!this.#destroySet) { return; }
-		const val = this.#setState?.(v) || v;
-		this.#state = val;
+		if (this.#destroyed) { return; }
+		const sta = this.#setState?.(v) || v;
+		this.#stateSignal.set(sta);
 		this.#set = true;
-		this.#onUpdateState?.(this.#index, this.#state);
-		if (this.#needUpdateState) { return; }
-		this.#needUpdateState = true;
+		this.#onUpdateState?.(this.#stateSignal.get(), this.#index.get());
 		this.#requestUpdate();
 	}
 	#requestUpdate() {
-		requestAnimationFrame(() => {
-			const oldValue = this.#value;
-			const oldState = this.#state;
-			return this.#runUpdate(oldValue, oldState, true);
+		if (this.#needUpdate) { return; }
+		this.#needUpdate = true;
+		queueMicrotask(() => {
+			const oldValue = this.#valueSignal.get();
+			const oldState = this.#stateSignal.get();
+			return this.#runUpdate(oldValue, oldState);
 		});
 	}
 
 
 	#needUpdate = false;
-	#needUpdateState = false;
 	/**
 	 * 
 	 * @param {T} value 
@@ -334,44 +247,26 @@ export default class Store extends EventEmitter {
 	 * @returns 
 	 */
 	#toUpdate(value, state) {
-		if (!this.#destroySet) { return value; }
+		if (this.#destroyed) { return value; }
 		const [val,sta] = this.#convert?.(value, state) || [value, state];
-		if(this.#value === val && this.#state === sta) { return [val,sta] }
-		const oldValue = this.#value;
-		const oldState = this.#state;
-		this.#value = val;
-		this.#state = sta;
+		if(this.#valueSignal.get() === val && this.#stateSignal.get() === sta) { return [val,sta] }
+		this.#valueSignal.set(val);
+		this.#stateSignal.set(sta);
 		if (!this.#set) {
 			this.#set = true;
 			this.#initValue = val;
 		}
-		try {
-			return this.#runUpdate(val, sta, true);
-		} finally {
-			if (oldValue !== this.#value) {
-				markChange(this, 'value');
-			}
-			if (oldState !== this.#state) {
-				markChange(this, 'state');
-			}
-		}
+		return this.#runUpdate(val, sta);
 	}
 	/**
 	 * 
 	 * @param {*} val 
 	 * @param {*} sta 
-	 * @param {boolean} [force] 
 	 * @returns 
 	 */
-	#runUpdate(val, sta, force = false) {
-		if (!this.#destroySet) { return [val, sta]; }
-		const needUpdate = this.#needUpdate;
-		const needUpdateState = this.#needUpdateState;
-		if (!force && !needUpdate && !needUpdateState) {
-			return [val, sta];
-		}
+	#runUpdate(val, sta) {
+		if (this.#destroyed) { return [val, sta]; }
 		this.#needUpdate = false;
-		this.#needUpdateState = false;
 		if (val && typeof val === 'object') {
 			/** @type {T} */
 			// @ts-ignore
@@ -396,36 +291,26 @@ export default class Store extends EventEmitter {
 			if (updated) {
 				val = newValues;
 				sta = newStates;
-				this.#value = val;
-				this.#state = newStates;
+				this.#valueSignal.set(val);
+				this.#stateSignal.set(newStates);
 			}
 		}
-		try {
-
-			if (this.#lastValue === val && this.#lastState === sta) {
-				return [val, sta];
-			}
-			this.#lastValue = val;
-			this.#lastState = sta;
-			this.emit('update', val, sta);
+		if (this.#lastValue === val && this.#lastState === sta) {
 			return [val, sta];
-		} finally {
-			if (needUpdate) { markChange(this, 'value'); }
-			if (needUpdateState) { markChange(this, 'state'); }
-
 		}
+		this.#lastValue = val;
+		this.#lastState = sta;
+		this.emit('update', val, sta);
+		return [val, sta];
+
 	}
 
 
 
-	get destroyed() { return !this.#destroySet; }
+	get destroyed() { return this.#destroyed; }
 	destroy() {
-		if (!this.#destroySet) { return; }
-		const set = this.#destroySet;
-		this.#destroySet = null;
-		for (const f of set) {
-			f();
-		}
+		if (this.#destroyed) { return; }
+		this.#destroyed = true;
 		for (const [, field] of this) {
 			field.destroy();
 		}
@@ -435,7 +320,7 @@ export default class Store extends EventEmitter {
 	 * @param {T} v
 	 */
 	reset(v) {
-		if (!this.#destroySet) { return; }
+		if (this.#destroyed) { return; }
 		if (this.#parent) {
 			if (!this.#set) { return; }
 			this.#reset(this.#initValue);
@@ -450,20 +335,20 @@ export default class Store extends EventEmitter {
 	 * @param {T?} v
 	 */
 	#reset(v) {
-		if (!this.#destroySet || !this.#set) { return; }
-		this.#value = this.#lastValue = this.#initValue = v;
+		if (this.#destroyed || !this.#set) { return; }
+		this.#valueSignal.set(v);
+		this.#lastValue = this.#initValue = v;
 		this.#set = true;
 		this.#needUpdate = false;
-		this.#lastValue = this.#value;
-		this.#lastState = this.#state;
-		const val = this.#value;
+		this.#lastValue = this.#valueSignal.get();
+		this.#lastState = this.#stateSignal.get();
+		const val = this.#valueSignal.get();
 		if (val && typeof val === 'object') {
 			for (const [key, field] of this) {
 				// @ts-ignore
 				field.#reset(val[key]);
 			}
 		}
-		markChange(this, 'value');
 	}
 
 	async verify() {
@@ -498,19 +383,18 @@ export default class Store extends EventEmitter {
 	 */
 	refresh(...fields) {
 		const allFields = fields.flat()
-		if (allFields.length) {
-			const fields = [...allFields];
-			const field = allFields.unshift();
-			const child = this.child(field);
-			if (!child) { return; }
-			child.refresh(allFields);
-			this.emit('refresh', fields);
+		if (!allFields.length) {
+			for (const [, field] of this) {
+				field.refresh();
+			}
+			this.emit('refresh');
 			return;
 		}
-		for (const [, field] of this) {
-			field.refresh();
-		}
-		this.emit('refresh');
+		const [field, ...newFields] = allFields;
+		const child = this.child(field);
+		if (!child) { return; }
+		child.refresh(allFields);
+		this.emit('refresh', newFields);
 	}
 }
 
@@ -592,20 +476,16 @@ export class ObjectStore extends Store {
 export class ArrayStore extends Store {
 	/** @type {(index: number, isNew?: boolean) => Store} */
 	#create = () => {throw new Error}
-	/** @type {Store[]} */
-	#children = [];
-	get children() {
-		markRead(this, 'children');
-		return [...this.#children];
-	}
-	*[Symbol.iterator]() { return yield*[...this.#children.entries()]; }
+	#children = new Signal.State(/** @type {Store[]} */([]));
+	get children() { return [...this.#children.get()]; }
+	*[Symbol.iterator]() { return yield*[...this.#children.get().entries()]; }
 	/**
 	 * 
 	 * @param {string | number} key 
 	 * @returns {Store?}
 	 */
 	child(key) {
-		const children = this.#children;
+		const children = this.#children.get();
 		if (typeof key === 'number' && key < 0) {
 			return children[children.length + key] || null;
 		}
@@ -625,7 +505,7 @@ export class ArrayStore extends Store {
 		const updateChildren = (list) => {
 			if (this.destroyed) { return; }
 			const length = Array.isArray(list) && list.length || 0;
-			const children = this.#children;
+			const children = [...this.#children.get()];
 			const oldLength = children.length;
 			for (let i = children.length; i < length; i++) {
 					children.push(this.#create(i));
@@ -635,7 +515,7 @@ export class ArrayStore extends Store {
 			}
 			if (oldLength !== length) {
 				this.length = children.length;
-				markChange(this, 'children');
+				this.#children.set(children);
 			}
 
 		}
@@ -707,7 +587,7 @@ export class ArrayStore extends Store {
 		if (this.destroyed) { return false; }
 		const data = this.value;
 		if (!Array.isArray(data)) { return false; }
-		const children = this.#children;
+		const children = [...this.#children.get()];
 		const insertIndex = Math.max(0, Math.min(Math.floor(index), children.length));
 		const item = this.#create(insertIndex, isNew);
 		item.new = true;
@@ -725,7 +605,7 @@ export class ArrayStore extends Store {
 		}
 		this.value = val;
 		this.length = children.length;
-		markChange(this, 'children');
+		this.#children.set(children);
 		return true;
 	}
 	/**
@@ -734,7 +614,7 @@ export class ArrayStore extends Store {
 	 * @returns 
 	 */
 	add(value) {
-		return this.insert(this.#children.length, value);
+		return this.insert(this.#children.get().length, value);
 	}
 	/**
 	 * 
@@ -745,7 +625,7 @@ export class ArrayStore extends Store {
 		if (this.destroyed) { return; }
 		const data = this.value;
 		if (!Array.isArray(data)) { return; }
-		const children = this.#children;
+		const children = [...this.#children.get()];
 		const removeIndex = Math.max(0, Math.min(Math.floor(index), children.length));
 		const [item] = children.splice(removeIndex, 1);
 		if (!item) { return; }
@@ -763,7 +643,7 @@ export class ArrayStore extends Store {
 		}
 		this.value = val;
 		this.length = children.length;
-		markChange(this, 'children');
+		this.#children.set(children);
 		return value;
 
 	}
@@ -777,7 +657,7 @@ export class ArrayStore extends Store {
 		if (this.destroyed) { return false; }
 		const data = this.value;
 		if (!Array.isArray(data)) { return false; }
-		const children = this.#children;
+		const children = [...this.#children.get()];
 		const [item] = children.splice(from, 1);
 		if (!item) { return false; }
 		children.splice(to, 0, item);
@@ -801,7 +681,7 @@ export class ArrayStore extends Store {
 			this.state = sta;
 		}
 		this.value = val;
-		markChange(this, 'children');
+		this.#children.set(children);
 		return true;
 
 	}
@@ -815,7 +695,7 @@ export class ArrayStore extends Store {
 		if (this.destroyed) { return false; }
 		const data = this.value;
 		if (!Array.isArray(data)) { return false; }
-		const children = this.#children;
+		const children = [...this.#children.get()];
 		const aItem = children[a];
 		const bItem = children[b];
 		if (!aItem || !bItem) { return false; }
@@ -838,7 +718,7 @@ export class ArrayStore extends Store {
 			this.state = sta;
 		}
 		this.value = val;
-		markChange(this, 'children');
+		this.#children.set(children);
 		return true;
 	}
 }
