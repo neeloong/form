@@ -56,7 +56,7 @@
  * @returns {Component?}
  */
 /**
- * @typedef {(Schema.Object | Schema.Type) & Schema.Event & Schema.Attr} Schema.Field
+ * @typedef {(Schema.Object | Schema.Type) & Schema.Attr} Schema.Field
  */
 /**
  * @typedef {Record<string, Schema.Field>} Schema
@@ -88,19 +88,6 @@
  */
 
 /**
- * @typedef {object} Schema.Event
- * 
- * @property {Function?} [input]
- * @property {Function?} [change]
- * @property {Function?} [click]
- * @property {Function?} [focus]
- * @property {Function?} [blur]
- * 
- * @property {Function?} [add]
- * @property {Function?} [remove]
- * @property {Function?} [move]
- */
-/**
  * @typedef {object} Schema.Attr
  * @property {boolean} [immutable]
  * @property {boolean} [creatable]
@@ -109,60 +96,4 @@
  * @property {boolean | ((store: Store) => boolean)?} [required]
  * @property {boolean | ((store: Store) => boolean)?} [disabled]
  * @property {boolean | ((store: Store) => boolean)?} [readonly]
- * 
- * 
- * @property {any} [default] 默认值
- * @property {(Schema.Value.Group | Schema.Value | string | number)[]} [values] 可选值
- * @property {string} [label] 字段标签
- * @property {string} [description] 字段描述
- * @property {number} [min] 日期、时间、数字的最小值
- * @property {number} [max] 日期、时间、数字的最大值
- * @property {number} [step] 日期、时间、数字的步长
- * @property {number} [decimalDigits]
- * @property {RegExp} [regex] 字符串验证正则
- * @property {Filter[] | ((row: any, rowState: any, data: any, state: any) => Filter[])} [queryOptions]
- * @property {object | ((row: any, rowState: any, data: any, state: any) => object)} [findOptions]
- * 
- * @property {(data: any, state: any) => boolean} [addable] 对于数组，是否支持增加
- * @property {(data: any, state: any) => boolean} [deletable] 对于数组，是否支持删除
- * // TODO: 数组最小数量
- * // TODO: 数组最大数量
- * // TODO: 最小值、最大值、步长增加函数支持
- * 
- * 
- * @property {boolean} [nullable] 是否可为空
- * 
- * 
- * @property {Record<string, string>} [fieldMap]
- * @property {Record<string, any>} [fieldValues]
- * @property {string} [noField]
- * 
- * @property {string[]} [models]
- * @property {string} [model]
- * 
- * @property {string} [field]
- * @property {string[]} [fields]
- * 
- * @property {(number | bigint)[]} [workspaces]
- * 
- * @property {(number | bigint)[]} [roles]
- * @property {(number | bigint)[]} [users]
- * @property {(number | bigint)[]} [userGroups]
- * 
- * @property {(number | bigint)[]} [workgroups]
- * @property {(number | bigint)[]} [workgroupAncestors]
- * @property {(number | string)[]} [workgroupAncestorFields]
- * @property {(number | bigint)[]} [workgroupDescendants]
- * @property {(number | string)[]} [workgroupDescendantFields]
- * 
- * @property {string} [optionConstraintScript]
- * 
- * 
- * @property {string} [label]
- * @property {string} [description]
- * @property {string} [options]
- * 
- * @property {boolean} [translatable]
- * 
- * @property {boolean} [ignorePermissions]
  */

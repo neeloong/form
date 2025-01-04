@@ -1,13 +1,11 @@
-import EventEmitter from '../EventEmitter.mjs';
 import { Signal } from 'signal-polyfill';
 import { createBooleanStates } from './createBooleanStates.mjs';
 
 /** @import { Schema } from '../types.mjs' */
 /**
  * @template [T=any]
- * @extends {EventEmitter<Record<string, any[]>>}
  */
-export default class Store extends EventEmitter {
+export default class Store {
 	/**
 	 * @param {Schema} schema
 	 * @param {object} [options] 
@@ -44,7 +42,6 @@ export default class Store extends EventEmitter {
 		index, length, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
 	}) {
-		super();
 		this.schema = schema;
 		this.#stateSignal.set(typeof state === 'object' && state || {});
 		const parent = parentNode instanceof Store ? parentNode : null;
@@ -300,7 +297,6 @@ export default class Store extends EventEmitter {
 		}
 		this.#lastValue = val;
 		this.#lastState = sta;
-		this.emit('update', val, sta);
 		return [val, sta];
 
 	}
@@ -316,86 +312,6 @@ export default class Store extends EventEmitter {
 		}
 	}
 
-	/**
-	 * @param {T} v
-	 */
-	reset(v) {
-		if (this.#destroyed) { return; }
-		if (this.#parent) {
-			if (!this.#set) { return; }
-			this.#reset(this.#initValue);
-		} else if (arguments.length) {
-			this.#set = true;
-			this.#reset(v);
-		} else if (this.#set) {
-			this.#reset(this.#initValue);
-		}
-	}
-	/**
-	 * @param {T?} v
-	 */
-	#reset(v) {
-		if (this.#destroyed || !this.#set) { return; }
-		this.#valueSignal.set(v);
-		this.#lastValue = this.#initValue = v;
-		this.#set = true;
-		this.#needUpdate = false;
-		this.#lastValue = this.#valueSignal.get();
-		this.#lastState = this.#stateSignal.get();
-		const val = this.#valueSignal.get();
-		if (val && typeof val === 'object') {
-			for (const [key, field] of this) {
-				// @ts-ignore
-				field.#reset(val[key]);
-			}
-		}
-	}
-
-	async verify() {
-		return Promise.all([...this].map(([,field]) => {
-			/** @type {import('../types.mjs').VerifyError[]} */
-			const error = [];
-			/** @type {*} */
-			let promise
-			let done = false;
-			field.emit('verify', {
-				waitUntil(p) {
-					if (done) { return }
-					if (promise) { return }
-					promise = Promise.resolve().then(() => p).catch(() => {});
-				},
-				error(e) {
-					if (done) { return }
-					error.push(e)
-				}
-			});
-			return Promise.resolve()
-				.then(() => promise)
-				.catch(() => {})
-				.finally(() => {done = true})
-				.then(() => error);
-		})).then(v => v.flat());
-	}
-
-	/**
-	 * 
-	 * @param {...string | number | (string | number)[]} fields 
-	 */
-	refresh(...fields) {
-		const allFields = fields.flat()
-		if (!allFields.length) {
-			for (const [, field] of this) {
-				field.refresh();
-			}
-			this.emit('refresh');
-			return;
-		}
-		const [field, ...newFields] = allFields;
-		const child = this.child(field);
-		if (!child) { return; }
-		child.refresh(allFields);
-		this.emit('refresh', newFields);
-	}
 }
 
 
