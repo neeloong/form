@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "esnext",
+    "allowJs": true,
+    "checkJs": true,
+    "moduleResolution": "Bundler",
+    "outDir": "typings",
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+		"verbatimModuleSyntax": true,
+    "esModuleInterop": true
+  },
+  "locale": "zh-CN",
+  "include": ["src"],
+  "compileOnSave": true
+}

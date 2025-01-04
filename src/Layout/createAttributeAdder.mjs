@@ -1,0 +1,65 @@
+/** @import * as Layout from './index.mjs' */
+
+import ParseError from './ParseError.mjs';
+const attrPattern = /^(?<decorator>[:@!+*\.]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
+const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
+/**
+ * @param {Layout.Node} node
+ * @param {Exclude<Layout.Options['creteCalc'], undefined>} creteCalc
+ * @param {Exclude<Layout.Options['creteEvent'], undefined>} creteEvent
+ */
+export default function createAttributeAdder(node, creteCalc, creteEvent) {
+	const { attrs, directives, events, classes, styles, vars, aliases } = node;
+	/**
+	 * @param {string} qName
+	 * @param {string} value
+	 */
+	function addAttribute(qName, value) {
+		const attr = attrPattern.exec(qName
+			.replace(/．/g,'.')
+			.replace(/：/g,':')
+			.replace(/＠/g,'@')
+			.replace(/＋/g,'+')
+			.replace(/－/g,'-')
+			.replace(/[＊×]/g,'*')
+			.replace(/！/g, '!'))?.groups;
+		if (!attr) { throw new ParseError('ATTR', qName); }
+		const { name } = attr;
+		const decorator = attr.decorator?.toLowerCase();
+		if (!decorator) {
+			attrs[name] = value;
+		} else if (decorator === ':') {
+			attrs[name] = nameRegex.test(value) ? {name: value} : creteCalc(value);
+		} else if (decorator === '.') {
+			classes[name] = !value ? true : nameRegex.test(value) ? value : creteCalc(value);
+		} else if (decorator === 'style:') {
+			styles[name] = nameRegex.test(value) ? value : creteCalc(value);
+		} else if (decorator === '@') {
+			events[name] = nameRegex.test(value) ? value : creteEvent(value);
+		} else if (decorator === '+') {
+			vars[name] = !value ? '' : nameRegex.test(value) ? value : creteCalc(value);
+		} else if (decorator === '*') {
+			aliases[name] = nameRegex.test(value) ? value : creteEvent(value);
+		} else if (decorator === '!') {
+			const key = name.toString();
+			switch (key) {
+				case 'fragment':
+				case 'else':
+				case 'enum':
+					directives[key] = true;
+					break;
+				case 'if':
+				case 'text':
+				case 'html':
+					directives[key] = nameRegex.test(value) ? value : creteCalc(value);
+					break;
+				case 'bind':
+				case 'value':
+				case 'comment':
+					directives[key] = value;
+					break;
+			}
+		}
+	}
+	return addAttribute;
+}
