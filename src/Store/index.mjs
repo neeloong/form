@@ -43,7 +43,7 @@ export default class Store {
 		hidden, clearable, required, disabled, readonly,
 	}) {
 		this.schema = schema;
-		this.#stateSignal.set(typeof state === 'object' && state || {});
+		this.#state.set(typeof state === 'object' && state || {});
 		const parent = parentNode instanceof Store ? parentNode : null;
 		if (parent) {
 			this.#parent = parent;
@@ -193,44 +193,44 @@ export default class Store {
 	/** @type {T?} */
 	#initValue = null;
 	#lastValue = this.#initValue;
-	#valueSignal = new Signal.State(this.#initValue);
+	#value = new Signal.State(this.#initValue);
 
 	
-	#stateSignal = new Signal.State(/** @type {any} */(null));
-	#lastState = this.#stateSignal.get();
+	#state = new Signal.State(/** @type {any} */(null));
+	#lastState = this.#state.get();
 
 
-	get changed() { return this.#valueSignal.get() === this.#lastValue; }
-	get saved() { return this.#valueSignal.get() === this.#initValue; }
+	get changed() { return this.#value.get() === this.#lastValue; }
+	get saved() { return this.#value.get() === this.#initValue; }
 
-	get value() { return this.#valueSignal.get(); }
+	get value() { return this.#value.get(); }
 	set value(v) {
 		if (this.#destroyed) { return; }
 		const val = this.#setValue?.(v) || v;
-		this.#valueSignal.set(val);
+		this.#value.set(val);
 		if (!this.#set) {
 			this.#set = true;
 			this.#initValue = v;
 		}
-		this.#onUpdate?.(this.#valueSignal.get(), this.#index.get());
+		this.#onUpdate?.(this.#value.get(), this.#index.get());
 		this.#requestUpdate();
 	}
 
-	get state() { return this.#stateSignal.get(); }
+	get state() { return this.#state.get(); }
 	set state(v) {
 		if (this.#destroyed) { return; }
 		const sta = this.#setState?.(v) || v;
-		this.#stateSignal.set(sta);
+		this.#state.set(sta);
 		this.#set = true;
-		this.#onUpdateState?.(this.#stateSignal.get(), this.#index.get());
+		this.#onUpdateState?.(this.#state.get(), this.#index.get());
 		this.#requestUpdate();
 	}
 	#requestUpdate() {
 		if (this.#needUpdate) { return; }
 		this.#needUpdate = true;
 		queueMicrotask(() => {
-			const oldValue = this.#valueSignal.get();
-			const oldState = this.#stateSignal.get();
+			const oldValue = this.#value.get();
+			const oldState = this.#state.get();
 			return this.#runUpdate(oldValue, oldState);
 		});
 	}
@@ -246,9 +246,9 @@ export default class Store {
 	#toUpdate(value, state) {
 		if (this.#destroyed) { return value; }
 		const [val,sta] = this.#convert?.(value, state) || [value, state];
-		if(this.#valueSignal.get() === val && this.#stateSignal.get() === sta) { return [val,sta] }
-		this.#valueSignal.set(val);
-		this.#stateSignal.set(sta);
+		if(this.#value.get() === val && this.#state.get() === sta) { return [val,sta] }
+		this.#value.set(val);
+		this.#state.set(sta);
 		if (!this.#set) {
 			this.#set = true;
 			this.#initValue = val;
@@ -288,8 +288,8 @@ export default class Store {
 			if (updated) {
 				val = newValues;
 				sta = newStates;
-				this.#valueSignal.set(val);
-				this.#stateSignal.set(newStates);
+				this.#value.set(val);
+				this.#state.set(newStates);
 			}
 		}
 		if (this.#lastValue === val && this.#lastState === sta) {

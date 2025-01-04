@@ -1,5 +1,5 @@
 import Environment from './Environment.mjs';
-import watch from '../watch.mjs';
+import watch from './watch.mjs';
 
 /**
  * @param {Node} node

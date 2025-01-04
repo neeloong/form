@@ -1,13 +1,10 @@
-
 /** @import * as Layout from './index.mjs' */
+import createAttributeAdder from './createAttributeAdder.mjs';
+import createElement from './createElement.mjs';
 import entityMap from './entityMap.mjs';
-import LayoutNode from './LayoutNode.mjs';
 import ParseError from './ParseError.mjs';
 
 const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
-const attrPattern = /^(?<decorator>[:@!+*\.]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
-const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
-
 
 /**
  * 
@@ -47,25 +44,46 @@ function fixSelfClosed(source, elStartEnd, name, closeMap) {
 }
 
 /**
+ * @param {ConstructorParameters<typeof ParseError>} p 
+ */
+function error(...p) {
+	console.error(new ParseError(...p));
+}
+
+/**
+ *
+ * @param {string} a
+ * @returns {string}
+ */
+function entityReplacer(a) {
+	const k = a.slice(1, -1);
+	if (k.charAt(0) === '#') {
+		return String.fromCodePoint(parseInt(k.substring(1).replace('x', '0x')));
+	}
+	if (k in entityMap) { return entityMap[k]; }
+	error('ENTITY', a);
+	return a;
+}
+/**
  *
  * @param {string} source
  * @param {Layout.Options} [options]
  * @returns {(Layout.Node | string)[]}
  */
 export default function parse(source, {
-	creteCalc = () => { throw new ParseError('CALC') },
-	creteEvent = () => { throw new ParseError('EVENT') },
+	creteCalc = () => { throw new ParseError('CALC'); },
+	creteEvent = () => { throw new ParseError('EVENT'); },
 	simpleTag = new Set,
 } = {}) {
-	/** @type {(LayoutNode | string)[]} */
-	const list = [];
+	/** @type {(Layout.Node | string)[]} */
+	const children = [];
 
-	const doc = { children: list };
-	/** @type {(LayoutNode | null)[]} */
+	const doc = { children };
+	/** @type {(Layout.Node | null)[]} */
 	const stack = [];
-	/** @type {LayoutNode?} */
+	/** @type {Layout.Node?} */
 	let currentNode = null;
-	/** @type {typeof doc | LayoutNode} */
+	/** @type {typeof doc | Layout.Node} */
 	let current = doc;
 	function endElement() {
 		currentNode = stack.pop() || null;
@@ -81,65 +99,42 @@ export default function parse(source, {
 		if (!chars) { return; }
 		current.children.push(chars);
 	}
-	/**
-	 * @param {ConstructorParameters<typeof ParseError>} p 
-	 */
-	function error(...p) {
-		console.error(new ParseError(...p));
-	}
 
-
-	/**
-	 *
-	 * @param {string} a
-	 * @returns {string}
-	 */
-	function entityReplacer(a) {
-		const k = a.slice(1, -1);
-		if (k.charAt(0) === '#') {
-			return String.fromCodePoint(parseInt(k.substring(1).replace('x', '0x')));
-		}
-		if (k in entityMap) { return entityMap[k]; }
-		error('ENTITY', a);
-		return a;
-	}
+	let closeMap = {};
+	let index = 0;
 	/**
 	 * 
 	 * @param {number} end 
 	 */
 	function appendText(end) {
-		if (end > start) {
-			const xt = source.substring(start, end).replace(/&#?\w+;/g, entityReplacer);
-			characters(xt);
-			start = end;
-		}
+		if (end <= index) { return; }
+		const xt = source.substring(index, end).replace(/&#?\w+;/g, entityReplacer);
+		characters(xt);
+		index = end;
 	}
-	let closeMap = {};
-	let start = 0;
 	for (; ;) {
-		let end = 0;
-		let tagStart = source.indexOf('<', start);
+		const tagStart = source.indexOf('<', index);
 		if (tagStart < 0) {
-			const text = source.substring(start);
+			const text = source.substring(index);
 			if (!text.match(/^\s*$/)) {
 				characters(text);
 			}
 			break;
 		}
-		if (tagStart > start) {
+		if (tagStart > index) {
 			appendText(tagStart);
 		}
 		if (source.charAt(tagStart + 1) === '/') {
-			end = source.indexOf('>', tagStart + 3);
-			let name = source.substring(tagStart + 2, end);
-			if (end < 0) {
+			index = source.indexOf('>', tagStart + 3);
+			let name = source.substring(tagStart + 2, index);
+			if (index < 0) {
 				name = source.substring(tagStart + 2).replace(/[\s<].*/, '');
 				error('UNCOMPLETED', name, currentNode?.name);
-				end = tagStart + 1 + name.length;
+				index = tagStart + 1 + name.length;
 			} else if (name.match(/\s</)) {
 				name = name.replace(/[\s<].*/, '');
 				error('UNCOMPLETED', name);
-				end = tagStart + 1 + name.length;
+				index = tagStart + 1 + name.length;
 			}
 			if (currentNode) {
 				const currentName = currentNode.name;
@@ -151,161 +146,105 @@ export default function parse(source, {
 					throw new ParseError('CLOSE', name, currentNode.name);
 				}
 			}
-			end++;
-		} else {
-			end = tagStart + 1;
-			/**
-			 * 
-			 * @param {string} c 
-			 * @returns 
-			 */
-			function getQuote(c) {
-				let start = end + 1;
-				end = source.indexOf(c, start);
-				if (end < 0) { throw new ParseError('QUOTE', c); }
-				const value = source.slice(start, end).replace(/&#?\w+;/g, entityReplacer);
-				end++;
-				return value;
-			}
-			function skipSpace() {
-				let c = source.charAt(end);
-				for (; c <= ' ' || c === '\u0080'; c = source.charAt(++end)) { }
-				return c;
+			index++;
+			continue;
+		}
+		index = tagStart + 1;
+		/**
+		 * 
+		 * @param {string} c 
+		 * @returns 
+		 */
+		function getQuote(c) {
+			let start = index + 1;
+			index = source.indexOf(c, start);
+			if (index < 0) { throw new ParseError('QUOTE', c); }
+			const value = source.slice(start, index).replace(/&#?\w+;/g, entityReplacer);
+			index++;
+			return value;
+		}
+		function skipSpace() {
+			let c = source.charAt(index);
+			for (; c <= ' ' || c === '\u0080'; c = source.charAt(++index)) { }
+			return c;
 
+		}
+		function getId() {
+			let start = index;
+			let c = source.charAt(index);
+			while (isIdCode(c)) {
+				index++;
+				c = source.charAt(index);
 			}
-			function getId() {
-				let start = end;
-				let c = source.charAt(end);
-				while (isIdCode(c)) {
-					end++;
-					c = source.charAt(end);
-				}
-				return source.slice(start, end);
+			return source.slice(start, index);
+		}
+		let c = source.charAt(index);
+		switch (c) {
+			case '=': throw new ParseError('EQUAL');
+			case '"': case '\'': throw new ParseError('ATTR_VALUE');
+			case '>': case '/': throw new ParseError('SYMBOL', c);
+			case '': throw new ParseError('EOF');
+		}
+		const name = getId();
+		const tagRes = tagNamePattern.exec(name)?.groups;
+		if (!tagRes) { throw new ParseError('TAG', name); }
+		stack.push(currentNode);
+		currentNode = createElement(tagRes.name, tagRes.is);
+		current.children.push(currentNode);
+		current = currentNode;
+		const addAttribute = createAttributeAdder(currentNode, creteCalc, creteEvent);
+
+		let run = true;
+		let closed = false;
+		parseAttr: for (; run;) {
+			let c = skipSpace();
+			switch (c) {
+				case '': error('EOF'); index++; break parseAttr;
+				case '>': index++; break parseAttr;
+				case '/': closed = true; break parseAttr;
+				case '"': case '\'': throw new ParseError('ATTR_VALUE');
+				case '=': throw new ParseError('SYMBOL', c);
 			}
-			let c = source.charAt(end);
+			const id = getId();
+			if (!id) { error('EOF'); index++; break parseAttr; }
+			c = skipSpace();
+			switch (c) {
+				case '': error('EOF'); index++; break parseAttr;
+				case '>': addAttribute(id, ''); index++; break parseAttr;
+				case '/': addAttribute(id, ''); closed = true; break parseAttr;
+				case '=': index++; break;
+				case '\'': case '"': addAttribute(id, getQuote(c)); continue;
+				default: addAttribute(id, ''); continue;
+			}
+			c = skipSpace();
+			switch (c) {
+				case '': addAttribute(id, ''); error('EOF'); index++; break parseAttr;
+				case '>': addAttribute(id, ''); index++; break parseAttr;
+				case '/': addAttribute(id, ''); closed = true; break parseAttr;
+				case '\'': case '"': addAttribute(id, getQuote(c)); continue;
+			}
+			addAttribute(id, getId());
+		}
+		if (closed) {
+			while (true) {
+				index++;
+				const c = source.charAt(index);
+				if (c === '/') { continue; }
+				if (c <= ' ' || c === '\u0080') { continue; }
+				break;
+			}
+			const c = source.charAt(index);
 			switch (c) {
 				case '=': throw new ParseError('EQUAL');
-				case '"': case '\'': throw new ParseError('ATTR_VALUE');
-				case '>': case '/': throw new ParseError('SYMBOL', c);
-				case '': throw new ParseError('EOF');
+				case '"': case '\'': throw new ParseError('ATTR_VALUE'); // No known test case
+				case '': error('EOF'); break;
+				case '>': index++; break;
+				default: throw new ParseError('CLOSE_SYMBOL');
 			}
-			const name = getId();
-			const tagRes = tagNamePattern.exec(name)?.groups;
-			if (!tagRes) { throw new ParseError('TAG', name); }
-			stack.push(currentNode);
-			currentNode = new LayoutNode(tagRes.name, tagRes.is);
-			current.children.push(currentNode);
-			current = currentNode;
-			const { attrs, directives, events, classes, styles, vars, aliases } = currentNode;
-			/**
-			 * @param {string} qName
-			 * @param {string} value
-			 */
-			function addAttribute(qName, value) {
-				const attr = attrPattern.exec(qName
-					.replace(/．/g,'.')
-					.replace(/：/g,':')
-					.replace(/＠/g,'@')
-					.replace(/＋/g,'+')
-					.replace(/－/g,'-')
-					.replace(/[＊×]/g,'*')
-					.replace(/！/g, '!'))?.groups;
-				if (!attr) { throw new ParseError('ATTR', qName); }
-				const { name } = attr;
-				const decorator = attr.decorator?.toLowerCase();
-				if (!decorator) {
-					attrs[name] = value;
-				} else if (decorator === ':') {
-					attrs[name] = nameRegex.test(value) ? {name: value} : creteCalc(value);
-				} else if (decorator === '.') {
-					classes[name] = !value ? true : nameRegex.test(value) ? value : creteCalc(value);
-				} else if (decorator === 'style:') {
-					styles[name] = nameRegex.test(value) ? value : creteCalc(value);
-				} else if (decorator === '@') {
-					events[name] = nameRegex.test(value) ? value : creteEvent(value);
-				} else if (decorator === '+') {
-					vars[name] = !value ? '' : nameRegex.test(value) ? value : creteCalc(value);
-				} else if (decorator === '*') {
-					aliases[name] = nameRegex.test(value) ? value : creteEvent(value);
-				} else if (decorator === '!') {
-					const key = name.toString();
-					switch (key) {
-						case 'fragment':
-						case 'else':
-						case 'enum':
-							directives[key] = true;
-							break;
-						case 'if':
-						case 'text':
-						case 'html':
-							directives[key] = nameRegex.test(value) ? value : creteCalc(value);
-							break;
-						case 'bind':
-						case 'value':
-						case 'comment':
-							directives[key] = value;
-							break;
-					}
-				}
-			}
-			let run = true;
-			let closed = false;
-			parseAttr: for (; run;) {
-				let c = skipSpace();
-				switch (c) {
-					case '': error('EOF'); end++; break parseAttr;
-					case '>': end++; break parseAttr;
-					case '/': closed = true; break parseAttr;
-					case '"': case '\'': throw new ParseError('ATTR_VALUE');
-					case '=': throw new ParseError('SYMBOL', c);
-				}
-				const id = getId();
-				if (!id) { error('EOF'); end++; break parseAttr; }
-				c = skipSpace();
-				switch (c) {
-					case '': error('EOF'); end++; break parseAttr;
-					case '>': addAttribute(id, ''); end++; break parseAttr;
-					case '/': addAttribute(id, ''); closed = true; break parseAttr;
-					case '=': end++; break;
-					case '\'': case '"': addAttribute(id, getQuote(c)); continue;
-					default: addAttribute(id, ''); continue;
-				}
-				c = skipSpace();
-				switch (c) {
-					case '': addAttribute(id, ''); error('EOF'); end++; break parseAttr;
-					case '>': addAttribute(id, ''); end++; break parseAttr;
-					case '/': addAttribute(id, ''); closed = true; break parseAttr;
-					case '\'': case '"': addAttribute(id, getQuote(c)); continue;
-				}
-				addAttribute(id, getId());
-			}
-			if (closed) {
-				while (true) {
-					end++;
-					const c = source.charAt(end);
-					if (c === '/') { continue; }
-					if (c <= ' ' || c === '\u0080') { continue; }
-					break;
-				}
-				const c = source.charAt(end);
-				switch (c) {
-					case '=': throw new ParseError('EQUAL');
-					case '"': case '\'': throw new ParseError('ATTR_VALUE'); // No known test case
-					case '': error('EOF'); break;
-					case '>': end++; break;
-					default: throw new ParseError('CLOSE_SYMBOL');
-				}
-				endElement();
-			} else if (simpleTag.has(name) || fixSelfClosed(source, end, name, closeMap)) {
-				endElement();
-			}
-
-		}
-		if (end > start) {
-			start = end;
-		} else {
-			appendText(Math.max(tagStart, start) + 1);
+			endElement();
+		} else if (simpleTag.has(name) || fixSelfClosed(source, index, name, closeMap)) {
+			endElement();
 		}
 	}
-	return list;
+	return children;
 }

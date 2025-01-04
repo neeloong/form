@@ -1,7 +1,7 @@
 /** @import { Component } from '../types.mjs' */
 /** @import Environment from './Environment.mjs' */
 
-import EventEmitter from '../EventEmitter.mjs';
+import EventEmitter from './EventEmitter.mjs';
 
 /** @type {Record<string, (evt: any, param: string[], global: any) => boolean | null | void>} */
 const eventFilters = {

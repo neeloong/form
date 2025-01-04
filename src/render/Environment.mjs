@@ -1,6 +1,6 @@
 import { Signal } from 'signal-polyfill';
 import Store, { ArrayStore } from '../Store/index.mjs';
-import watch from '../watch.mjs';
+import watch from './watch.mjs';
 
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; store?: Store; calc?: null; }} ValueDefine */
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
