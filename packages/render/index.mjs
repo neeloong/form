@@ -135,9 +135,11 @@ function render(layout, parent, next, store, env, componentPath, getComponent) {
  * @param {Store} store
  * @param {(Layout.Node | string)[]} layouts 
  * @param {Element} parent 
- * @param {...((path: string[]) => Component?) | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} options 
+ * @param {((path: string[]) => Component?) | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt1] 
+ * @param {((path: string[]) => Component?) | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt2] 
  */
-export default function (store, layouts, parent, ...options) {
+export default function (store, layouts, parent, opt1, opt2) {
+	const options = [opt1, opt2];
 	const components = options.find(v => typeof v === 'function')
 	const global = options.find(v => typeof v === 'object');
 	const env = new Environment(global).setValue(store);

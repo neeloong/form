@@ -1,5 +1,5 @@
-import { Store, Layout, render } from '../src/index.mjs';
-/** @import { Schema } from '../src/types.mjs'; */
+import { Store, Layout, render } from '@neeloong/form';
+/** @import { Schema } from '@neeloong/form'; */
 /**
  * @type {Schema}
  */
