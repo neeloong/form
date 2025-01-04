@@ -104,3 +104,15 @@ await fsPromise.writeFile(`dist/package.json`, JSON.stringify({
 		},
 	},
 }, null, 2));
+
+console.log('复制文件...');
+for (const file of await fsPromise.readdir('.', 'utf-8')) {
+	if (/^(README|LICENSE)(\..+)?$/.test(file)) {
+		console.log(`  ${file}...`);
+		await fsPromise.writeFile(
+			pathFn.resolve('dist', file),
+			await fsPromise.readFile(file),
+		);
+	}
+}
+console.log('完成');
