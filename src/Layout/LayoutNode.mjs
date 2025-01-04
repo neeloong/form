@@ -1,7 +1,7 @@
 
 /** @import { Directives, Node } from './index.mjs' */
 
-import { nodeToString } from './toString.mjs';
+import { nodeToString } from './stringify.mjs';
 
 /**
  * @implements {Node}

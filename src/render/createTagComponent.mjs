@@ -29,7 +29,7 @@ function toAttrValue(val) {
  */
 function toText(val) {
 	if ((val ?? null) === null) {
-		return "";
+		return '';
 	}
 	return String(val);
 }

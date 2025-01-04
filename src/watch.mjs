@@ -1,4 +1,4 @@
-import { Signal } from "signal-polyfill";
+import { Signal } from 'signal-polyfill';
 
 let needsEnqueue = true;
 

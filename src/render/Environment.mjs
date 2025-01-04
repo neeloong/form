@@ -2,7 +2,7 @@ import { Signal } from 'signal-polyfill';
 import Store, { ArrayStore } from '../Store/index.mjs';
 import watch from '../watch.mjs';
 
-/** @typedef {{get(): any; set?(v: any): void; exec?: null; value?: Store; calc?: null; }} ValueDefine */
+/** @typedef {{get(): any; set?(v: any): void; exec?: null; store?: Store; calc?: null; }} ValueDefine */
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
 /** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
 /**
@@ -12,7 +12,7 @@ import watch from '../watch.mjs';
  * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
  */
 function *toItem(val, key = '', sign = '$') {
-	yield [`${key}`, {get: () => val.value, set: v => val.value = v, value: val}]
+	yield [`${key}`, {get: () => val.value, set: v => val.value = v, store: val}]
 	yield [`${key}${sign}value`, {get: () => val.value, set: v => val.value = v}]
 	yield [`${key}${sign}state`, {get: () => val.state, set: v => val.state = v}]
 	yield [`${key}${sign}null`, {get: () => val.null}]
@@ -102,16 +102,16 @@ export default class Environment {
 	bind(name, type, cb) {
 		const item = this.#items[name];
 		if (!item?.get) { return; }
-		const {value} = item;
-		if (!value) { return; }
+		const { store } = item;
+		if (!store) { return; }
 		switch(type) {
-			case 'value': return watch(() => value.value, cb);
-			case 'state': return watch(() => value.state, cb);
-			case 'required': return watch(() => value.required, cb);
-			case 'clearable': return watch(() => value.clearable, cb);
-			case 'hidden': return watch(() => value.hidden, cb);
-			case 'disabled': return watch(() => value.disabled, cb);
-			case 'readonly': return watch(() => value.readonly || !value.editable, cb);
+			case 'value': return watch(() => store.value, cb);
+			case 'state': return watch(() => store.state, cb);
+			case 'required': return watch(() => store.required, cb);
+			case 'clearable': return watch(() => store.clearable, cb);
+			case 'hidden': return watch(() => store.hidden, cb);
+			case 'disabled': return watch(() => store.disabled, cb);
+			case 'readonly': return watch(() => store.readonly || !store.editable, cb);
 		}
 	}
 	/**
@@ -121,20 +121,20 @@ export default class Environment {
 	bindAll(name) {
 		const item = this.#items[name];
 		if (!item?.get) { return; }
-		const {value} = item;
-		if (!value) {
+		const { store } = item;
+		if (!store) {
 			const get = item.get;
 			if (typeof get !== 'function') { return; }
 			return { '$value': cb => watch(get, cb) }
 		}
 		return {
-			'$value': cb => watch(() => value.value, cb),
-			'$state': cb => watch(() => value.state, cb),
-			'$required': cb => watch(() => value.required, cb),
-			'$clearable': cb => watch(() => value.clearable, cb),
-			'$hidden': cb => watch(() => value.hidden, cb),
-			'$disabled': cb => watch(() => value.disabled, cb),
-			'$readonly': cb => watch(() => value.readonly || !value.editable, cb),
+			'$value': cb => watch(() => store.value, cb),
+			'$state': cb => watch(() => store.state, cb),
+			'$required': cb => watch(() => store.required, cb),
+			'$clearable': cb => watch(() => store.clearable, cb),
+			'$hidden': cb => watch(() => store.hidden, cb),
+			'$disabled': cb => watch(() => store.disabled, cb),
+			'$readonly': cb => watch(() => store.readonly || !store.editable, cb),
 		}
 	}
 	/**
@@ -145,11 +145,11 @@ export default class Environment {
 	bindSet(name, type) {
 		const item = this.#items[name];
 		if (!item?.get) { return; }
-		const {value} = item;
-		if (!value) { return; }
+		const { store } = item;
+		if (!store) { return; }
 		switch(type) {
-			case 'value': return v => {value.value = v; };
-			case 'state': return v => {value.state = v; };
+			case 'value': return v => {store.value = v; };
+			case 'state': return v => {store.state = v; };
 		}
 	}
 	/**
@@ -159,15 +159,15 @@ export default class Environment {
 	bindStateAllSet(name) {
 		const item = this.#items[name];
 		if (!item?.get) { return; }
-		const {value} = item;
-		if (!value) { 
+		const { store } = item;
+		if (!store) { 
 			const set = item.set;
 			if (typeof set !== 'function') { return; }
 			return { '$value': set }
 		 }
 		return {
-			'$value': v => {value.value = v; },
-			'$state': v => {value.state = v; },
+			'$value': v => {store.value = v; },
+			'$state': v => {store.state = v; },
 		}
 	}
 
@@ -312,11 +312,11 @@ export default class Environment {
 			}
 			const item = items[name];
 			if (!item) { continue; }
-			if (!item.get || !item.value) {
+			if (!item.get || !item.store) {
 				explicit[key] = items[key] = item;
 				continue;
 			}
-			for (const [k, it] of toItem(item.value, key)) {
+			for (const [k, it] of toItem(item.store, key)) {
 				explicit[k] = items[k] = it;
 			}
 		}

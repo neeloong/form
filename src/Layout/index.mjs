@@ -1,5 +1,5 @@
 export { default as parse } from './parse.mjs';
-export { default as toString } from './toString.mjs';
+export { default as stringify } from './stringify.mjs';
 
 
 /**

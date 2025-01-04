@@ -104,11 +104,11 @@
  * @typedef {object} Schema.Attr
  * @property {boolean} [immutable]
  * @property {boolean} [creatable]
- * @property {boolean | ((value: Store) => boolean)?} [hidden]
- * @property {boolean | ((value: Store) => boolean)?} [clearable]
- * @property {boolean | ((value: Store) => boolean)?} [required]
- * @property {boolean | ((value: Store) => boolean)?} [disabled]
- * @property {boolean | ((value: Store) => boolean)?} [readonly]
+ * @property {boolean | ((store: Store) => boolean)?} [hidden]
+ * @property {boolean | ((store: Store) => boolean)?} [clearable]
+ * @property {boolean | ((store: Store) => boolean)?} [required]
+ * @property {boolean | ((store: Store) => boolean)?} [disabled]
+ * @property {boolean | ((store: Store) => boolean)?} [readonly]
  * 
  * 
  * @property {any} [default] 默认值

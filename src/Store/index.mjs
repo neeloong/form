@@ -1,5 +1,5 @@
 import EventEmitter from '../EventEmitter.mjs';
-import { Signal } from "signal-polyfill";
+import { Signal } from 'signal-polyfill';
 import { createBooleanStates } from './createBooleanStates.mjs';
 
 /** @import { Schema } from '../types.mjs' */
@@ -9,7 +9,7 @@ import { createBooleanStates } from './createBooleanStates.mjs';
  */
 export default class Store extends EventEmitter {
 	/**
-	 * @param {Record<string, Schema.Field>} schema
+	 * @param {Schema} schema
 	 * @param {object} [options] 
 	 * @param {boolean} [options.new] 
 	 */
@@ -411,7 +411,7 @@ export class ObjectStore extends Store {
 	 */
 	child(key) { return this.#children[key] || null; }
 	/**
-	 * @param {Schema.Object & Schema.Event & Schema.Attr} schema
+	 * @param {Schema.Field} schema
 	 * @param {object} [options] 
 	 * @param {Store?} [options.parent] 
 	 * @param {string | number} [options.index] 

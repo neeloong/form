@@ -7,7 +7,7 @@ import Environment from './Environment.mjs';
  */
 function toText(val) {
 	if ((val ?? null) === null) {
-		return "";
+		return '';
 	}
 	return String(val);
 }

@@ -2,6 +2,7 @@
 /** @import * as Layout from './index.mjs' */
 import entityMap from './entityMap.mjs';
 import LayoutNode from './LayoutNode.mjs';
+import ParseError from './ParseError.mjs';
 
 const tagNamePattern = /^(?<name>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_:]*)(?:|(?<is>[\w\p{Unified_Ideograph}_][-\.\|:|d\w\p{Unified_Ideograph}_]*))?$/u;
 const attrPattern = /^(?<decorator>[:@!+*\.]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
@@ -52,8 +53,8 @@ function fixSelfClosed(source, elStartEnd, name, closeMap) {
  * @returns {(Layout.Node | string)[]}
  */
 export default function parse(source, {
-	creteCalc = () => { throw new Error('无 creteCalc 选项,不支持表达式解析') },
-	creteEvent = () => { throw new Error('无 creteEvent 选项,不支持事件解析') },
+	creteCalc = () => { throw new ParseError('CALC') },
+	creteEvent = () => { throw new ParseError('EVENT') },
 	simpleTag = new Set,
 } = {}) {
 	/** @type {(LayoutNode | string)[]} */
@@ -81,11 +82,10 @@ export default function parse(source, {
 		current.children.push(chars);
 	}
 	/**
-	 * 
-	 * @param {string} error 
+	 * @param {ConstructorParameters<typeof ParseError>} p 
 	 */
-	function error(error) {
-		console.error('[xmldom error]\t' + error);
+	function error(...p) {
+		console.error(new ParseError(...p));
 	}
 
 
@@ -100,7 +100,7 @@ export default function parse(source, {
 			return String.fromCodePoint(parseInt(k.substring(1).replace('x', '0x')));
 		}
 		if (k in entityMap) { return entityMap[k]; }
-		error('entity not found:' + a);
+		error('ENTITY', a);
 		return a;
 	}
 	/**
@@ -134,11 +134,11 @@ export default function parse(source, {
 			let name = source.substring(tagStart + 2, end);
 			if (end < 0) {
 				name = source.substring(tagStart + 2).replace(/[\s<].*/, '');
-				error("end tag name: " + name + ' is not complete:' + currentNode?.name);
+				error('UNCOMPLETED', name, currentNode?.name);
 				end = tagStart + 1 + name.length;
 			} else if (name.match(/\s</)) {
 				name = name.replace(/[\s<].*/, '');
-				error("end tag name: " + name + ' maybe not complete');
+				error('UNCOMPLETED', name);
 				end = tagStart + 1 + name.length;
 			}
 			if (currentNode) {
@@ -147,7 +147,8 @@ export default function parse(source, {
 					endElement();
 				} else if (currentName.toLowerCase() == name.toLowerCase()) {
 					endElement();
-					throw new Error("end tag name: " + name + ' is not match the current start tagName:' + currentNode.name);
+				} else {
+					throw new ParseError('CLOSE', name, currentNode.name);
 				}
 			}
 			end++;
@@ -158,10 +159,10 @@ export default function parse(source, {
 			 * @param {string} c 
 			 * @returns 
 			 */
-			function getQu(c) {
+			function getQuote(c) {
 				let start = end + 1;
 				end = source.indexOf(c, start);
-				if (end < 0) { throw new Error('attribute value no end \'' + c + '\' match'); }
+				if (end < 0) { throw new ParseError('QUOTE', c); }
 				const value = source.slice(start, end).replace(/&#?\w+;/g, entityReplacer);
 				end++;
 				return value;
@@ -183,14 +184,14 @@ export default function parse(source, {
 			}
 			let c = source.charAt(end);
 			switch (c) {
-				case '=': throw new Error('attribute equal must after attrName');
-				case '"': case '\'': throw new Error('attribute value must after "="');
-				case '=': case '>': case '/': throw new Error(`意外的 "${c}"`);
-				case '': throw new Error('意外的文件结束');
+				case '=': throw new ParseError('EQUAL');
+				case '"': case '\'': throw new ParseError('ATTR_VALUE');
+				case '>': case '/': throw new ParseError('SYMBOL', c);
+				case '': throw new ParseError('EOF');
 			}
 			const name = getId();
 			const tagRes = tagNamePattern.exec(name)?.groups;
-			if (!tagRes) { throw new Error('invalid tagName:' + name); }
+			if (!tagRes) { throw new ParseError('TAG', name); }
 			stack.push(currentNode);
 			currentNode = new LayoutNode(tagRes.name, tagRes.is);
 			current.children.push(currentNode);
@@ -209,7 +210,7 @@ export default function parse(source, {
 					.replace(/－/g,'-')
 					.replace(/[＊×]/g,'*')
 					.replace(/！/g, '!'))?.groups;
-				if (!attr) { throw new Error('无效的属性:' + qName); }
+				if (!attr) { throw new ParseError('ATTR', qName); }
 				const { name } = attr;
 				const decorator = attr.decorator?.toLowerCase();
 				if (!decorator) {
@@ -252,29 +253,29 @@ export default function parse(source, {
 			parseAttr: for (; run;) {
 				let c = skipSpace();
 				switch (c) {
-					case '': error('意外的文件结束'); end++; break parseAttr;
+					case '': error('EOF'); end++; break parseAttr;
 					case '>': end++; break parseAttr;
 					case '/': closed = true; break parseAttr;
-					case '"': case '\'': throw new Error('attribute value must after "="');
-					case '=': throw new Error(`意外的 "${c}"`);
+					case '"': case '\'': throw new ParseError('ATTR_VALUE');
+					case '=': throw new ParseError('SYMBOL', c);
 				}
 				const id = getId();
-				if (!id) { error('意外的文件结束'); end++; break parseAttr; }
+				if (!id) { error('EOF'); end++; break parseAttr; }
 				c = skipSpace();
 				switch (c) {
-					case '': error('意外的文件结束'); end++; break parseAttr;
+					case '': error('EOF'); end++; break parseAttr;
 					case '>': addAttribute(id, ''); end++; break parseAttr;
 					case '/': addAttribute(id, ''); closed = true; break parseAttr;
 					case '=': end++; break;
-					case '\'': case '"': addAttribute(id, getQu(c)); continue;
+					case '\'': case '"': addAttribute(id, getQuote(c)); continue;
 					default: addAttribute(id, ''); continue;
 				}
 				c = skipSpace();
 				switch (c) {
-					case '': addAttribute(id, ''); error('意外的文件结束'); end++; break parseAttr;
+					case '': addAttribute(id, ''); error('EOF'); end++; break parseAttr;
 					case '>': addAttribute(id, ''); end++; break parseAttr;
 					case '/': addAttribute(id, ''); closed = true; break parseAttr;
-					case '\'': case '"': addAttribute(id, getQu(c)); continue;
+					case '\'': case '"': addAttribute(id, getQuote(c)); continue;
 				}
 				addAttribute(id, getId());
 			}
@@ -288,11 +289,11 @@ export default function parse(source, {
 				}
 				const c = source.charAt(end);
 				switch (c) {
-					case '=': throw new Error('attribute equal must after attrName');
-					case '"': case '\'': throw new Error('attribute value must after "="'); // No known test case
-					case '': error('意外的文件结束'); break;
+					case '=': throw new ParseError('EQUAL');
+					case '"': case '\'': throw new ParseError('ATTR_VALUE'); // No known test case
+					case '': error('EOF'); break;
 					case '>': end++; break;
-					default: throw new Error("elements closed character '/' and '>' must be connected to");
+					default: throw new ParseError('CLOSE_SYMBOL');
 				}
 				endElement();
 			} else if (simpleTag.has(name) || fixSelfClosed(source, end, name, closeMap)) {
