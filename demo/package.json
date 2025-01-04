@@ -1,5 +1,0 @@
-{
-	"dependencies": {
-		"@neeloong/form": "workspace:../packages"
-	}
-}

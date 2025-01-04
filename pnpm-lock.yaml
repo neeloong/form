@@ -31,13 +31,13 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
 
-  demo:
+  src: {}
+
+  test:
     dependencies:
       '@neeloong/form':
-        specifier: workspace:../packages
-        version: link:../packages
-
-  packages: {}
+        specifier: workspace:../src
+        version: link:../src
 
 packages:
 

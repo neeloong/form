@@ -329,7 +329,7 @@ export default class Environment {
 				val.set(v(settable));
 			} else if (v && typeof v === 'string') {
 				const item = items[v];
-				if (!item.get) { continue }
+				if (!item?.get) { continue }
 				val.set(item.get());
 			}
 			explicit[k] = items[k] = {

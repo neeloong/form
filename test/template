@@ -1,5 +1,5 @@
+<input !value="int" !bind="$value" />
 <ul +a=1 +x=0>
-	<input !value="int" !bind="$value" />
 	<li !value="a" !enum>
 		<input !bind="b" />
 		<ul>
@@ -24,8 +24,8 @@
 		</ul>
 	</li>
 </ul>
+<input !value=int !bind="$value" />
 <ul>
-	<input !value=int !bind="$value" />
 	<li !value="a" !enum>
 		<input !value="b" !bind="$value" />
 		<ul>

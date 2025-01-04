@@ -16,6 +16,6 @@
     "esModuleInterop": true
   },
   "locale": "zh-CN",
-  "include": ["packages"],
+  "include": ["src"],
   "compileOnSave": true
 }

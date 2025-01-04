@@ -34,10 +34,10 @@ fetch('./template').then(v => v.text()).then(template => {
 	console.log(Layout.stringify(layouts, true))
 	console.log(Layout.stringify(layouts))
 
-	const data = Store.create(schema);
-	data.value = defaultValue
+	const store = Store.create(schema);
+	store.value = defaultValue
 	setTimeout(() => {
-		const it = data.child('a')?.child(0)?.child('c')?.child(0);
+		const it = store.child('a')?.child(0)?.child('c')?.child(0);
 		if (it)
 		setInterval(() => {
 			it.value= {d:Math.random()};
@@ -47,5 +47,5 @@ fetch('./template').then(v => v.text()).then(template => {
 	/** @type {Element} */
 	// @ts-ignore
 	const app = document.querySelector('#app');
-	render(data, layouts, app);
+	render(store, layouts, app);
 })
