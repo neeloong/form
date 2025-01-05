@@ -88,6 +88,14 @@ const tagBindMap = {
 	input: {
 		attrs: {
 			/** @param {any} v @param {HTMLInputElement} e */
+			$min: (v, e) => {e.min = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$max: (v, e) => {e.max = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$step: (v, e) => {e.step = v},
+			/** @param {any} v @param {HTMLInputElement} e */
+			$placeholder: (v, e) => {e.placeholder = v},
+			/** @param {any} v @param {HTMLInputElement} e */
 			$disabled: (v, e) => {e.disabled = v},
 			/** @param {any} v @param {HTMLInputElement} e */
 			$readonly: (v, e) => {e.readOnly = v},
@@ -119,13 +127,15 @@ const tagBindMap = {
 	},
 	textarea: {
 		attrs: {
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLTextAreaElement} e */
+			$placeholder: (v, e) => {e.placeholder = v},
+			/** @param {any} v @param {HTMLTextAreaElement} e */
 			$disabled: (v, e) => {e.disabled = v},
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLTextAreaElement} e */
 			$readonly: (v, e) => {e.readOnly = v},
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLTextAreaElement} e */
 			$required: (v, e) => {e.required = v},
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLTextAreaElement} e */
 			$value: (v, e) => { e.value = toText(v); },
 		},
 		events: {
@@ -134,13 +144,11 @@ const tagBindMap = {
 	},
 	select: {
 		attrs: {
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLSelectElement} e */
 			$disabled: (v, e) => {e.disabled = v},
-			/** @param {any} v @param {HTMLInputElement} e */
-			$readonly: (v, e) => {e.readOnly = v},
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLSelectElement} e */
 			$required: (v, e) => {e.required = v},
-			/** @param {any} v @param {HTMLInputElement} e */
+			/** @param {any} v @param {HTMLSelectElement} e */
 			$value: (v, e) => { e.value = toText(v); },
 		},
 		events: {

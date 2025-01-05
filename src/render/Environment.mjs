@@ -2,6 +2,26 @@ import { Signal } from 'signal-polyfill';
 import Store, { ArrayStore } from '../Store/index.mjs';
 import watch from './watch.mjs';
 
+const bindable = {
+	new: true,
+	readonly: true,
+
+	required: true,
+	clearable: true,
+	hidden: true,
+	disabled: true,
+
+	label: true,
+	description: true,
+	placeholder: true,
+	min: true,
+	max: true,
+	step: true,
+	values: true,
+}
+/** @type {Set<keyof typeof bindable>} */
+// @ts-ignore
+const bindableSet = new Set(Object.keys(bindable));
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; store?: Store; calc?: null; }} ValueDefine */
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
 /** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
@@ -21,13 +41,12 @@ function *toItem(val, key = '', sign = '$') {
 	yield [`${key}${sign}length`, {get: () => val.length}]
 	yield [`${key}${sign}creatable`, {get: () => val.creatable}]
 	yield [`${key}${sign}immutable`, {get: () => val.immutable}]
-	yield [`${key}${sign}new`, {get: () => val.new}]
-	yield [`${key}${sign}editable`, {get: () => val.editable}]
-	yield [`${key}${sign}hidden`, {get: () => val.hidden}]
-	yield [`${key}${sign}clearable`, {get: () => val.clearable}]
-	yield [`${key}${sign}required`, {get: () => val.required}]
-	yield [`${key}${sign}disabled`, {get: () => val.disabled}]
-	yield [`${key}${sign}readonly`, {get: () => val.readonly}]
+
+	yield [`${key}${sign}schema`, {get: () => val.schema}]
+
+	for (const k of bindableSet) {
+		yield [`${key}${sign}${k}`, {get: () => val[k]}];
+	}
 	if (!(val instanceof ArrayStore)) { return; }
 	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
 	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
@@ -107,11 +126,11 @@ export default class Environment {
 		switch(type) {
 			case 'value': return watch(() => store.value, cb);
 			case 'state': return watch(() => store.state, cb);
-			case 'required': return watch(() => store.required, cb);
-			case 'clearable': return watch(() => store.clearable, cb);
-			case 'hidden': return watch(() => store.hidden, cb);
-			case 'disabled': return watch(() => store.disabled, cb);
-			case 'readonly': return watch(() => store.readonly || !store.editable, cb);
+		}
+		// @ts-ignore
+		if (bindableSet.has(type)) {
+			// @ts-ignore
+			return watch(() => store[type], cb);
 		}
 	}
 	/**
@@ -127,15 +146,13 @@ export default class Environment {
 			if (typeof get !== 'function') { return; }
 			return { '$value': cb => watch(get, cb) }
 		}
-		return {
-			'$value': cb => watch(() => store.value, cb),
-			'$state': cb => watch(() => store.state, cb),
-			'$required': cb => watch(() => store.required, cb),
-			'$clearable': cb => watch(() => store.clearable, cb),
-			'$hidden': cb => watch(() => store.hidden, cb),
-			'$disabled': cb => watch(() => store.disabled, cb),
-			'$readonly': cb => watch(() => store.readonly || !store.editable, cb),
-		}
+		/** @type {Record<string, ((cb: (value: any) => void) => () => void) | void> | void} */
+		const res = Object.fromEntries([...bindableSet].map(v => [
+			`$${v}`, cb => watch(() => store[v], cb)
+		]));
+		res.$value = cb => watch(() => store.value, cb);
+		res.$state = cb => watch(() => store.state, cb);
+		return res;
 	}
 	/**
 	 * @param {string} name

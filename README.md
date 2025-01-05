@@ -181,13 +181,20 @@ render(store, layouts, app);
    - `$length` 只读属性
    - `$creatable` 只读属性
    - `$immutable` 只读属性
+   - `$schema` 只读属性
    - `$new` 只读属性
-   - `$editable` 只读属性
+   - `$readonly` 只读属性
    - `$hidden` 只读属性
    - `$clearable` 只读属性
    - `$required` 只读属性
    - `$disabled` 只读属性
-   - `$readonly` 只读属性
+   - `$label` 只读属性
+   - `$description` 只读属性
+   - `$placeholder` 只读属性
+   - `$min` 只读属性
+   - `$max` 只读属性
+   - `$step` 只读属性
+   - `$values` 只读属性
 1. 数组字段扩展隐式函数（只在事件中可用）
    - `$insert(index, value)`
    - `$add(value)`

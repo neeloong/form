@@ -1,6 +1,7 @@
 import { Signal } from 'signal-polyfill';
 import { createBooleanStates } from './createBooleanStates.mjs';
-
+import * as toValues from './toValues.mjs';
+import createState from './createState.mjs';
 /** @import { Schema } from '../types.mjs' */
 /**
  * @template [T=any]
@@ -30,6 +31,15 @@ export default class Store {
 	 * @param {boolean} [options.required] 
 	 * @param {boolean} [options.readonly] 
 	 * @param {boolean} [options.disabled] 
+	 * 
+	 * @param {string} [options.label] 字段标签
+	 * @param {string} [options.description] 字段描述
+	 * @param {string} [options.placeholder] 占位符
+	 * @param {number} [options.min] 日期、时间、数字的最小值
+	 * @param {number} [options.max] 日期、时间、数字的最大值
+	 * @param {number} [options.step] 日期、时间、数字的步长
+	 * @param {(Schema.Value.Group | Schema.Value | string | number)[]} [options.values] 可选值
+	 * 
 	 * @param {((value: any) => any)?} [options.setValue] 
 	 * @param {((value: any) => any)?} [options.setState] 
 	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
@@ -41,6 +51,7 @@ export default class Store {
 		setValue, setState, convert, onUpdate, onUpdateState,
 		index, length, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
+		label, description, placeholder, min, max, step, values
 	}) {
 		this.schema = schema;
 		this.#state.set(typeof state === 'object' && state || {});
@@ -63,13 +74,41 @@ export default class Store {
 		const creatable = schema.creatable !== false;
 		this.#immutable = immutable;
 		this.#creatable = creatable;
-		this.#editable = new Signal.Computed(() => newState.get() ? creatable : !immutable);
+
+		const readonlyFn = schema.readonly
+		const selfReadonly = new Signal.State(typeof readonly === 'boolean' ? readonly : null);
+		/** @type {Signal.Computed<boolean>} */
+		let readonlyScript
+		if (typeof readonlyFn === 'function') {
+			readonlyScript = new Signal.Computed(() => Boolean(readonlyFn(this, this.root)))
+		} else {
+			const def = Boolean(readonlyFn)
+			readonlyScript = new Signal.Computed(() => def);
+		}
+		const getReadonly = () => {
+			if (newState.get() ? !creatable : immutable) { return true; }
+			const s = selfReadonly.get();
+			return s === null ? readonlyScript.get() : s;
+		};
+		const readonlyParent =  parent ? parent.#readonly : null;
+		this.#selfReadonly = selfReadonly;
+		this.#readonly = readonlyParent
+			? new Signal.Computed(() => readonlyParent.get() || getReadonly())
+			: new Signal.Computed(getReadonly);
 
 		[this.#selfHidden, this.#hidden] = createBooleanStates(this, hidden, schema.hidden, parent ? parent.#hidden : null);
 		[this.#selfClearable, this.#clearable] = createBooleanStates(this, clearable, schema.clearable, parent ? parent.#clearable : null);
 		[this.#selfRequired, this.#required] = createBooleanStates(this, required, schema.required, parent ? parent.#required : null);
 		[this.#selfDisabled, this.#disabled] = createBooleanStates(this, disabled, schema.disabled, parent ? parent.#disabled : null);
-		[this.#selfReadonly, this.#readonly] = createBooleanStates(this, readonly, schema.readonly, parent ? parent.#readonly : null);
+
+		[this.#selfLabel, this.#label] = createState(this, toValues.string, label, schema.label);
+		[this.#selfDescription, this.#description] = createState(this, toValues.string, description, schema.description);
+		[this.#selfPlaceholder, this.#placeholder] = createState(this, toValues.string, placeholder, schema.placeholder);
+		[this.#selfMin, this.#min] = createState(this, toValues.number, min, schema.min);
+		[this.#selfMax, this.#max] = createState(this, toValues.number, max, schema.max);
+		[this.#selfStep, this.#step] = createState(this, toValues.number, step, schema.step);
+		// @ts-ignore
+		[this.#selfValues, this.#values] = createState(this, toValues.values, values, schema.values);
 
 		if (isNull) {
 			this.#null = true;
@@ -123,13 +162,10 @@ export default class Store {
 	#new
 	/** @readonly @type {Signal.State<boolean>} */
 	#selfNew
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#editable
 	get selfNew() { return this.#selfNew.get(); }
 	set selfNew(v) { this.#selfNew.set(Boolean(v)); }
 	get new() { return this.#new.get(); }
 	set new(v) { this.#selfNew.set(Boolean(v)); }
-	get editable() { return this.#editable.get(); }
 
 	/** @readonly @type {Signal.State<boolean?>} */
 	#selfHidden
@@ -175,6 +211,77 @@ export default class Store {
 	set selfReadonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
 	get readonly() { return this.#readonly.get(); }
 	set readonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
+
+
+
+
+	/** @readonly @type {Signal.State<string?>} */
+	#selfLabel
+	/** @readonly @type {Signal.Computed<string?>} */
+	#label
+	get selfLabel() { return this.#selfLabel.get(); }
+	set selfLabel(v) { this.#selfLabel.set(toValues.string(v)); }
+	get label() { return this.#label.get(); }
+	set label(v) { this.#selfLabel.set(toValues.string(v)); }
+
+
+	/** @readonly @type {Signal.State<string?>} */
+	#selfDescription
+	/** @readonly @type {Signal.Computed<string?>} */
+	#description
+	get selfDescription() { return this.#selfDescription.get(); }
+	set selfDescription(v) { this.#selfDescription.set(toValues.string(v)); }
+	get description() { return this.#description.get(); }
+	set description(v) { this.#selfDescription.set(toValues.string(v)); }
+
+	/** @readonly @type {Signal.State<string?>} */
+	#selfPlaceholder
+	/** @readonly @type {Signal.Computed<string?>} */
+	#placeholder
+	get selfPlaceholder() { return this.#selfPlaceholder.get(); }
+	set selfPlaceholder(v) { this.#selfPlaceholder.set(toValues.string(v)); }
+	get placeholder() { return this.#placeholder.get(); }
+	set placeholder(v) { this.#selfPlaceholder.set(toValues.string(v)); }
+
+
+	/** @readonly @type {Signal.State<number?>} */
+	#selfMin
+	/** @readonly @type {Signal.Computed<number?>} */
+	#min
+	get selfMin() { return this.#selfMin.get(); }
+	set selfMin(v) { this.#selfMin.set(toValues.number(v)); }
+	get min() { return this.#min.get(); }
+	set min(v) { this.#selfMin.set(toValues.number(v)); }
+
+
+	/** @readonly @type {Signal.State<number?>} */
+	#selfMax
+	/** @readonly @type {Signal.Computed<number?>} */
+	#max
+	get selfMax() { return this.#selfMax.get(); }
+	set selfMax(v) { this.#selfMax.set(toValues.number(v)); }
+	get max() { return this.#max.get(); }
+	set max(v) { this.#selfMax.set(toValues.number(v)); }
+
+
+	/** @readonly @type {Signal.State<number?>} */
+	#selfStep
+	/** @readonly @type {Signal.Computed<number?>} */
+	#step
+	get selfStep() { return this.#selfStep.get(); }
+	set selfStep(v) { this.#selfStep.set(toValues.number(v)); }
+	get step() { return this.#step.get(); }
+	set step(v) { this.#selfStep.set(toValues.number(v)); }
+
+
+	/** @readonly @type {Signal.State<Schema.Value.Group | Schema.Value | null>} */
+	#selfValues
+	/** @readonly @type {Signal.Computed<Schema.Value.Group | Schema.Value | null>} */
+	#values
+	get selfValues() { return this.#selfValues.get(); }
+	set selfValues(v) { this.#selfValues.set(toValues.values(v)); }
+	get values() { return this.#values.get(); }
+	set values(v) { this.#selfValues.set(toValues.values(v)); }
 
 
 

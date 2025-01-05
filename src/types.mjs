@@ -62,6 +62,17 @@
  * @typedef {Record<string, Schema.Field>} Schema
  */
 /**
+ * @typedef {Schema.Value | string | number} Schema.Value.Define
+ * @property {string} label
+ * @property {string | number} value
+ */
+/**
+ * @typedef {object} Schema.Value.Group.Define
+ * @property {string} label
+ * @property {string | number} [value]
+ * @property {(Schema.Value.Group | Schema.Value.Define)[]} children
+ */
+/**
  * @typedef {object} Schema.Value
  * @property {string} label
  * @property {string | number} value
@@ -70,7 +81,7 @@
  * @typedef {object} Schema.Value.Group
  * @property {string} label
  * @property {string | number} [value]
- * @property {(Schema.Value.Group | Schema.Value | string | number)[]} children
+ * @property {(Schema.Value.Group | Schema.Value)[]} children
  */
 /**
  * @typedef {object} Schema.Object
@@ -87,13 +98,34 @@
  * @property {any} [meta]
  */
 
+
+/**
+ * @typedef {object} Schema.Event
+ * 
+ * @property {Function?} [input]
+ * @property {Function?} [change]
+ * @property {Function?} [click]
+ * @property {Function?} [focus]
+ * @property {Function?} [blur]
+ * 
+ * @property {Function?} [add]
+ * @property {Function?} [remove]
+ * @property {Function?} [move]
+ */
 /**
  * @typedef {object} Schema.Attr
  * @property {boolean} [immutable]
  * @property {boolean} [creatable]
- * @property {boolean | ((store: Store) => boolean)?} [hidden]
- * @property {boolean | ((store: Store) => boolean)?} [clearable]
- * @property {boolean | ((store: Store) => boolean)?} [required]
- * @property {boolean | ((store: Store) => boolean)?} [disabled]
- * @property {boolean | ((store: Store) => boolean)?} [readonly]
+ * @property {boolean | ((store: Store, root: Store) => boolean) | null} [hidden]
+ * @property {boolean | ((store: Store, root: Store) => boolean) | null} [clearable]
+ * @property {boolean | ((store: Store, root: Store) => boolean) | null} [required]
+ * @property {boolean | ((store: Store, root: Store) => boolean) | null} [disabled]
+ * @property {boolean | ((store: Store, root: Store) => boolean) | null} [readonly]
+ * @property {string | ((store: Store, root: Store) => string) | null} [label] 字段标签
+ * @property {string | ((store: Store, root: Store) => string) | null} [description] 字段描述
+ * @property {string | ((store: Store, root: Store) => string) | null} [placeholder] 占位符
+ * @property {number | ((store: Store, root: Store) => number) | null} [min] 日期、时间、数字的最小值
+ * @property {number | ((store: Store, root: Store) => number) | null} [max] 日期、时间、数字的最大值
+ * @property {number | ((store: Store, root: Store) => number) | null} [step] 日期、时间、数字的步长
+ * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
  */
