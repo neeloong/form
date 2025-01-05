@@ -18,5 +18,6 @@ export default function createElement(name, is) {
 		styles: Object.create(null),
 		vars: Object.create(null),
 		aliases: Object.create(null),
+		params: Object.create(null),
 	};
 }

@@ -1,6 +1,7 @@
 import { Signal } from 'signal-polyfill';
 import Store, { ArrayStore } from '../Store/index.mjs';
 import watch from './watch.mjs';
+/** @import * as Layout from '../Layout/index.mjs' */
 
 const bindable = {
 	new: true,
@@ -325,6 +326,67 @@ export default class Environment {
 		}
 		if (parent instanceof ArrayStore) {
 
+		}
+		return cloned;
+	}
+	/**
+	 * 
+	 * @param {Layout.Node} template 
+	 * @param {Layout.Node} source 
+	 * @param {Environment} sourceEnv 
+	 */
+	params({params}, {attrs}, sourceEnv) {
+		if (Object.keys(params).length === 0) { return this; }
+		const cloned = new Environment(this);
+		cloned.#store = this.#store;
+		cloned.#parent = this.#parent;
+		cloned.#object = this.#object;
+		const explicit = cloned.#explicit;
+		const items = cloned.#items;
+		for (const [key, param] of Object.entries(params)) {
+			const attr = key in attrs ? attrs[key] : null;
+			if (typeof attr === 'string') {
+				explicit[key] = items[key] = {get: () => attr};
+			} else if (attr && typeof attr === 'object') {
+				const item = sourceEnv.#items[attr.name];
+				if (!item?.get) { continue; }
+				if (!item.store) {
+					explicit[key] = items[key] = item;
+					continue;
+				}
+				for (const [k, it] of toItem(item.store, key)) {
+					explicit[k] = items[k] = it;
+				}
+				continue;
+
+			} else if (typeof attr === 'function') {
+				const val = new Signal.Computed(() => attr(sourceEnv.getters));
+				explicit[key] = items[key] = {
+					get: () => { return val.get(); },
+				};
+
+				continue;
+			} else if (typeof param === 'function') {
+				const getters = cloned.getters;
+				cloned.#getters = null;
+				const val = new Signal.Computed(() => param(getters));
+				explicit[key] = items[key] = {
+					get: () => { return val.get(); },
+				};
+				continue;
+
+			} else {
+				const item = items[param];
+				if (!item?.get) { continue; }
+				if (!item.store) {
+					explicit[key] = items[key] = item;
+					continue;
+				}
+				for (const [k, it] of toItem(item.store, key)) {
+					explicit[k] = items[k] = it;
+				}
+				continue;
+			}
 		}
 		return cloned;
 	}

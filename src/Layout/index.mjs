@@ -5,7 +5,9 @@ export { default as stringify } from './stringify.mjs';
 /**
  * @typedef {object} Directives
  * 
- * @property {boolean} [fragment]
+ * @property {string} [template]
+ * 
+ * @property {boolean | string} [fragment]
  * 
  * @property {string | Function} [if]
  * @property {boolean} [else]
@@ -34,6 +36,7 @@ export { default as stringify } from './stringify.mjs';
  * @property {string?} [is]
  * @property {string} [id]
  * @property {Record<string, string | {name: string} | ((global: any) => void)>} attrs
+ * @property {Record<string, string | ((global: any) => void)>} params
  * @property {Record<string, string | boolean | ((global: any) => void)>} classes
  * @property {Record<string, string | ((global: any) => void)>} styles
  * @property {Record<string, string | (($event: any, global: any) => void)>} events

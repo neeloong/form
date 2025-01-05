@@ -1,7 +1,7 @@
 /** @import * as Layout from './index.mjs' */
 
 import ParseError from './ParseError.mjs';
-const attrPattern = /^(?<decorator>[:@!+*\.]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
+const attrPattern = /^(?<decorator>[:@!+*\.?]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
 const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
 /**
  * @param {Layout.Node} node
@@ -9,7 +9,7 @@ const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_
  * @param {Exclude<Layout.Options['creteEvent'], undefined>} creteEvent
  */
 export default function createAttributeAdder(node, creteCalc, creteEvent) {
-	const { attrs, directives, events, classes, styles, vars, aliases } = node;
+	const { attrs, directives, events, classes, styles, vars, aliases, params } = node;
 	/**
 	 * @param {string} qName
 	 * @param {string} value
@@ -40,13 +40,13 @@ export default function createAttributeAdder(node, creteCalc, creteEvent) {
 			vars[name] = !value ? '' : nameRegex.test(value) ? value : creteCalc(value);
 		} else if (decorator === '*') {
 			aliases[name] = nameRegex.test(value) ? value : creteCalc(value);
+		} else if (decorator === '?') {
+			params[name] = nameRegex.test(value) ? value : creteCalc(value);
 		} else if (decorator === '!') {
 			const key = name.toString();
 			switch (key) {
-				case 'fragment':
-				case 'else':
-					directives[key] = true;
-					break;
+				case 'fragment': directives.fragment = value || true; break;
+				case 'else': directives.else = true; break;
 				case 'enum':
 					directives.enum = value ? nameRegex.test(value) ? value : creteCalc(value) : true;
 					break;
@@ -55,6 +55,7 @@ export default function createAttributeAdder(node, creteCalc, creteEvent) {
 				case 'html':
 					directives[key] = nameRegex.test(value) ? value : creteCalc(value);
 					break;
+				case 'template':
 				case 'bind':
 				case 'value':
 				case 'comment':

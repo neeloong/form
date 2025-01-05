@@ -19,30 +19,27 @@ import renderEnum from './renderEnum.mjs';
  * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {Environment} env
- * @param {(layout: Layout.Node) => () => void} renderItem
- * @returns {() => void}
- */
-function renderFragment(layout, parent, next, env, renderItem) {
-	return renderFillDirectives(parent, next, env, layout.directives) || 
-	renderList(layout.children || [], parent, next, env, renderItem);
-
-}
-/**
- * @param {Layout.Node} layout
- * @param {Element} parent
- * @param {Node?} next
  * @param {Store} store
  * @param {Environment} env
+ * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
  * @param {((path: string[]) => Component?)?} [getComponent]
  */
-function renderItem(layout, parent, next, store, env, componentPath, getComponent) {
+function renderItem(layout, parent, next, store, env, templates, componentPath, getComponent) {
 	env = env.set(layout.aliases, layout.vars);
+	const fragment = layout.directives.fragment;
+	if (fragment && typeof fragment === 'string') {
+		const template = templates[fragment];
+		if (!template) { return () => {}; }
+		const [templateLayout, templateEnv] = template;
+		const newEnv = templateEnv.params(templateLayout, layout, env);
+		return render(templateLayout, parent, next, store, newEnv, templates, componentPath, getComponent);
+	}
 	if (!layout.name || layout.directives.fragment) {
-		return renderFragment(layout, parent, next, env, l => {
-			return render(l, parent, next, store, env, componentPath, getComponent);
-		});
+		return renderFillDirectives(parent, next, env, layout.directives) || 
+			renderList(layout.children || [], parent, next, env, templates, (layout, templates) => {
+				return render(layout, parent, next, store, env, templates, componentPath, getComponent);
+			});
 	}
 	const path = [...componentPath, layout.name];
 	const component = getComponent?.(path);
@@ -66,13 +63,13 @@ function renderItem(layout, parent, next, store, env, componentPath, getComponen
 			: createTagComponent(context, component.tag, component.is)
 		: createTagComponent(context, layout.name, layout.is);
 	const root = Array.isArray(r) ? r[0] : r;
-	const slot = Array.isArray(r) && r[1] || root;
+	const slot = Array.isArray(r) ? r[1] : root;
 	parent.insertBefore(root, next);
-	const children =
+	const children = slot ? 
 		renderFillDirectives(slot, null, env, layout.directives)
-		|| renderList(layout.children || [], slot, null, env, l => {
-			return render(l, slot, null, store, env, componentPath, getComponent);
-		});
+		|| renderList(layout.children || [], slot, null, env,  templates, (layout, templates) => {
+			return render(layout, slot, null, store, env, templates, componentPath, getComponent);
+		}) : () => {};
 
 
 	bindClasses(root, layout.classes, env);
@@ -94,11 +91,12 @@ function renderItem(layout, parent, next, store, env, componentPath, getComponen
  * @param {Node?} next
  * @param {Store} store
  * @param {Environment} env
+ * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
  * @param {((path: string[]) => Component?)?} [getComponent]
  * @returns {() => void}
  */
-function render(layout, parent, next, store, env, componentPath, getComponent) {
+function render(layout, parent, next, store, env, templates, componentPath, getComponent) {
 	const { directives } = layout;
 	const { value } = directives;
 	if (value) {
@@ -109,22 +107,22 @@ function render(layout, parent, next, store, env, componentPath, getComponent) {
 	}
 	const enumValue = directives.enum;
 	if (!enumValue) {
-		return renderItem(layout, parent, next, store, env, componentPath, getComponent);
+		return renderItem(layout, parent, next, store, env, templates, componentPath, getComponent);
 	}
 	const newStore = enumValue === true ? store : env.enum(enumValue);
 	if (newStore instanceof ArrayStore) {
 		return renderArray(layout, parent, next, newStore, env, (a, b, c, store, env) => {
-			return renderItem(a, b, c, store, env, componentPath, getComponent);
+			return renderItem(a, b, c, store, env, templates, componentPath, getComponent);
 		});
 	}
 	if (newStore instanceof ObjectStore) {
 		return renderObject(layout, parent, next, newStore, env, (a, b, c, store, env) => {
-			return renderItem(a, b, c, store, env, componentPath, getComponent);
+			return renderItem(a, b, c, store, env, templates, componentPath, getComponent);
 		});
 	}
 	if (typeof newStore === 'function') {
 		return renderEnum(layout, parent, next, store, newStore, env, (a, b, c, store, env) => {
-			return renderItem(a, b, c, store, env, componentPath, getComponent);
+			return renderItem(a, b, c, store, env, templates, componentPath, getComponent);
 		});
 	}
 	return () => { };
@@ -159,7 +157,8 @@ export default function (store, layouts, parent, opt1, opt2) {
 	const components = options.find(v => typeof v === 'function')
 	const global = options.find(v => typeof v === 'object');
 	const env = new Environment(global).setStore(store);
-	return renderList(layouts, parent, null, env, l => {
-		return render(l, parent, null, store, env, [], components);
+	const templates = Object.create(null)
+	return renderList(layouts, parent, null, env, templates, (layout, templates) => {
+		return render(layout, parent, null, store, env, templates, [], components);
 	});
 }

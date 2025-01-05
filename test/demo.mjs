@@ -22,15 +22,15 @@ const template = `
 		</ul>
 	</li>
 </ul>
-<select !bind="select">
-	<option value !text="select$placeholder"></option>
-	<option !fragment !enum="select$values" *children="$value.children">
+<option !template="options" !fragment ?list="[]" !enum="select$values">
 		<optgroup !if="$value.children" :label="$value.label">
 			<option !enum="$value.children" :value="$value.value" !text="$value.value"></option>
 		</optgroup>
 		<option !else :value="$value.value" !text="$value.value"></option>
-
 	</option>
+<select !bind="select">
+	<option value !text="select$placeholder"></option>
+	<option !fragment="options" :list="select$values" />
 </select>
 `
 

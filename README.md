@@ -160,12 +160,13 @@ render(store, layouts, app);
 
 优先级从高到低:
 
-1. 片段标志: `!fragment` 
+1. 模板定义: `!template`
 1. 条件: `!if` `!else`
 1. 子属性: `!value`
 1. 枚举: `!enum`
 1. 别名与计算名: `*别名` `*计算名`
 1. 显式变量: `+变量`
+1. 片段与模板调用: `!fragment` 
 1. 属性与事件: `:绑定属性` `@事件` `普通属性` `!bind`
 1. 子内容: `!text` `!html`
 1. 注释: `!comment`

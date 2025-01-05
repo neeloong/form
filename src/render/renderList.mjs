@@ -7,15 +7,24 @@ import Environment from './Environment.mjs';
  * @param {Element} parent
  * @param {Node?} next
  * @param {Environment} envs
- * @param {(layout: Layout.Node) => () => void} renderItem
+ * @param {Record<string, [Layout.Node, Environment]>} templates
+ * @param {(layout: Layout.Node, templates: Record<string, any>) => () => void} renderItem
  * @returns {() => void}
  */
-export default function renderList(layouts, parent, next, envs, renderItem) {
+export default function renderList(layouts, parent, next, envs, templates, renderItem) {
 
 	/** @type {Set<() => void>?} */
 	let bkList = new Set();
 	/** @type {[string | Function | null, Layout.Node][]} */
 	let ifList = [];
+	/** @type {Record<string, [Layout.Node, Environment]>} */
+	let currentTemplates = Object.create(templates)
+	for (const layout of layouts) {
+		if (typeof layout === 'string') { continue; }
+		const name = layout.directives.template
+		if (!name) { continue; }
+		currentTemplates[name] = [layout, envs];
+	}
 
 	/** @param {[string | Function | null, Layout.Node][]} list */
 	function renderIf(list) {
@@ -33,7 +42,7 @@ export default function renderList(layouts, parent, next, envs, renderItem) {
 		function renderIndex(index) {
 			const layout = list[index]?.[1];
 			if (!layout) { return; }
-			destroy = renderItem(layout);
+			destroy = renderItem(layout, currentTemplates);
 		}
 		bkList.add(() => {
 			destroy();
@@ -60,6 +69,11 @@ export default function renderList(layouts, parent, next, envs, renderItem) {
 			bkList.add(() => node.remove());
 			continue;
 		}
+		if (layout.directives.template) {
+			renderIf(ifList);
+			ifList = [];
+			continue;
+		}
 		if (ifList.length && layout.directives.else) {
 			const ifv = layout.directives.if || null;
 			ifList.push([ifv, layout]);
@@ -77,7 +91,7 @@ export default function renderList(layouts, parent, next, envs, renderItem) {
 			continue;
 		}
 		bkList.add(
-			renderItem(layout)
+			renderItem(layout, currentTemplates)
 		);
 	}
 
