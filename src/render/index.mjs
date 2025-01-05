@@ -1,6 +1,6 @@
 /** @import Store from '../Store/index.mjs' */
 import Environment from './Environment.mjs';
-import { ArrayStore } from '../Store/index.mjs';
+import { ArrayStore, ObjectStore } from '../Store/index.mjs';
 /** @import { Component } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 import bindAttrs from './bindAttrs.mjs';
@@ -12,6 +12,7 @@ import createTagComponent from './createTagComponent.mjs';
 import renderArray from './renderArray.mjs';
 import renderFillDirectives from './renderFillDirectives.mjs';
 import renderList from './renderList.mjs';
+import renderObject from './renderObject.mjs';
 
 /**
  * @param {Layout.Node} layout
@@ -108,10 +109,17 @@ function render(layout, parent, next, store, env, componentPath, getComponent) {
 	if (!directives.enum) {
 		return renderItem(layout, parent, next, store, env, componentPath, getComponent);
 	}
-	if (!(store instanceof ArrayStore)) { return () => { }; }
-	return renderArray(layout, parent, next, store, env, (a, b, c, store, env) => {
-		return renderItem(a, b, c, store, env, componentPath, getComponent);
-	});
+	if (store instanceof ArrayStore) {
+		return renderArray(layout, parent, next, store, env, (a, b, c, store, env) => {
+			return renderItem(a, b, c, store, env, componentPath, getComponent);
+		});
+	}
+	if (store instanceof ObjectStore) {
+		return renderObject(layout, parent, next, store, env, (a, b, c, store, env) => {
+			return renderItem(a, b, c, store, env, componentPath, getComponent);
+		});
+	}
+	return () => { };
 }
 
 /**

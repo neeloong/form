@@ -59,6 +59,7 @@ export default function renderArray(layout, parent, next, store, env, renderItem
 
 	return () => {
 		start.remove();
+		destroyMap(seMap);
 		childrenResult();
 	};
 }
