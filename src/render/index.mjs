@@ -106,16 +106,18 @@ function render(layout, parent, next, store, env, componentPath, getComponent) {
 		store = newStore;
 		env = env.setValue(store);
 	}
-	if (!directives.enum) {
+	const enumValue = directives.enum;
+	if (!enumValue) {
 		return renderItem(layout, parent, next, store, env, componentPath, getComponent);
 	}
-	if (store instanceof ArrayStore) {
-		return renderArray(layout, parent, next, store, env, (a, b, c, store, env) => {
+	const newStore = enumValue === true ? store : env.enum(enumValue);
+	if (newStore instanceof ArrayStore) {
+		return renderArray(layout, parent, next, newStore, env, (a, b, c, store, env) => {
 			return renderItem(a, b, c, store, env, componentPath, getComponent);
 		});
 	}
-	if (store instanceof ObjectStore) {
-		return renderObject(layout, parent, next, store, env, (a, b, c, store, env) => {
+	if (newStore instanceof ObjectStore) {
+		return renderObject(layout, parent, next, newStore, env, (a, b, c, store, env) => {
 			return renderItem(a, b, c, store, env, componentPath, getComponent);
 		});
 	}

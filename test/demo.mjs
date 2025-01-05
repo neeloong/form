@@ -3,9 +3,9 @@ import { Store, Layout, render } from '@neeloong/form';
 /** @import { Schema } from '@neeloong/form'; */
 const template = `
 <input !value="a" !bind="$value" />
-		<input !bind="a" />
-<ul +a=1>
-	<li !value="list" !enum>
+<input !bind="a" />
+<ul +a=1 *alias="list">
+	<li !enum="alias">
 		<input !bind="b" />
 		<ul !value="c" +x="0">
 			<li !enum +b=alias$length +a=2 +k="++x">

@@ -115,6 +115,18 @@ export default class Environment {
 
 	/**
 	 * @param {string} name
+	 */
+	enum(name) {
+		if (typeof name !== 'string') { return null; }
+		const item = this.#items[name];
+		if (typeof item?.get !== 'function') { return null }
+		const store = item.store;
+		return store instanceof Store ? store : item.get;
+
+	}
+
+	/**
+	 * @param {string} name
 	 * @param {string} type
 	 * @param {(value: any) => void} cb 
 	 */

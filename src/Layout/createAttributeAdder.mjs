@@ -45,8 +45,10 @@ export default function createAttributeAdder(node, creteCalc, creteEvent) {
 			switch (key) {
 				case 'fragment':
 				case 'else':
-				case 'enum':
 					directives[key] = true;
+					break;
+				case 'enum':
+					directives[key] = value || true;
 					break;
 				case 'if':
 				case 'text':
