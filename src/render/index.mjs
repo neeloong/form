@@ -13,6 +13,7 @@ import renderArray from './renderArray.mjs';
 import renderFillDirectives from './renderFillDirectives.mjs';
 import renderList from './renderList.mjs';
 import renderObject from './renderObject.mjs';
+import renderEnum from './renderEnum.mjs';
 
 /**
  * @param {Layout.Node} layout
@@ -104,7 +105,7 @@ function render(layout, parent, next, store, env, componentPath, getComponent) {
 		const newStore = store.child(value);
 		if (!newStore) { return () => {}; }
 		store = newStore;
-		env = env.setValue(store);
+		env = env.setStore(store);
 	}
 	const enumValue = directives.enum;
 	if (!enumValue) {
@@ -118,6 +119,11 @@ function render(layout, parent, next, store, env, componentPath, getComponent) {
 	}
 	if (newStore instanceof ObjectStore) {
 		return renderObject(layout, parent, next, newStore, env, (a, b, c, store, env) => {
+			return renderItem(a, b, c, store, env, componentPath, getComponent);
+		});
+	}
+	if (typeof newStore === 'function') {
+		return renderEnum(layout, parent, next, store, newStore, env, (a, b, c, store, env) => {
 			return renderItem(a, b, c, store, env, componentPath, getComponent);
 		});
 	}
@@ -152,7 +158,7 @@ export default function (store, layouts, parent, opt1, opt2) {
 	const options = [opt1, opt2];
 	const components = options.find(v => typeof v === 'function')
 	const global = options.find(v => typeof v === 'object');
-	const env = new Environment(global).setValue(store);
+	const env = new Environment(global).setStore(store);
 	return renderList(layouts, parent, null, env, l => {
 		return render(l, parent, null, store, env, [], components);
 	});

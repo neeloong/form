@@ -11,7 +11,7 @@ export { default as stringify } from './stringify.mjs';
  * @property {boolean} [else]
  * 
  * @property {string} [value] 值关联（关联为列表）
- * @property {boolean | string} [enum] 列表属性枚举
+ * @property {boolean | string | Function} [enum] 列表属性枚举
  * 
  * @property {string} [bind]
  * @property {string | Function} [text]

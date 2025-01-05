@@ -35,7 +35,7 @@ export default function renderArray(layout, parent, next, store, env, renderItem
 			if (!old) {
 				const ItemStart = parent.insertBefore(document.createComment(''), nextNode);
 				const itemEnd = parent.insertBefore(document.createComment(''), nextNode);
-				const d = renderItem(layout, parent, itemEnd, child, env.setValue(child, store));
+				const d = renderItem(layout, parent, itemEnd, child, env.setStore(child, store));
 				seMap.set(child, [ItemStart, itemEnd, d]);
 				continue;
 			}

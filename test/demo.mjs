@@ -22,6 +22,16 @@ const template = `
 		</ul>
 	</li>
 </ul>
+<select !bind="select">
+	<option value !text="select$placeholder"></option>
+	<option !fragment !enum="select$values" *children="$value.children">
+		<optgroup !if="$value.children" :label="$value.label">
+			<option !enum="$value.children" :value="$value.value" !text="$value.value"></option>
+		</optgroup>
+		<option !else :value="$value.value" !text="$value.value"></option>
+
+	</option>
+</select>
 `
 
 /** @type {Layout.Options} */
@@ -42,20 +52,43 @@ const layoutOptions = {
  * @type {Schema}
  */
 const schema = {
-	a: { type: 'int', disabled: true },
+	a: { type: 'int', disabled: true, placeholder: '这是a的占位符', },
 	list: { array: true, props: {
-			b: { type: 'int', disabled: true },
+			b: { type: 'int', disabled: true, placeholder: '这是b的占位符' },
 			c: { array: true, type: 'int' },
 		},
 	},
+	select: {
+		type: 'string',
+		placeholder: '这是占位符',
+		values: [
+			{label: 'test 1', value: '1'},
+			{label: 'test 2', value: '2'},
+			{label: 'test 3', value: '3'},
+			{label: 'g 4',  children: [
+				{label: 'g 4 test 1', value: '4-1'},
+				{label: 'g 4 test 2', value: '4-2'},
+				{label: 'g 4 test 3', value: '4-3'},
+
+			]},
+			{label: 'test 5', value: '5'},
+			{label: 'g 6',  children: [
+				{label: 'g 6 test 1', value: '6-1'},
+				{label: 'g 6 test 2', value: '6-2'},
+				{label: 'g 6 test 3', value: '6-3'},
+
+			]},
+		]
+	}
 };
 const defaultValue = {
 	a: 5,
-	list: {b: 2, c: [1,2,3,4,5]}
+	list: {b: 2, c: [1,2,3,4,5]},
 }
 const layouts = Layout.parse(template, layoutOptions);
 
 const store = Store.create(schema);
+setInterval(() => console.log(store.value), 500);
 store.value = defaultValue
 /** @type {Element} */
 // @ts-ignore

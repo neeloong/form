@@ -39,7 +39,7 @@ export default function createAttributeAdder(node, creteCalc, creteEvent) {
 		} else if (decorator === '+') {
 			vars[name] = !value ? '' : nameRegex.test(value) ? value : creteCalc(value);
 		} else if (decorator === '*') {
-			aliases[name] = nameRegex.test(value) ? value : creteEvent(value);
+			aliases[name] = nameRegex.test(value) ? value : creteCalc(value);
 		} else if (decorator === '!') {
 			const key = name.toString();
 			switch (key) {
@@ -48,7 +48,7 @@ export default function createAttributeAdder(node, creteCalc, creteEvent) {
 					directives[key] = true;
 					break;
 				case 'enum':
-					directives[key] = value || true;
+					directives.enum = value ? nameRegex.test(value) ? value : creteCalc(value) : true;
 					break;
 				case 'if':
 				case 'text':

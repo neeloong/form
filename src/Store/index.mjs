@@ -274,9 +274,9 @@ export default class Store {
 	set step(v) { this.#selfStep.set(toValues.number(v)); }
 
 
-	/** @readonly @type {Signal.State<Schema.Value.Group | Schema.Value | null>} */
+	/** @readonly @type {Signal.State<(Schema.Value.Group | Schema.Value)[] | null>} */
 	#selfValues
-	/** @readonly @type {Signal.Computed<Schema.Value.Group | Schema.Value | null>} */
+	/** @readonly @type {Signal.Computed<(Schema.Value.Group | Schema.Value)[] | null>} */
 	#values
 	get selfValues() { return this.#selfValues.get(); }
 	set selfValues(v) { this.#selfValues.set(toValues.values(v)); }

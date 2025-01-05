@@ -114,9 +114,12 @@ export default class Environment {
 	watch(value, cb) { return watch(() => this.exec(value), cb); }
 
 	/**
-	 * @param {string} name
+	 * @param {string | Function} name
 	 */
 	enum(name) {
+		if (typeof name === 'function') {
+			return () => name(this.getters);
+		}
 		if (typeof name !== 'string') { return null; }
 		const item = this.#items[name];
 		if (typeof item?.get !== 'function') { return null }
@@ -267,6 +270,8 @@ export default class Environment {
 	#explicit = Object.create(null);
 	/** @type {Store?} */
 	#store = null
+	/** @type {Record<string, any>?} */
+	#object = null
 	/** @type {Store?} */
 	#parent = null
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>?} */
@@ -282,12 +287,18 @@ export default class Environment {
 		}));
 		const store = this.#store;
 		const parent = this.#parent;
+		const object = this.#object;
 		if (store) {
 			for (const [key, item] of toItem(store)) {
 				ais[key] = item;
 			}
 			for (const [key, item] of toParentItem(parent, store)) {
 				ais[key] = item;
+			}
+		}
+		if (object) {
+			for (const k of Object.keys(object)) {
+				ais[`$${k}`] = {get: () => object[k]};
 			}
 		}
 		this.#allItems = ais;
@@ -298,7 +309,7 @@ export default class Environment {
 	 * @param {Store} store 
 	 * @param {Store} [parent] 
 	 */
-	setValue(store, parent) {
+	setStore(store, parent) {
 		const cloned = new Environment(this);
 		cloned.#store = store;
 		if (parent) { cloned.#parent = parent; }
@@ -317,6 +328,12 @@ export default class Environment {
 		}
 		return cloned;
 	}
+	/** @param {Record<string, any>} object */
+	setObject(object) {
+		const cloned = new Environment(this);
+		cloned.#object = object;
+		return cloned;
+	}
 	/**
 	 * 
 	 * @param {Record<string, string | Function>} aliases 
@@ -327,6 +344,7 @@ export default class Environment {
 		const cloned = new Environment(this);
 		cloned.#store = this.#store;
 		cloned.#parent = this.#parent;
+		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
 		const items = cloned.#items;
 		for (const [key, name] of Object.entries(aliases)) {

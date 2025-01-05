@@ -15,7 +15,7 @@ export default function renderObject(layout, parent, next, store, env, renderIte
 	/** @type {(() => void)[]} */
 	const children = [];
 	for (const [k, child] of [...store]) {
-	children.push(renderItem(layout, parent, next, child, env.setValue(child, store)));
+	children.push(renderItem(layout, parent, next, child, env.setStore(child, store)));
 	}
 
 	return () => {

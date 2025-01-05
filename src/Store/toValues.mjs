@@ -29,7 +29,7 @@ function toValueItem(v) {
 }
 /** @param {*} v  */
 export const values = v => {
-	if (!v || !Array.isArray(v)) { return v;}
+	if (!v || !Array.isArray(v)) { return null;}
 	const list = v.map(toValueItem).filter(valueFilter);
 	if (!list.length) { return null; }
 	return list;
