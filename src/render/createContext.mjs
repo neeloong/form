@@ -1,9 +1,10 @@
 /** @import { Component } from '../types.mjs' */
 /** @import Environment from './Environment.mjs' */
+/** @import Store from '../Store/index.mjs' */
 
 import EventEmitter from './EventEmitter.mjs';
 
-/** @type {Record<string, (evt: any, param: string[], global: any) => boolean | null | void>} */
+/** @type {Record<string, Component.Event.Filter>} */
 const eventFilters = {
 	stop(evt) {
 		if (evt instanceof Event) { evt.stopPropagation(); }
@@ -167,7 +168,7 @@ export default function createContext(component, env) {
 			if (!filters) { return; }
 			/** @type {AddEventListenerOptions} */
 			const options = {}
-			/** @type {[($event: any, param: string[], env: any) => boolean | null | void, string[], boolean][]} */
+			/** @type {[Component.Event.Filter, string[], boolean][]} */
 			const filterFns = [];
 			if (filters) for (let f = fs.shift();f;f = fs.shift()) {
 				const paramIndex = f.indexOf(':');

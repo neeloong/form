@@ -71,8 +71,8 @@ function entityReplacer(a) {
  * @returns {(Layout.Node | string)[]}
  */
 export default function parse(source, {
-	creteCalc = () => { throw new ParseError('CALC'); },
-	creteEvent = () => { throw new ParseError('EVENT'); },
+	createCalc = () => { throw new ParseError('CALC'); },
+	createEvent = () => { throw new ParseError('EVENT'); },
 	simpleTag = new Set,
 } = {}) {
 	/** @type {(Layout.Node | string)[]} */
@@ -192,7 +192,7 @@ export default function parse(source, {
 		currentNode = createElement(tagRes.name, tagRes.is);
 		current.children.push(currentNode);
 		current = currentNode;
-		const addAttribute = createAttributeAdder(currentNode, creteCalc, creteEvent);
+		const addAttribute = createAttributeAdder(currentNode, createCalc, createEvent);
 
 		let run = true;
 		let closed = false;

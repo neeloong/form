@@ -15,7 +15,7 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 
 	/** @type {Set<() => void>?} */
 	let bkList = new Set();
-	/** @type {[string | Function | null, Layout.Node][]} */
+	/** @type {[string | Layout.Calc | null, Layout.Node][]} */
 	let ifList = [];
 	/** @type {Record<string, [Layout.Node, Environment]>} */
 	let currentTemplates = Object.create(templates)
@@ -26,7 +26,7 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 		currentTemplates[name] = [layout, envs];
 	}
 
-	/** @param {[string | Function | null, Layout.Node][]} list */
+	/** @param {[string | Layout.Calc | null, Layout.Node][]} list */
 	function renderIf(list) {
 		if (!list.length || !bkList) { return; }
 		const end = parent.insertBefore(document.createComment(''), next);

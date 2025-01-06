@@ -34,12 +34,12 @@ const template = `
 
 /** @type {Layout.Options} */
 const layoutOptions = {
-	creteCalc: value => {
+	createCalc: value => {
 		const fn = new Function('globalThis', `with(globalThis) { return ${value} }`);
 		fn.toString = () => value;
 		return /** @type {*} */(fn);
 	},
-	creteEvent: value => {
+	createEvent: value => {
 		const fn = new Function('$event', 'globalThis', `with(globalThis) { ${value} }`);
 		fn.toString = () => value;
 		return /** @type {*} */(fn);
@@ -176,13 +176,14 @@ render(store, layouts, app);
 1. 字段扩展隐式属性
    - `$value` 
    - `$state` 
+   - `$store` 只读属性
+   - `$schema` 只读属性
    - `$null` 只读属性
    - `$index` 只读属性
    - `$no` 只读属性
    - `$length` 只读属性
    - `$creatable` 只读属性
    - `$immutable` 只读属性
-   - `$schema` 只读属性
    - `$new` 只读属性
    - `$readonly` 只读属性
    - `$hidden` 只读属性

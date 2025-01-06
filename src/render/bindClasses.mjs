@@ -1,10 +1,12 @@
+/** @import * as Layout from '../Layout/index.mjs' */
+
 import Environment from './Environment.mjs';
 import watch from './watch.mjs';
 
 /**
  * @param {Node} node
  * @param {Environment} envs
- * @param {Record<string, string | boolean | ((...any: any) => void)>} classes
+ * @param {Record<string, string | boolean | Layout.Calc>} classes
  */
 export default function bindClasses(node, classes, envs) {
 	if (!(node instanceof Element)) {

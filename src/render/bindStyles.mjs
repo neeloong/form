@@ -1,3 +1,5 @@
+/** @import * as Layout from '../Layout/index.mjs' */
+
 import Environment from './Environment.mjs';
 import watch from './watch.mjs';
 
@@ -67,7 +69,7 @@ function toStyle(name, value) {
 /**
  * @param {Element} node
  * @param {Environment} envs
- * @param {Record<string, string | ((...any: any) => void)>} classes
+ * @param {Record<string, string | Layout.Calc>} classes
  */
 export default function bindStyles(node, classes, envs) {
 	if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {

@@ -1,10 +1,12 @@
 /** @import { Component } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
+
 import Environment from './Environment.mjs';
 
 /**
  * @param {Component.Handler} handler
  * @param {Environment} envs
- * @param {Record<string, string | {name: string} | ((...any: any) => void)>} attrs
+ * @param {Record<string, string | {name: string} | Layout.Calc>} attrs
  * @param {Record<string, Component.Attr>} componentAttrs
  * @param {string?} [bindValue]
  */
@@ -18,7 +20,7 @@ export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValu
 				handler.set(name, attrValue);
 				continue;
 			}
-			const attrSchema = typeof attrValue === 'function' ? attrValue : attrValue.name;
+			const attrSchema = typeof attrValue === 'function' ? /** @type{Layout.Calc} */(attrValue) : attrValue.name;
 			if (attr.immutable) {
 				handler.set(name, envs.exec(attrSchema));
 				continue;

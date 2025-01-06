@@ -20,13 +20,21 @@ function _xmlEncoder(c) {
  * @returns {Iterable<string>}
  */
 export function* nodeToString(node, level = 0) {
-	const { attrs, events, directives, children, is, name, classes, styles, aliases, vars } = node;
+	const { attrs, events, directives, children, is, name, params, classes, styles, aliases, vars } = node;
 	const pad = level > 0 ? ''.padEnd(level, '\t') : '';
 
 	yield pad;
 	yield* ['<', name || '-'];
 	if (is) { yield* ['|', is]; }
 
+	for (const [name, value] of Object.entries(params)) {
+		if (value == null) { continue; }
+		const val = typeof value === 'function' ? String(value) : value;
+		yield* [' ?', name];
+		if (val && typeof val === 'string') {
+			yield* ['="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
+		}
+	}
 	for (const [name, value] of Object.entries(directives)) {
 		if (value === false || value == null) { continue; }
 		const val = typeof value === 'function' ? String(value) : value;

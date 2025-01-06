@@ -36,6 +36,8 @@ function *toItem(val, key = '', sign = '$') {
 	yield [`${key}`, {get: () => val.value, set: v => val.value = v, store: val}]
 	yield [`${key}${sign}value`, {get: () => val.value, set: v => val.value = v}]
 	yield [`${key}${sign}state`, {get: () => val.state, set: v => val.state = v}]
+	yield [`${key}${sign}store`, {get: () => val}]
+	yield [`${key}${sign}schema`, {get: () => val.schema}]
 	yield [`${key}${sign}null`, {get: () => val.null}]
 	yield [`${key}${sign}index`, {get: () => val.index}]
 	yield [`${key}${sign}no`, {get: () => val.no}]
@@ -43,7 +45,6 @@ function *toItem(val, key = '', sign = '$') {
 	yield [`${key}${sign}creatable`, {get: () => val.creatable}]
 	yield [`${key}${sign}immutable`, {get: () => val.immutable}]
 
-	yield [`${key}${sign}schema`, {get: () => val.schema}]
 
 	for (const k of bindableSet) {
 		yield [`${key}${sign}${k}`, {get: () => val[k]}];
@@ -96,7 +97,7 @@ function *toParentItem(parent, val, key = '', sign = '$') {
 }
 export default class Environment {
 	/**
-	 * @param {string | Function} value
+	 * @param {string | Layout.Calc} value
 	 */
 	exec(value) {
 		if (typeof value === 'string') {
@@ -109,13 +110,13 @@ export default class Environment {
 		}
 	}
 	/**
-	 * @param {string | Function} value
+	 * @param {string | Layout.Calc} value
 	 * @param {(value: any) => void} cb 
 	 */
 	watch(value, cb) { return watch(() => this.exec(value), cb); }
 
 	/**
-	 * @param {string | Function} name
+	 * @param {string | Layout.Calc} name
 	 */
 	enum(name) {
 		if (typeof name === 'function') {
@@ -205,8 +206,8 @@ export default class Environment {
 	}
 
 	/**
-	 * @param {string | (($event: any, global: any) => any)} event
-	 * @returns {(($event: any, global: any) => any)?}
+	 * @param {string | Layout.EventListener} event
+	 * @returns {Layout.EventListener?}
 	 */
 	getEvent(event) {
 		if (typeof event === 'function') { return event }
@@ -364,7 +365,6 @@ export default class Environment {
 				explicit[key] = items[key] = {
 					get: () => { return val.get(); },
 				};
-
 				continue;
 			} else if (typeof param === 'function') {
 				const getters = cloned.getters;
@@ -374,7 +374,6 @@ export default class Environment {
 					get: () => { return val.get(); },
 				};
 				continue;
-
 			} else {
 				const item = items[param];
 				if (!item?.get) { continue; }
@@ -398,8 +397,8 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Record<string, string | Function>} aliases 
-	 * @param {Record<string, any>} vars 
+	 * @param {Record<string, string | Layout.Calc>} aliases 
+	 * @param {Record<string, string | Layout.Calc>} vars 
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }

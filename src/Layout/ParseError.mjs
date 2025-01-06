@@ -1,7 +1,7 @@
 
 const errors = {
-	CALC: 'no `creteCalc` option, no expression parsing support',
-	EVENT: 'no `creteEvent`, options, no event parsing support',
+	CALC: 'no `createCalc` option, no expression parsing support',
+	EVENT: 'no `createEvent`, options, no event parsing support',
 	/** @param {string} endTag @param {string} startTag */
 	CLOSE: (endTag, startTag) => `end tag name: ${endTag} is not match the current start tagName: ${startTag}`,
 	/** @param {string} name */

@@ -1,10 +1,12 @@
 /** @import { Component } from '../types.mjs' */
+/** @import * as Layout from '../Layout/index.mjs' */
+
 import Environment from './Environment.mjs';
 
 /**
  * @param {Component.Handler} handler
  * @param {Environment} envs
- * @param {Record<string, string | {name: string} | ((...any: any) => void)>} attrs
+ * @param {Record<string, string | {name: string} | Layout.Calc>} attrs
  * @param {string?} [bindValue]
  */
 export default function bindBaseAttrs(handler, envs, attrs, bindValue) {
@@ -18,7 +20,7 @@ export default function bindBaseAttrs(handler, envs, attrs, bindValue) {
 			attrValues[name] = String(attr);
 			continue;
 		}
-		const attrSchema = typeof attr === 'function' ? attr : attr.name;
+		const attrSchema = typeof attr === 'function' ? /** @type{Layout.Calc} */(attr) : attr.name;
 		if (typeof tag === 'string' && tag.toLocaleLowerCase() === 'input' && name.toLocaleLowerCase() === 'type') {
 			const value = envs.exec(attrSchema);
 			attrValues[name] = String(value);

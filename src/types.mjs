@@ -1,4 +1,5 @@
 /** @import Store from './Store/index.mjs' */
+/** @import * as Layout from './Layout/index.mjs' */
 
 /**
  * @typedef {any} VerifyError
@@ -8,7 +9,7 @@
  * @property {string} type
  * @property {boolean} [isProp]
  * // TODO: 可否计算，可否关联
- * @property {[event: string, set: ($event: any, global: any) => any, boolean?] | 'hidden' | 'clearable' | 'readonly' | 'disabled' | 'required'} [bind]
+ * @property {[event: string, set: Layout.EventListener, boolean?] | 'hidden' | 'clearable' | 'readonly' | 'disabled' | 'required'} [bind]
  * @property {*} [default]
  * @property {boolean} [immutable]
  * 
@@ -16,7 +17,7 @@
 /**
  * @typedef {object} Component.Handler
  * @property {(name: string, value: any) => void} set
- * @property {(event: string, listener: ($event: any, global: any) => any) => void} addEvent
+ * @property {(event: string, listener: Layout.EventListener) => void} addEvent
  * @property {() => void} destroy
  * @property {any} tag
  * @property {() => void} init
@@ -39,9 +40,16 @@
 
 /**
  * @typedef {object} Component.Event
- * @property {Record<string, (($event: any, param: string[], env: any) => boolean | null | void) | string>} filters 过滤器
+ * @property {Record<string, Component.Event.Filter | string>} filters 过滤器
  * 
  */
+/**
+ * @callback Component.Event.Filter
+ * @param {*} $event
+ * @param {string[]} param
+ * @param {*} env
+ * @returns {boolean | null | void}
+*/
 /**
  * @typedef {object} Component
  * @property {string | ((ctx: any) => Element)} tag

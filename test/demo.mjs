@@ -36,12 +36,12 @@ const template = `
 
 /** @type {Layout.Options} */
 const layoutOptions = {
-	creteCalc: value => {
+	createCalc: value => {
 		const fn = new Function('globalThis', `with(globalThis) { return ${value} }`);
 		fn.toString = () => value;
 		return /** @type {*} */(fn);
 	},
-	creteEvent: value => {
+	createEvent: value => {
 		const fn = new Function('$event', 'globalThis', `with(globalThis) { ${value} }`);
 		fn.toString = () => value;
 		return /** @type {*} */(fn);
