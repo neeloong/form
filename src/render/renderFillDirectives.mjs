@@ -1,5 +1,5 @@
 /** @import * as Layout from '../Layout/index.mjs' */
-import Environment from './Environment.mjs';
+import Environment from './Environment/index.mjs';
 /**
  *
  * @param {any} val

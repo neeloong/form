@@ -1,100 +1,17 @@
 import { Signal } from 'signal-polyfill';
-import Store, { ArrayStore } from '../Store/index.mjs';
-import watch from './watch.mjs';
-/** @import * as Layout from '../Layout/index.mjs' */
+import Store, { ArrayStore } from '../../Store/index.mjs';
+import watch from '../watch.mjs';
+import bindableSet from './bindableSet.mjs';
+import toItem from './toItem.mjs';
+import toParentItem from './toParentItem.mjs';
+/** @import * as Layout from '../../Layout/index.mjs' */
 
-const bindable = {
-	new: true,
-	readonly: true,
 
-	required: true,
-	clearable: true,
-	hidden: true,
-	disabled: true,
-
-	label: true,
-	description: true,
-	placeholder: true,
-	min: true,
-	max: true,
-	step: true,
-	values: true,
-}
-/** @type {Set<keyof typeof bindable>} */
-// @ts-ignore
-const bindableSet = new Set(Object.keys(bindable));
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; store?: Store; calc?: null; }} ValueDefine */
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
 /** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
-/**
- * 
- * @param {Store} val 
- * @param {string | number} [key] 
- * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
- */
-function *toItem(val, key = '', sign = '$') {
-	yield [`${key}`, {get: () => val.value, set: v => val.value = v, store: val}]
-	yield [`${key}${sign}value`, {get: () => val.value, set: v => val.value = v}]
-	yield [`${key}${sign}state`, {get: () => val.state, set: v => val.state = v}]
-	yield [`${key}${sign}store`, {get: () => val}]
-	yield [`${key}${sign}schema`, {get: () => val.schema}]
-	yield [`${key}${sign}null`, {get: () => val.null}]
-	yield [`${key}${sign}index`, {get: () => val.index}]
-	yield [`${key}${sign}no`, {get: () => val.no}]
-	yield [`${key}${sign}length`, {get: () => val.length}]
-	yield [`${key}${sign}creatable`, {get: () => val.creatable}]
-	yield [`${key}${sign}immutable`, {get: () => val.immutable}]
 
 
-	for (const k of bindableSet) {
-		yield [`${key}${sign}${k}`, {get: () => val[k]}];
-	}
-	if (!(val instanceof ArrayStore)) { return; }
-	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
-	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
-	yield [`${key}${sign}remove`, {exec: (index) => val.remove(index)}]
-	yield [`${key}${sign}move`, {exec: (from, to) => val.move(from, to)}]
-	yield [`${key}${sign}exchange`, {exec: (a, b) => val.exchange(a, b)}]
-}
-/**
- * 
- * @param {Store?} parent 
- * @param {Store} val 
- * @param {string | number} [key] 
- * @returns {Iterable<[string, ValueDefine | ExecDefine | CalcDefine]>}
- */
-function *toParentItem(parent, val, key = '', sign = '$') {
-	if (!(parent instanceof ArrayStore)) {
-		yield [`${key}${sign}upMovable`, {get: () => false}];
-		yield [`${key}${sign}downMovable`, {get: () => false}]
-		return
-	}
-	yield [`${key}${sign}upMovable`, {get: () => {
-		const s = val.index;
-		if (typeof s !== 'number') { return false; }
-		if (s <= 0) { return false; }
-		return true;
-	}}];
-	yield [`${key}${sign}downMovable`, {get: () => {
-		const s = val.index;
-		if (typeof s !== 'number') { return false; }
-		if (s >= parent.length - 1) { return false; }
-		return true;
-	}}]
-	yield [`${key}${sign}remove`, {exec: () => parent.remove(Number(val.index))}]
-	yield [`${key}${sign}upMove`, {exec: () => {
-		const s = val.index;
-		if (typeof s !== 'number') { return; }
-		if (s <= 0) { return; }
-		parent.move(s, s - 1);
-	}}];
-	yield [`${key}${sign}downMove`, {exec: () => {
-		const s = val.index;
-		if (typeof s !== 'number') { return; }
-		if (s >= parent.length - 1) { return; }
-		parent.move(s, s + 1);
-	}}]
-}
 export default class Environment {
 	/**
 	 * @param {string | Layout.Calc} value
@@ -220,10 +137,11 @@ export default class Environment {
 
 	}
 	/**
-	 * 
+	 * @param {Store} store
 	 * @param {Environment | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
 	 */
-	constructor(global) {
+	constructor(store, global) {
+		this.#store = store;
 		if (global instanceof Environment) {
 			this.#global = global.#global;
 			const schemaItems = this.#schemaItems;
@@ -270,8 +188,8 @@ export default class Environment {
 	#schemaItems = Object.create(null);
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
 	#explicit = Object.create(null);
-	/** @type {Store?} */
-	#store = null
+	/** @readonly @type {Store} */
+	#store
 	/** @type {Record<string, any>?} */
 	#object = null
 	/** @type {Store?} */
@@ -290,17 +208,16 @@ export default class Environment {
 		const store = this.#store;
 		const parent = this.#parent;
 		const object = this.#object;
-		if (store) {
+		if (object) {
+			for (const k of Object.keys(object)) {
+				ais[`$${k}`] = {get: () => object[k]};
+			}
+		} else {
 			for (const [key, item] of toItem(store)) {
 				ais[key] = item;
 			}
 			for (const [key, item] of toParentItem(parent, store)) {
 				ais[key] = item;
-			}
-		}
-		if (object) {
-			for (const k of Object.keys(object)) {
-				ais[`$${k}`] = {get: () => object[k]};
 			}
 		}
 		this.#allItems = ais;
@@ -312,8 +229,7 @@ export default class Environment {
 	 * @param {Store} [parent] 
 	 */
 	setStore(store, parent) {
-		const cloned = new Environment(this);
-		cloned.#store = store;
+		const cloned = new Environment(store, this);
 		if (parent) { cloned.#parent = parent; }
 		if (store instanceof ArrayStore) { return cloned; }
 		const items = cloned.#schemaItems;
@@ -338,8 +254,7 @@ export default class Environment {
 	 */
 	params({params}, {attrs}, sourceEnv) {
 		if (Object.keys(params).length === 0) { return this; }
-		const cloned = new Environment(this);
-		cloned.#store = this.#store;
+		const cloned = new Environment(this.#store, this);
 		cloned.#parent = this.#parent;
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
@@ -391,7 +306,7 @@ export default class Environment {
 	}
 	/** @param {Record<string, any>} object */
 	setObject(object) {
-		const cloned = new Environment(this);
+		const cloned = new Environment(this.#store, this);
 		cloned.#object = object;
 		return cloned;
 	}
@@ -402,8 +317,7 @@ export default class Environment {
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
-		const cloned = new Environment(this);
-		cloned.#store = this.#store;
+		const cloned = new Environment(this.#store, this);
 		cloned.#parent = this.#parent;
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
@@ -479,6 +393,7 @@ export default class Environment {
 				});
 			}
 		}
+		this.#addStore(ngt);
 		this.#all = ngt;
 		return ngt;
 	}
@@ -506,6 +421,7 @@ export default class Environment {
 				});
 			}
 		}
+		this.#addStore(ngt);
 		this.#settable = ngt;
 		return ngt;
 	}
@@ -532,7 +448,24 @@ export default class Environment {
 				});
 			}
 		}
+		this.#addStore(ngt);
 		this.#getters = ngt;
 		return ngt;
+	}
+	/** @param {*} env  */
+	#addStore(env) {
+		const store = this.#store;
+		Object.defineProperty(env, '$store', {
+			value: store,
+			writable: false,
+			configurable: true,
+			enumerable: false,
+		});
+		Object.defineProperty(env, '$root', {
+			value: store.root,
+			writable: false,
+			configurable: true,
+			enumerable: false,
+		});
 	}
 }

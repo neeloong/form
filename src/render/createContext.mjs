@@ -1,5 +1,5 @@
 /** @import { Component } from '../types.mjs' */
-/** @import Environment from './Environment.mjs' */
+/** @import Environment from './Environment/index.mjs' */
 /** @import Store from '../Store/index.mjs' */
 
 import EventEmitter from './EventEmitter.mjs';

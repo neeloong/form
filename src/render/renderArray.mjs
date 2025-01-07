@@ -1,5 +1,5 @@
 import watch from './watch.mjs';
-import Environment from './Environment.mjs';
+import Environment from './Environment/index.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 /** @import Store, { ArrayStore } from '../Store/index.mjs' */
 

@@ -1,5 +1,5 @@
 /** @import Store from '../Store/index.mjs' */
-import Environment from './Environment.mjs';
+import Environment from './Environment/index.mjs';
 import { ArrayStore, ObjectStore } from '../Store/index.mjs';
 /** @import { Component } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
@@ -156,7 +156,7 @@ export default function (store, layouts, parent, opt1, opt2) {
 	const options = [opt1, opt2];
 	const components = options.find(v => typeof v === 'function')
 	const global = options.find(v => typeof v === 'object');
-	const env = new Environment(global).setStore(store);
+	const env = new Environment(store, global);
 	const templates = Object.create(null)
 	return renderList(layouts, parent, null, env, templates, (layout, templates) => {
 		return render(layout, parent, null, store, env, templates, [], components);
