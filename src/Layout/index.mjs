@@ -1,5 +1,3 @@
-/** @import Store from '../Store/index.mjs' */
-
 export { default as parse } from './parse.mjs';
 export { default as stringify } from './stringify.mjs';
 
@@ -17,7 +15,7 @@ export { default as stringify } from './stringify.mjs';
  * @property {string} [value] 值关联（关联为列表）
  * @property {boolean | string | Calc} [enum] 列表属性枚举
  * 
- * @property {string} [bind]
+ * @property {boolean | string} [bind]
  * @property {string | Calc} [text]
  * @property {string | Calc} [html]
  * 

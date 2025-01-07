@@ -7,7 +7,7 @@ import Environment from './Environment/index.mjs';
  * @param {Component.Handler} handler
  * @param {Environment} envs
  * @param {Record<string, string | {name: string} | Layout.Calc>} attrs
- * @param {string?} [bindValue]
+ * @param {string | boolean | null} [bindValue]
  */
 export default function bindBaseAttrs(handler, envs, attrs, bindValue) {
 	const tag = handler.tag;
@@ -29,7 +29,7 @@ export default function bindBaseAttrs(handler, envs, attrs, bindValue) {
 		}
 		bk.add(envs.watch(attrSchema, val => handler.set(name, val)));
 	}
-	if (bindValue) {
+	if (bindValue && typeof bindValue !== 'boolean') {
 		for (const [key, effect] of Object.entries(envs.bindAll(bindValue) || {})) {
 			if (typeof effect !== 'function') { continue; }
 			bk.add(effect(val => handler.set(key, val)));

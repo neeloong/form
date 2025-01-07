@@ -55,12 +55,10 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 				case 'html':
 					directives[key] = nameRegex.test(value) ? value : createCalc(value);
 					break;
-				case 'template':
-				case 'bind':
-				case 'value':
-				case 'comment':
-					directives[key] = value;
-					break;
+				case 'template': directives.template = value; break;
+				case 'bind': directives.bind = value || true; break;
+				case 'value': directives.value = value; break;
+				case 'comment': directives.comment = value; break;
 			}
 		}
 	}

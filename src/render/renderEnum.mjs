@@ -1,20 +1,16 @@
 import watch from './watch.mjs';
 import Environment from './Environment/index.mjs';
 import { Signal } from 'signal-polyfill';
-/** @import * as Layout from '../Layout/index.mjs' */
-/** @import Store from '../Store/index.mjs' */
 
 /**
  *
- * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
- * @param {Store} store
  * @param {() => any} getter
  * @param {Environment} env
- * @param {(layout: Layout.Node, parent: Element, next: Node | null, store: Store, env: any) => () => void} renderItem
+ * @param {(next: Node | null, env: any) => () => void} renderItem
  */
-export default function renderEnum(layout, parent, next, store, getter, env, renderItem) {
+export default function renderEnum(parent, next, getter, env, renderItem) {
 
 	/** @type {Signal.Computed<[value: any, index: number, kKey: any][]>} */
 	const list = new Signal.Computed(() => {
@@ -55,7 +51,7 @@ export default function renderEnum(layout, parent, next, store, getter, env, ren
 				const itemEnd = parent.insertBefore(document.createComment(''), nextNode);
 				const valueState = new Signal.State(value);
 				const indexState = new Signal.State(index);
-				const d = renderItem(layout, parent, itemEnd, store, env.setObject({
+				const d = renderItem(itemEnd, env.setObject({
 					get key() { return key; },
 					get value() { return valueState.get(); },
 					get index() { return indexState.get(); },

@@ -1,0 +1,36 @@
+import Store from '../../Store/index.mjs';
+import toItem from './toItem.mjs';
+/** @import { ValueDefine, ExecDefine, CalcDefine } from './index.mjs' */
+
+/**
+ * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
+ */
+export default function toGlobal(global) {
+	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
+	const items = Object.create(null);
+	if (!global || typeof global !== 'object') { return items; }
+	for (const [key, value] of Object.entries(global)) {
+		if (!key || key.includes('$')) { continue; }
+		if (!value || typeof value !== 'object') { continue; }
+		if (value instanceof Store) {
+			for (const [k, v] of toItem(value, key)) {
+				items[k] = v;
+			}
+			continue;
+		}
+		const {get,set,exec,calc} = value;
+		if (typeof get === 'function') {
+			items[key] = typeof set === 'function' ? {get,set} : {get};
+			continue;
+		}
+		if (typeof calc === 'function') {
+			items[key] = {calc};
+			continue;
+		}
+		if (typeof exec === 'function') {
+			items[key] = {exec};
+			continue;
+		}
+	}
+	return items;
+}

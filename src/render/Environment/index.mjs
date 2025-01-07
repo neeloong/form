@@ -1,9 +1,12 @@
 import { Signal } from 'signal-polyfill';
-import Store, { ArrayStore } from '../../Store/index.mjs';
+import Store from '../../Store/index.mjs';
 import watch from '../watch.mjs';
 import bindableSet from './bindableSet.mjs';
 import toItem from './toItem.mjs';
 import toParentItem from './toParentItem.mjs';
+import setStore from './setStore.mjs';
+import toGlobal from './toGlobal.mjs';
+import addStore from './addStore.mjs';
 /** @import * as Layout from '../../Layout/index.mjs' */
 
 
@@ -11,7 +14,9 @@ import toParentItem from './toParentItem.mjs';
 /** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
 /** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
 
-
+/**
+ * @template {Store} [T=Store]
+ */
 export default class Environment {
 	/**
 	 * @param {string | Layout.Calc} value
@@ -33,12 +38,12 @@ export default class Environment {
 	watch(value, cb) { return watch(() => this.exec(value), cb); }
 
 	/**
-	 * @param {string | Layout.Calc} name
+	 * @param {string | Layout.Calc | boolean | null} [name]
 	 */
 	enum(name) {
-		if (typeof name === 'function') {
-			return () => name(this.getters);
-		}
+		if (!name) { return true; }
+		if (name === true) { return this.store; }
+		if (typeof name === 'function') { return () => name(this.getters); }
 		if (typeof name !== 'string') { return null; }
 		const item = this.#items[name];
 		if (typeof item?.get !== 'function') { return null }
@@ -137,11 +142,11 @@ export default class Environment {
 
 	}
 	/**
-	 * @param {Store} store
+	 * @param {T} store
 	 * @param {Environment | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
 	 */
 	constructor(store, global) {
-		this.#store = store;
+		this.store = store;
 		if (global instanceof Environment) {
 			this.#global = global.#global;
 			const schemaItems = this.#schemaItems;
@@ -154,33 +159,8 @@ export default class Environment {
 			}
 			return;
 		}
-		const items = Object.create(null);
-		this.#global = items;
-		if (!global) { return }
-		if (typeof global !== 'object') { return; }
-		for (const [key, value] of Object.entries(global)) {
-			if (!key || key.includes('$')) { continue; }
-			if (!value || typeof value !== 'object') { return; }
-			if (value instanceof Store) {
-				for (const [k, v] of toItem(value, key)) {
-					items[k] = v;
-				}
-				continue;
-			}
-			const {get,set,exec,calc} = value;
-			if (typeof get === 'function') {
-				items[key] = typeof set === 'function' ? {get,set} : {get};
-				continue;
-			}
-			if (typeof calc === 'function') {
-				items[key] = {calc};
-				continue;
-			}
-			if (typeof exec === 'function') {
-				items[key] = {exec};
-				continue;
-			}
-		}
+		setStore(this.#schemaItems, store);
+		this.#global = toGlobal(global);
 	}
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
 	#global
@@ -188,8 +168,8 @@ export default class Environment {
 	#schemaItems = Object.create(null);
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
 	#explicit = Object.create(null);
-	/** @readonly @type {Store} */
-	#store
+	/** @readonly @type {T} */
+	store
 	/** @type {Record<string, any>?} */
 	#object = null
 	/** @type {Store?} */
@@ -205,7 +185,7 @@ export default class Environment {
 			...this.#global,
 			...this.#explicit,
 		}));
-		const store = this.#store;
+		const store = this.store;
 		const parent = this.#parent;
 		const object = this.#object;
 		if (object) {
@@ -226,24 +206,24 @@ export default class Environment {
 	/**
 	 * 
 	 * @param {Store} store 
-	 * @param {Store} [parent] 
+	 * @param {Store} parent 
 	 */
 	setStore(store, parent) {
 		const cloned = new Environment(store, this);
 		if (parent) { cloned.#parent = parent; }
-		if (store instanceof ArrayStore) { return cloned; }
-		const items = cloned.#schemaItems;
-		for (const [name, val] of store) {
-			for (const [b, x] of toItem(val, name)) {
-				items[b] = x;
-			}
-			for (const [b, x] of toItem(val, name, '$$')) {
-				items[b] = x;
-			}
-		}
-		if (parent instanceof ArrayStore) {
-
-		}
+		setStore(cloned.#schemaItems, store, parent);
+		return cloned;
+	}
+	/**
+	 * 
+	 * @param {string?} [name] 
+	 */
+	child(name) {
+		if (!name) { return this; }
+		const store = this.store.child(name);
+		if (!store) { return null; }
+		const cloned = new Environment(store, this);
+		setStore(cloned.#schemaItems, store);
 		return cloned;
 	}
 	/**
@@ -251,10 +231,20 @@ export default class Environment {
 	 * @param {Layout.Node} template 
 	 * @param {Layout.Node} source 
 	 * @param {Environment} sourceEnv 
+	 * @param {string | null | boolean} [bind] 
 	 */
-	params({params}, {attrs}, sourceEnv) {
+	params({params}, {attrs}, sourceEnv, bind) {
+		/** @type {Store} */
+		let store = this.store;
+		if (bind === true) {
+			store = sourceEnv.store;
+		} else if (bind) {
+			const item = sourceEnv.#items[bind];
+			const s = item?.get && item.store;
+			if (s) { store = s; }
+		}
 		if (Object.keys(params).length === 0) { return this; }
-		const cloned = new Environment(this.#store, this);
+		const cloned = new Environment(store, this);
 		cloned.#parent = this.#parent;
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
@@ -306,7 +296,7 @@ export default class Environment {
 	}
 	/** @param {Record<string, any>} object */
 	setObject(object) {
-		const cloned = new Environment(this.#store, this);
+		const cloned = new Environment(this.store, this);
 		cloned.#object = object;
 		return cloned;
 	}
@@ -317,7 +307,7 @@ export default class Environment {
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
-		const cloned = new Environment(this.#store, this);
+		const cloned = new Environment(this.store, this);
 		cloned.#parent = this.#parent;
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
@@ -393,7 +383,7 @@ export default class Environment {
 				});
 			}
 		}
-		this.#addStore(ngt);
+		addStore(this.store, ngt);
 		this.#all = ngt;
 		return ngt;
 	}
@@ -421,7 +411,7 @@ export default class Environment {
 				});
 			}
 		}
-		this.#addStore(ngt);
+		addStore(this.store, ngt);
 		this.#settable = ngt;
 		return ngt;
 	}
@@ -448,24 +438,8 @@ export default class Environment {
 				});
 			}
 		}
-		this.#addStore(ngt);
+		addStore(this.store, ngt);
 		this.#getters = ngt;
 		return ngt;
-	}
-	/** @param {*} env  */
-	#addStore(env) {
-		const store = this.#store;
-		Object.defineProperty(env, '$store', {
-			value: store,
-			writable: false,
-			configurable: true,
-			enumerable: false,
-		});
-		Object.defineProperty(env, '$root', {
-			value: store.root,
-			writable: false,
-			configurable: true,
-			enumerable: false,
-		});
 	}
 }

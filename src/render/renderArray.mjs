@@ -1,18 +1,16 @@
 import watch from './watch.mjs';
 import Environment from './Environment/index.mjs';
-/** @import * as Layout from '../Layout/index.mjs' */
 /** @import Store, { ArrayStore } from '../Store/index.mjs' */
 
 /**
  *
- * @param {Layout.Node} layout
  * @param {Element} parent
  * @param {Node?} next
  * @param {ArrayStore} store
  * @param {Environment} env
- * @param {(layout: Layout.Node, parent: Element, next: Node | null, store: Store, env: any) => () => void} renderItem
+ * @param {(next: Node | null, env: any) => () => void} renderItem
  */
-export default function renderArray(layout, parent, next, store, env, renderItem) {
+export default function renderArray(parent, next, store, env, renderItem) {
 	const start = parent.insertBefore(document.createComment(''), next);
 	/** @type {Map<Store, [Comment, Comment, () => void]>} */
 	let seMap = new Map();
@@ -35,7 +33,7 @@ export default function renderArray(layout, parent, next, store, env, renderItem
 			if (!old) {
 				const ItemStart = parent.insertBefore(document.createComment(''), nextNode);
 				const itemEnd = parent.insertBefore(document.createComment(''), nextNode);
-				const d = renderItem(layout, parent, itemEnd, child, env.setStore(child, store));
+				const d = renderItem(itemEnd, env.setStore(child, store));
 				seMap.set(child, [ItemStart, itemEnd, d]);
 				continue;
 			}
