@@ -26,12 +26,13 @@ import renderEnum from './renderEnum.mjs';
  */
 function renderItem(layout, parent, next, env, templates, componentPath, getComponent) {
 	env = env.set(layout.aliases, layout.vars);
+	const bind = layout.directives.bind;
 	const fragment = layout.directives.fragment;
 	if (fragment && typeof fragment === 'string') {
 		const template = templates[fragment];
 		if (!template) { return () => {}; }
 		const [templateLayout, templateEnv] = template;
-		const newEnv = templateEnv.params(templateLayout, layout, env, layout.directives.bind);
+		const newEnv = templateEnv.params(templateLayout, layout, env, bind);
 		return render(templateLayout, parent, next, newEnv, templates, componentPath, getComponent);
 	}
 	if (!layout.name || layout.directives.fragment) {
@@ -48,12 +49,18 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
 
 	const componentAttrs = component?.attrs
 	const attrs = componentAttrs
-		? bindAttrs(handler, env, layout.attrs, componentAttrs, layout.directives.bind)
-		: bindBaseAttrs(handler, env, layout.attrs, layout.directives.bind)
+		? bindAttrs(handler, env, layout.attrs, componentAttrs, bind)
+		: bindBaseAttrs(handler, env, layout.attrs, bind)
 
 	for (const [name, event] of Object.entries(layout.events)) {
 		const fn = env.getEvent(event);
 		if (fn) { handler.addEvent(name, fn); }
+	}
+
+	if (bind && typeof bind !== 'boolean') {
+		for (const [key, event] of Object.entries(env.bindEvents(bind) || {})) {
+			handler.addEvent(key, event);
+		}
 	}
 
 	const r = component ?
