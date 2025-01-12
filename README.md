@@ -200,6 +200,7 @@ render(store, layouts, app);
    - `$type` 只读属性
    - `$meta` 只读属性
    - `$component` 只读属性
+   - `$kind` 只读属性
 1. 数组字段扩展隐式函数（只在事件中可用）
    - `$insert(index, value)`
    - `$add(value)`

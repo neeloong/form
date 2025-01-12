@@ -17,6 +17,7 @@ export default class Store {
 	}
 	#null = false;
 	get null() { return this.#null; }
+	get kind() { return ''; }
 	/**
 	 * @param {Schema.Field} schema
 	 * @param {object} options 
@@ -436,6 +437,7 @@ export default class Store {
 
 
 export class ObjectStore extends Store {
+	get kind() { return 'object'; }
 	/** @type {Record<string, Store>} */
 	#children
 	*[Symbol.iterator]() {yield* Object.entries(this.#children);}
@@ -526,6 +528,7 @@ export class ArrayStore extends Store {
 		}
 		return children[Number(key)] || null;
 	}
+	get kind() { return 'array'; }
 	/**
 	 * @param {Schema.Field} schema
 	 * @param {object} [options] 

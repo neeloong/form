@@ -2,6 +2,7 @@ const bindable = {
 	type: true,
 	meta: true,
 	component: true,
+	kind: true,
 
 	new: true,
 	readonly: true,
