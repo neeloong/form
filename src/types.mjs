@@ -52,7 +52,7 @@
 */
 /**
  * @typedef {object} Component
- * @property {string | ((ctx: any) => Element)} tag
+ * @property {string | ((ctx: any) => Element | [Element, (Element | null)?])} tag
  * @property {string} [is]
  * @property {Record<string, Component.Attr>} [attrs]
  * @property {Record<string, Component.Event>} [events]
@@ -108,15 +108,11 @@
 /**
  * @typedef {object} Schema.Event
  * 
- * @property {Function?} [input]
- * @property {Function?} [change]
- * @property {Function?} [click]
- * @property {Function?} [focus]
- * @property {Function?} [blur]
- * 
- * @property {Function?} [add]
- * @property {Function?} [remove]
- * @property {Function?} [move]
+ * @property {InputEvent} input
+ * @property {InputEvent} change
+ * @property {Event} click
+ * @property {Event} focus
+ * @property {Event} blur
  */
 /**
  * @typedef {object} Schema.Attr
@@ -136,4 +132,5 @@
  * @property {number | ((store: Store, root: Store) => number) | null} [max] 日期、时间、数字的最大值
  * @property {number | ((store: Store, root: Store) => number) | null} [step] 日期、时间、数字的步长
  * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
+ * @property {{[k in keyof Schema.Event]?: ((this: Store, value: Schema.Event[k], store: Store) => void | boolean | null)?}} [events]
  */

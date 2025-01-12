@@ -7,6 +7,43 @@ import createState from './createState.mjs';
  * @template [T=any]
  */
 export default class Store {
+	/** @type {Map<string, Set<(value: any, store: any) => void | boolean | null>>} */
+	#events = new Map()
+	/**
+	 * 
+	 * @template {keyof Schema.Event} K
+	 * @param {K} event 
+	 * @param  {Schema.Event[K]} value 
+	 */
+	emit(event, value) {
+		const key = typeof event === 'number' ? String(event) : event;
+		const events = this.#events;
+		let canceled = false;
+		for (const d of [...events.get(key) || []]) {
+			canceled = d(value, this) === false || canceled;
+		}
+		return !canceled;
+	}
+	/**
+	 * 
+	 * @template {keyof Schema.Event} K
+	 * @param {K} event 
+	 * @param  {(this: this, p: Schema.Event[K], store: this) => void | boolean | null} listener
+	 * @returns {() => void}
+	 */
+	listen(event, listener) {
+		const fn = listener.bind(this);
+		const events = this.#events;
+		const key = typeof event === 'number' ? String(event) : event;
+		let set = events.get(key);
+		if (!set) {
+			set = new Set();
+			events.set(key, set);
+		}
+		set.add(fn);
+		return () => { set?.delete(fn); }
+
+	}
 	/**
 	 * @param {Schema} schema
 	 * @param {object} [options] 
@@ -125,6 +162,13 @@ export default class Store {
 		this.#convert = typeof convert === 'function' ? convert : null;
 		this.#length.set(length || 0);
 		this.#index.set(index ?? '');
+		
+		for (const [k, f] of Object.entries(schema.events || {})) {
+			if (typeof f !== 'function') { continue; }
+			// @ts-ignore
+			this.listen(k, f);
+		}
+		
 
 	}
 	#destroyed = false;
