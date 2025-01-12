@@ -61,10 +61,11 @@ export default class Environment {
 		const item = this.#items[name];
 		if (!item?.get) { return; }
 		const { store } = item;
-		if (!store) { return; }
-		switch(type) {
-			case 'value': return watch(() => store.value, cb);
-			case 'state': return watch(() => store.state, cb);
+		if (!store) {
+			switch(type) {
+				case 'value': return watch(() => item.get(), cb);
+			}
+			return;
 		}
 		// @ts-ignore
 		if (bindableSet.has(type)) {
@@ -89,8 +90,6 @@ export default class Environment {
 		const res = Object.fromEntries([...bindableSet].map(v => [
 			`$${v}`, cb => watch(() => store[v], cb)
 		]));
-		res.$value = cb => watch(() => store.value, cb);
-		res.$state = cb => watch(() => store.state, cb);
 		return res;
 	}
 	/**

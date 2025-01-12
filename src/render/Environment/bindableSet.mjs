@@ -4,8 +4,19 @@ const bindable = {
 	component: true,
 	kind: true,
 
+	value: true,
+	state: true,
+
+	store: true,
+	parent: true,
+	root: true,
+
+	schema: true,
+
 	new: true,
 	readonly: true,
+	creatable: true,
+	immutable: true,
 
 	required: true,
 	clearable: true,
@@ -19,6 +30,11 @@ const bindable = {
 	max: true,
 	step: true,
 	values: true,
+
+	null: true,
+	index: true,
+	no: true,
+	length: true,
 }
 /** @type {Set<keyof typeof bindable>} */
 // @ts-ignore

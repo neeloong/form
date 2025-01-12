@@ -148,6 +148,7 @@ export default class Store {
 	#meta;
 	/** @readonly @type {any} */
 	#component;
+	get store() { return this; }
 	get parent() { return this.#parent; }
 	get root() { return this.#root; }
 	get type() { return this.#type; }

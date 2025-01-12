@@ -96,14 +96,12 @@
  * @property {null} [type]
  * @property {Record<string, Schema.Field>} [props]
  * @property {boolean} [array] 
- * @property {any} [meta]
  */
 /**
  * @typedef {object} Schema.Type
  * @property {string} type
  * @property {null} [props]
  * @property {boolean} [array] 
- * @property {any} [meta]
  */
 
 
@@ -122,6 +120,8 @@
  */
 /**
  * @typedef {object} Schema.Attr
+ * @property {any} [meta]
+ * @property {any} [component]
  * @property {boolean} [immutable]
  * @property {boolean} [creatable]
  * @property {boolean | ((store: Store, root: Store) => boolean) | null} [hidden]
