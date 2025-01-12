@@ -61,6 +61,9 @@ export default class Store {
 			this.#root = parent.#root;
 			// TODO: 事件向上冒泡
 		}
+		this.#type = schema.type;
+		this.#meta = schema.meta;
+		this.#component = schema.component;
 
 		const selfNewState = new Signal.State(Boolean(isNew));
 		this.#selfNew = selfNewState;
@@ -138,8 +141,17 @@ export default class Store {
 	#parent = null;
 	/** @readonly @type {Store} */
 	#root = this;
+	/** @readonly @type {any} */
+	#type;
+	/** @readonly @type {any} */
+	#meta;
+	/** @readonly @type {any} */
+	#component;
 	get parent() { return this.#parent; }
 	get root() { return this.#root; }
+	get type() { return this.#type; }
+	get meta() { return this.#meta; }
+	get component() { return this.#component; }
 
 	#length = new Signal.State(0);
 	get length() { return this.#length.get(); }

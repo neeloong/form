@@ -1,4 +1,8 @@
 const bindable = {
+	type: true,
+	meta: true,
+	component: true,
+
 	new: true,
 	readonly: true,
 
