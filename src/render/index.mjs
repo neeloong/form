@@ -23,7 +23,7 @@ import bindBase from './bindBase.mjs';
  * @param {Environment} env
  * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
- * @param {((path: string[]) => Component?)?} [getComponent]
+ * @param {Component.Getter?} [getComponent]
  */
 function renderItem(layout, parent, next, env, templates, componentPath, getComponent) {
 	env = env.set(layout.aliases, layout.vars);
@@ -79,7 +79,7 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
 	bindClasses(root, layout.classes, env);
 	bindStyles(root, layout.styles, env);
 
-	handler.init();
+	handler.mount();
 	
 	return () => {
 		root.remove();
@@ -97,7 +97,7 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
  * @param {Environment} env
  * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
- * @param {((path: string[]) => Component?)?} [getComponent]
+ * @param {Component.Getter?} [getComponent]
  * @returns {() => void}
  */
 function render(layout, parent, next, env, templates, componentPath, getComponent) {
@@ -136,15 +136,15 @@ function render(layout, parent, next, env, templates, componentPath, getComponen
  * @param {Store} store
  * @param {(Layout.Node | string)[]} layouts 
  * @param {Element} parent 
- * @param {((path: string[]) => Component?)?} [components] 
+ * @param {Component.Getter?} [components] 
  * @returns {() => void}
  */
 /**
  * @param {Store} store
  * @param {(Layout.Node | string)[]} layouts 
  * @param {Element} parent 
- * @param {((path: string[]) => Component?) | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt1] 
- * @param {((path: string[]) => Component?) | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt2] 
+ * @param {Component.Getter | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt1] 
+ * @param {Component.Getter | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt2] 
  */
 export default function (store, layouts, parent, opt1, opt2) {
 	const options = [opt1, opt2];

@@ -20,7 +20,7 @@
  * @property {(event: string, listener: Layout.EventListener) => void} addEvent
  * @property {() => void} destroy
  * @property {any} tag
- * @property {() => void} init
+ * @property {() => void} mount
  */
 /**
  * @typedef {object} Component.Context.Events

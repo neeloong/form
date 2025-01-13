@@ -1,8 +1,9 @@
 /** @import { Component } from '../types.mjs' */
 /** @import Environment from './Environment/index.mjs' */
-/** @import Store from '../Store/index.mjs' */
 
+import { Signal } from 'signal-polyfill';
 import EventEmitter from './EventEmitter.mjs';
+import watch from './watch.mjs';
 
 /** @type {Record<string, Component.Event.Filter>} */
 const eventFilters = {
@@ -50,7 +51,7 @@ const eventFilters = {
 		if (evt instanceof KeyboardEvent) {
 			const key = evt.code.toLowerCase().replace(/-/g, '');
 			for (const k of param) {
-				if (key === k.toLowerCase().replace(/-/g, '')) { return true }
+				if (key === k.toLowerCase().replace(/-/g, '')) { return true; }
 			}
 			return false;
 		}
@@ -89,34 +90,34 @@ const eventFilters = {
 		if (evt instanceof PointerEvent) {
 			const pointerType = evt.pointerType.toLowerCase().replace(/-/g, '');
 			for (const k of param) {
-				if (pointerType === k.toLowerCase().replace(/-/g, '')) { return true }
+				if (pointerType === k.toLowerCase().replace(/-/g, '')) { return true; }
 			}
 			return false;
 		}
 	},
 
 	ctrl(evt) {
-		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+		if (evt instanceof MouseEvent || evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
 			return evt.ctrlKey;
 		}
 	},
 	alt(evt) {
-		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+		if (evt instanceof MouseEvent || evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
 			return evt.altKey;
 		}
 	},
 	shift(evt) {
-		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+		if (evt instanceof MouseEvent || evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
 			return evt.shiftKey;
 		}
 	},
 	meta(evt) {
-		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+		if (evt instanceof MouseEvent || evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
 			return evt.metaKey;
 		}
 	},
 	cmd(evt) {
-		if (evt instanceof MouseEvent|| evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
+		if (evt instanceof MouseEvent || evt instanceof KeyboardEvent || evt instanceof TouchEvent) {
 			return evt.ctrlKey || evt.metaKey;
 		}
 	},
@@ -129,25 +130,45 @@ const eventFilters = {
  */
 export default function createContext(component, env) {
 	const tag = typeof component === 'string' ? component : component.tag;
-	const { attrs, events } = typeof component !== 'string' && component || {attrs: null, events: null };
+	const { attrs, events } = typeof component !== 'string' && component || { attrs: null, events: null };
 
 	let destroyed = false;
-	let init = false;
+	const destroyedState = new Signal.State(false);
+	let mounted = false;
+	const mountedState = new Signal.State(false);
+	/** @type {Record<string, Signal.State<any> | void>} */
+	const attrStates = Object.create(null);
 	const tagAttrs = Object.create(null);
+
+	const attrWatchers = new Set();
 
 	/** @type {[string, ($event: any) => void, AddEventListenerOptions][]} */
 	const allEvents = [];
 	const stateEmitter = new EventEmitter();
-	/** @type {EventEmitter<Record<string, [any, any, string]>>} */
-	const attrEmitter = new EventEmitter();
 	/** @type {Component.Context} */
 	const context = {
 		events: allEvents,
-		props: attrs ? new Set(Object.entries(attrs).filter(([,a]) => a.isProp).map(([e]) => e)) : null,
+		props: attrs ? new Set(Object.entries(attrs).filter(([, a]) => a.isProp).map(([e]) => e)) : null,
 		tagAttrs,
-		watchAttr(name, fn) { return attrEmitter.listen(name, fn); },
-		get destroyed() { return destroyed},
-		get init() { return init},
+		watchAttr(name, fn) {
+			if (destroyed) { return () => { }; }
+			const state = attrStates[name];
+			if (!state) { return () => { }; }
+			let old = state.get();
+			const w = watch(() => state.get(), v => {
+				const o = old;
+				old = v;
+				fn(v, o, name);
+			});
+			attrWatchers.add(w);
+
+			return () => {
+				attrWatchers.delete(w);
+				w();
+			};
+		},
+		get destroyed() { return destroyedState.get(); },
+		get init() { return mountedState.get(); },
 		listen(name, listener) { return stateEmitter.listen(name, listener); },
 	};
 	/** @type {Component.Handler} */
@@ -155,11 +176,18 @@ export default function createContext(component, env) {
 		tag,
 		set(name, value) {
 			if (attrs && !(name in attrs)) { return; }
-			if (!(name in tagAttrs)) { tagAttrs[name] = void 0; }
-			const old = tagAttrs[name];
-			if (old === value) { return; }
-			tagAttrs[name] = value;
-			attrEmitter.emit(name, value, old, name);
+			let state = attrStates[name];
+			if (state) {
+				state.set(value);
+				return;
+			}
+			const s = new Signal.State(value);
+			attrStates[name] = s;
+			Object.defineProperty(tagAttrs, name, {
+				configurable: true,
+				enumerable: true,
+				get: s.get.bind(s),
+			});
 		},
 		addEvent(name, fn) {
 			if (typeof fn !== 'function') { return; }
@@ -167,17 +195,17 @@ export default function createContext(component, env) {
 			const filters = events ? events[e].filters : {};
 			if (!filters) { return; }
 			/** @type {AddEventListenerOptions} */
-			const options = {}
+			const options = {};
 			/** @type {[Component.Event.Filter, string[], boolean][]} */
 			const filterFns = [];
-			if (filters) for (let f = fs.shift();f;f = fs.shift()) {
+			if (filters) for (let f = fs.shift(); f; f = fs.shift()) {
 				const paramIndex = f.indexOf(':');
 				const noParamName = paramIndex >= 0 ? f.slice(0, paramIndex) : f;
 				const param = paramIndex >= 0 ? f.slice(paramIndex + 1).split(':') : [];
 				const filterName = noParamName.replace(/^-+/, '');
 				const sub = (noParamName.length - filterName.length) % 2 === 1;
 				let filter = filters[filterName] || filterName;
-				switch(filter) {
+				switch (filter) {
 					case 'once':
 						options.once = !sub;
 						break;
@@ -198,20 +226,25 @@ export default function createContext(component, env) {
 			allEvents.push([e, $event => {
 				const global = env.all;
 				for (const [filter, param, sub] of filterFns) {
-					if (filter($event, param, global) === sub) { return}
+					if (filter($event, param, global) === sub) { return; }
 				}
 				fn($event, global);
 			}, options]);
 		},
 		destroy() {
-			if (destroyed) { return }
+			if (destroyed) { return; }
 			destroyed = true;
+			destroyedState.set(true);
+			for (const w of attrWatchers) {
+				w();
+			}
 			stateEmitter.emit('destroy');
 		},
-		init() {
-			if (init) { return }
-			init = true;
-			stateEmitter.emit('init', {events: allEvents});
+		mount() {
+			if (mounted) { return; }
+			mounted = true;
+			mountedState.set(true);
+			stateEmitter.emit('init', { events: allEvents });
 		},
 
 	};
