@@ -14,6 +14,7 @@ import renderFillDirectives from './renderFillDirectives.mjs';
 import renderList from './renderList.mjs';
 import renderObject from './renderObject.mjs';
 import renderEnum from './renderEnum.mjs';
+import bindBase from './bindBase.mjs';
 
 /**
  * @param {Layout.Node} layout
@@ -50,18 +51,15 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
 	const componentAttrs = component?.attrs
 	const attrs = componentAttrs
 		? bindAttrs(handler, env, layout.attrs, componentAttrs, bind)
-		: bindBaseAttrs(handler, env, layout.attrs, bind)
+		: bindBaseAttrs(handler, env, layout.attrs)
 
 	for (const [name, event] of Object.entries(layout.events)) {
 		const fn = env.getEvent(event);
 		if (fn) { handler.addEvent(name, fn); }
 	}
 
-	if (bind && typeof bind !== 'boolean') {
-		for (const [key, event] of Object.entries(env.bindEvents(bind) || {})) {
-			handler.addEvent(key, event);
-		}
-	}
+	const base = bindBase(handler, env, bind);
+
 
 	const r = component ?
 		typeof component.tag === 'function'
@@ -88,6 +86,7 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
 		handler.destroy();
 		attrs();
 		children();
+		base();
 	};
 }
 /**

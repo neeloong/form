@@ -111,24 +111,6 @@ export default class Environment {
 	 * @param {string} name
 	 * @returns {Record<string, (value: any) => void> | void} 
 	 */
-	bindStateAllSet(name) {
-		const item = this.#items[name];
-		if (!item?.get) { return; }
-		const { store } = item;
-		if (!store) { 
-			const set = item.set;
-			if (typeof set !== 'function') { return; }
-			return { '$value': set }
-		 }
-		return {
-			'$value': v => {store.value = v; },
-			'$state': v => {store.state = v; },
-		}
-	}
-	/**
-	 * @param {string} name
-	 * @returns {Record<string, (value: any) => void> | void} 
-	 */
 	bindEvents(name) {
 		const item = this.#items[name];
 		if (!item?.get) { return; }
@@ -137,8 +119,10 @@ export default class Environment {
 			const set = item.set;
 			if (typeof set !== 'function') { return; }
 			return { '$value': set }
-		 }
+		}
 		return {
+			'$value': v => {store.value = v; },
+			'$state': v => {store.state = v; },
 			'$input': v => {store.emit('input', v); },
 			'$change': v => {store.emit('change', v); },
 			'$click': v => {store.emit('click', v); },
