@@ -29,7 +29,7 @@ export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValu
 			continue;
 		}
 		const bind = attr.bind;
-		if (!bindValue || !bind || typeof bindValue === 'boolean') {
+		if (!bindValue || !bind) {
 			handler.set(name, attr.default);
 			continue;
 		}
@@ -51,8 +51,9 @@ export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValu
 			continue;
 		}
 		if (!isState) {
-			bk.add(envs.watch(bindValue, v => handler.set(name, v)));
-			handler.addEvent(event, (...args) => { envs.all[bindValue] = set(...args)});
+			const bindKey = bindValue === true ? '' : bindValue;
+			bk.add(envs.watch(bindKey, v => handler.set(name, v)));
+			handler.addEvent(event, (...args) => { envs.all[bindKey] = set(...args)});
 			continue;
 		}
 		const r = envs.bind(bindValue, 'state', v => handler.set(name, v));

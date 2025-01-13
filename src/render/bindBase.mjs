@@ -8,7 +8,7 @@ import Environment from './Environment/index.mjs';
  * @param {string | boolean | null} [bind]
  */
 export default function bindBase(handler, env, bind) {
-	if (!bind || typeof bind === 'boolean') { return () => {}; }
+	if (!bind) { return () => {}; }
 	let bk = new Set();
 	for (const [key, effect] of Object.entries(env.bindAll(bind) || {})) {
 		if (typeof effect !== 'function') { continue; }

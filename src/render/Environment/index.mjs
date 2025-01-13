@@ -53,12 +53,12 @@ export default class Environment {
 	}
 
 	/**
-	 * @param {string} name
+	 * @param {string | true} name
 	 * @param {string} type
 	 * @param {(value: any) => void} cb 
 	 */
 	bind(name, type, cb) {
-		const item = this.#items[name];
+		const item = this.#items[name === true ? '' : name];
 		if (!item?.get) { return; }
 		const { store } = item;
 		if (!store) {
@@ -74,11 +74,11 @@ export default class Environment {
 		}
 	}
 	/**
-	 * @param {string} name
+	 * @param {string | true} name
 	 * @returns {Record<string, ((cb: (value: any) => void) => () => void) | void> | void}
 	 */
 	bindAll(name) {
-		const item = this.#items[name];
+		const item = this.#items[name === true ? '' : name];
 		if (!item?.get) { return; }
 		const { store } = item;
 		if (!store) {
@@ -93,12 +93,12 @@ export default class Environment {
 		return res;
 	}
 	/**
-	 * @param {string} name
+	 * @param {string | true} name
 	 * @param {string} type
 	 * @returns {((value: any) => void) | void} 
 	 */
 	bindSet(name, type) {
-		const item = this.#items[name];
+		const item = this.#items[name === true ? '' : name];
 		if (!item?.get) { return; }
 		const { store } = item;
 		if (!store) { return; }
@@ -108,11 +108,11 @@ export default class Environment {
 		}
 	}
 	/**
-	 * @param {string} name
+	 * @param {string | true} name
 	 * @returns {Record<string, (value: any) => void> | void} 
 	 */
 	bindEvents(name) {
-		const item = this.#items[name];
+		const item = this.#items[name === true ? '' : name];
 		if (!item?.get) { return; }
 		const { store } = item;
 		if (!store) { 
