@@ -52,13 +52,13 @@
 */
 /**
  * @typedef {object} Component
- * @property {string | ((ctx: any) => Element | [Element, (Element | null)?])} tag
+ * @property {string | ((ctx: Component.Context) => Element | [Element, (Element | null)?])} tag
  * @property {string} [is]
  * @property {Record<string, Component.Attr>} [attrs]
  * @property {Record<string, Component.Event>} [events]
  */
 /**
- * @callback ComponentGetter
+ * @callback Component.Getter
  * @param {string[]} path
  * @param {(path: string[]) => Component?} [next]
  * @returns {Component?}
@@ -106,7 +106,7 @@
 
 
 /**
- * @typedef {object} Schema.Event
+ * @typedef {object} Schema.Events
  * 
  * @property {InputEvent} input
  * @property {InputEvent} change
@@ -132,5 +132,5 @@
  * @property {number | ((store: Store, root: Store) => number) | null} [max] 日期、时间、数字的最大值
  * @property {number | ((store: Store, root: Store) => number) | null} [step] 日期、时间、数字的步长
  * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
- * @property {{[k in keyof Schema.Event]?: ((this: Store, value: Schema.Event[k], store: Store) => void | boolean | null)?}} [events]
+ * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events]
  */

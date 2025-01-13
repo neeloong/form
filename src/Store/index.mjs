@@ -11,9 +11,9 @@ export default class Store {
 	#events = new Map()
 	/**
 	 * 
-	 * @template {keyof Schema.Event} K
+	 * @template {keyof Schema.Events} K
 	 * @param {K} event 
-	 * @param  {Schema.Event[K]} value 
+	 * @param  {Schema.Events[K]} value 
 	 */
 	emit(event, value) {
 		const key = typeof event === 'number' ? String(event) : event;
@@ -26,9 +26,9 @@ export default class Store {
 	}
 	/**
 	 * 
-	 * @template {keyof Schema.Event} K
+	 * @template {keyof Schema.Events} K
 	 * @param {K} event 
-	 * @param  {(this: this, p: Schema.Event[K], store: this) => void | boolean | null} listener
+	 * @param  {(this: this, p: Schema.Events[K], store: this) => void | boolean | null} listener
 	 * @returns {() => void}
 	 */
 	listen(event, listener) {
