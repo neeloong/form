@@ -50,7 +50,7 @@ export default class Store {
 	 * @param {boolean} [options.new] 
 	 */
 	static create(schema, options = {}) {
-		return new ObjectStore({type: null, props: schema}, { ...options, parent: null });
+		return new ObjectStore({type: schema}, { ...options, parent: null });
 	}
 	#null = false;
 	get null() { return this.#null; }
@@ -493,7 +493,7 @@ export class ObjectStore extends Store {
 	 */
 	child(key) { return this.#children[key] || null; }
 	/**
-	 * @param {Schema.Field} schema
+	 * @param {Schema.Object & Schema.Attr} schema
 	 * @param {object} [options] 
 	 * @param {Store?} [options.parent] 
 	 * @param {string | number} [options.index] 
@@ -532,7 +532,7 @@ export class ObjectStore extends Store {
 			}
 		}
 
-		for (const [index, field] of Object.entries(schema.props || {})) {
+		for (const [index, field] of Object.entries(schema.type)) {
 			let child;
 			if (typeof field.type === 'string') {
 				if (field.array) {
@@ -543,7 +543,7 @@ export class ObjectStore extends Store {
 			} else if (field.array) {
 				child = new ArrayStore(field, {...childCommonOptions, index});
 			} else {
-				child = new ObjectStore(field, { ...childCommonOptions, index});
+				child = new ObjectStore(/**@type {*}*/(field), { ...childCommonOptions, index});
 			}
 			children[index] = child;
 		}
@@ -648,9 +648,9 @@ export class ArrayStore extends Store {
 				child.index = index;
 				return child
 			}
-		} else if (!Array.isArray(schema.props)) {
+		} else if (schema.type && typeof schema.type === 'object' && !Array.isArray(schema.type)) {
 			this.#create = (index, isNew) =>  {
-				const child = new ObjectStore(schema, { ...childCommonOptions, index, new: isNew});
+				const child = new ObjectStore(/** @type {*} */(schema), { ...childCommonOptions, index, new: isNew});
 				child.index = index;
 				return child
 			}

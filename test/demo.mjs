@@ -53,7 +53,7 @@ const layoutOptions = {
  */
 const schema = {
 	a: { type: 'int', disabled: true, placeholder: '这是a的占位符', },
-	list: { array: true, props: {
+	list: { array: true, type: {
 			b: { type: 'int', disabled: true, placeholder: '这是b的占位符' },
 			c: { array: true, type: 'int' },
 		},

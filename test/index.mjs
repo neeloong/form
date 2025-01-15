@@ -5,9 +5,9 @@ import { Store, Layout, render } from '@neeloong/form';
  */
 const schema = {
 	int: { type: 'int' },
-	a: { array: true, props: {
+	a: { array: true, type: {
 			b: { type: 'int', disabled: true },
-			c: { array: true, props: { d: {type: 'int'}, } },
+			c: { array: true, type: { d: {type: 'int'}, } },
 			x: { array: true, type: 'int' },
 		},
 	},

@@ -93,14 +93,12 @@
  */
 /**
  * @typedef {object} Schema.Object
- * @property {null} [type]
- * @property {Record<string, Schema.Field>} [props]
+ * @property {Record<string, Schema.Field>} type
  * @property {boolean} [array] 
  */
 /**
  * @typedef {object} Schema.Type
  * @property {string} type
- * @property {null} [props]
  * @property {boolean} [array] 
  */
 
