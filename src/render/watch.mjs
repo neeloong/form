@@ -1,24 +1,5 @@
 import { Signal } from 'signal-polyfill';
 
-let needsEnqueue = true;
-
-const w = new Signal.subtle.Watcher(() => {
-	if (needsEnqueue) {
-		needsEnqueue = false;
-		queueMicrotask(processPending);
-	}
-});
-
-function processPending() {
-	needsEnqueue = true;
-
-	for (const s of w.getPending()) {
-		s.get();
-	}
-
-	w.watch();
-}
-
 /**
  * 创建可赋值计算值
  * @template T
@@ -27,7 +8,18 @@ function processPending() {
  * @returns {() => void}
  */
 export default function watch(getter, callback) {
-
+	let needsEnqueue = true;
+	const w = new Signal.subtle.Watcher(() => {
+		if (!needsEnqueue) { return }
+		needsEnqueue = false;
+		queueMicrotask(() => {
+			needsEnqueue = true;
+			for (const s of w.getPending()) {
+				s.get();
+			}
+			w.watch();
+		});
+	});
 	let run = false;
 	/** @type {any} */
 	let value
