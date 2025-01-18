@@ -17,6 +17,7 @@ const bindable = {
 	readonly: true,
 	creatable: true,
 	immutable: true,
+	changed: true,
 
 	required: true,
 	clearable: true,
