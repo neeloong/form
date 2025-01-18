@@ -1,4 +1,5 @@
 import Store from '../../Store/index.mjs';
+import globals from './globals.mjs';
 import toItem from './toItem.mjs';
 /** @import { ValueDefine, ExecDefine, CalcDefine } from './index.mjs' */
 
@@ -20,7 +21,7 @@ function testKey(key) {
  */
 export default function toGlobal(global) {
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
-	const items = Object.create(null);
+	const items = Object.create(null, globals);
 	if (!global || typeof global !== 'object') { return items; }
 	for (const [key, value] of Object.entries(global)) {
 		if (!testKey(key)) { continue; }

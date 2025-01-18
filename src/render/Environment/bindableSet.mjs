@@ -10,6 +10,7 @@ const bindable = {
 	store: true,
 	parent: true,
 	root: true,
+	ref: true,
 
 	schema: true,
 

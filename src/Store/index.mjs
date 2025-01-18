@@ -2,7 +2,10 @@ import { Signal } from 'signal-polyfill';
 import { createBooleanStates } from './createBooleanStates.mjs';
 import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
+import createRef from './ref.mjs';
+/** @import { Ref } from './ref.mjs' */
 /** @import { Schema } from '../types.mjs' */
+
 /**
  * @template [T=any]
  */
@@ -55,6 +58,9 @@ export default class Store {
 	#null = false;
 	get null() { return this.#null; }
 	get kind() { return ''; }
+	/** @type {Ref?} */
+	#ref = null;
+	get ref() { return this.#ref || createRef(this); }
 	/**
 	 * @param {Schema.Field} schema
 	 * @param {object} options 
@@ -78,6 +84,8 @@ export default class Store {
 	 * @param {number} [options.step] 日期、时间、数字的步长
 	 * @param {(Schema.Value.Group | Schema.Value | string | number)[]} [options.values] 可选值
 	 * 
+	 * @param {Ref?} [options.ref]
+	 * 
 	 * @param {((value: any) => any)?} [options.setValue] 
 	 * @param {((value: any) => any)?} [options.setState] 
 	 * @param {((value: any, state: any) => [value: any, state: any])?} [options.convert] 
@@ -86,7 +94,7 @@ export default class Store {
 	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdateState] 
 	 */
 	constructor(schema, {
-		null: isNull, state,
+		null: isNull, state, ref,
 		setValue, setState, convert, onUpdate, onUpdateState,
 		index, length, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
@@ -160,8 +168,10 @@ export default class Store {
 
 		if (isNull) {
 			this.#null = true;
+			this.#ref = createRef(this);
 			return;
 		}
+		this.#ref = ref || null;
 		this.#onUpdate = onUpdate || null;
 		this.#onUpdateState = onUpdateState || null;
 		this.#setValue = typeof setValue === 'function' ? setValue : null;
