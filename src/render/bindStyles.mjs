@@ -1,7 +1,7 @@
 /** @import * as Layout from '../Layout/index.mjs' */
 
 import Environment from './Environment/index.mjs';
-import watch from './watch.mjs';
+import watch from '../watch.mjs';
 
 /** @type {Record<string, string>} */
 const unit = {
@@ -85,7 +85,7 @@ export default function bindStyles(node, classes, envs) {
 			} else {
 				node.style.removeProperty(name);
 			}
-		}));
+		}, true));
 	}
 	// TODO: 创建组件
 	return ()=> {

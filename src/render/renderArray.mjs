@@ -1,4 +1,4 @@
-import watch from './watch.mjs';
+import watch from '../watch.mjs';
 import Environment from './Environment/index.mjs';
 /** @import Store, { ArrayStore } from '../Store/index.mjs' */
 
@@ -53,7 +53,7 @@ export default function renderArray(parent, next, store, env, renderItem) {
 			parent.insertBefore(old[1], nextNode);
 		}
 		destroyMap(oldSeMap);
-	});
+	}, true);
 
 	return () => {
 		start.remove();

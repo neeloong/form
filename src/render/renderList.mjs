@@ -1,4 +1,4 @@
-import watch from './watch.mjs';
+import watch from '../watch.mjs';
 import Environment from './Environment/index.mjs';
 /** @import * as Layout from '../Layout/index.mjs' */
 
@@ -57,7 +57,7 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 				destroy();
 				destroy = () => { };
 				renderIndex(lastIndex);
-			},
+			}, true,
 		));
 	}
 	for (const layout of layouts) {

@@ -1,13 +1,11 @@
 import { Signal } from 'signal-polyfill';
 
 /**
- * 创建可赋值计算值
- * @template T
- * @param {() => T} getter 取值方法
- * @param {(value: T) => void} callback 取值方法
+ * 
+ * @param {() => void} fn 
  * @returns {() => void}
  */
-export default function watch(getter, callback) {
+export default function effect(fn) {
 	let needsEnqueue = true;
 	const w = new Signal.subtle.Watcher(() => {
 		if (!needsEnqueue) { return }
@@ -20,16 +18,7 @@ export default function watch(getter, callback) {
 			w.watch();
 		});
 	});
-	let run = false;
-	/** @type {any} */
-	let value
-	const computed = new Signal.Computed(() => {
-		const val = getter();
-		if (run && Object.is(val, value)) { return; }
-		value = val;
-		run = true;
-		callback(val);
-	});
+	const computed = new Signal.Computed(fn);
 
 	w.watch(computed);
 	computed.get();

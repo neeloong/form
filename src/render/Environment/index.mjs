@@ -1,6 +1,6 @@
 import { Signal } from 'signal-polyfill';
 import Store from '../../Store/index.mjs';
-import watch from '../watch.mjs';
+import watch from '../../watch.mjs';
 import bindableSet from './bindableSet.mjs';
 import toItem from './toItem.mjs';
 import toParentItem from './toParentItem.mjs';
@@ -35,7 +35,7 @@ export default class Environment {
 	 * @param {string | Layout.Calc} value
 	 * @param {(value: any) => void} cb 
 	 */
-	watch(value, cb) { return watch(() => this.exec(value), cb); }
+	watch(value, cb) { return watch(() => this.exec(value), cb, true); }
 
 	/**
 	 * @param {string | Layout.Calc | boolean | null} [name]
@@ -63,14 +63,14 @@ export default class Environment {
 		const { store } = item;
 		if (!store) {
 			switch(type) {
-				case 'value': return watch(() => item.get(), cb);
+				case 'value': return watch(() => item.get(), cb, true);
 			}
 			return;
 		}
 		// @ts-ignore
 		if (bindableSet.has(type)) {
 			// @ts-ignore
-			return watch(() => store[type], cb);
+			return watch(() => store[type], cb, true);
 		}
 	}
 	/**
@@ -84,11 +84,11 @@ export default class Environment {
 		if (!store) {
 			const get = item.get;
 			if (typeof get !== 'function') { return; }
-			return { '$value': cb => watch(get, cb) }
+			return { '$value': cb => watch(get, cb, true) }
 		}
 		/** @type {Record<string, ((cb: (value: any) => void) => () => void) | void> | void} */
 		const res = Object.fromEntries([...bindableSet].map(v => [
-			`$${v}`, cb => watch(() => store[v], cb)
+			`$${v}`, cb => watch(() => store[v], cb, true)
 		]));
 		return res;
 	}

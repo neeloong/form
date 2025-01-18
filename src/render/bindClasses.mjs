@@ -1,7 +1,7 @@
 /** @import * as Layout from '../Layout/index.mjs' */
 
 import Environment from './Environment/index.mjs';
-import watch from './watch.mjs';
+import watch from '../watch.mjs';
 
 /**
  * @param {Node} node
@@ -27,7 +27,7 @@ export default function bindClasses(node, classes, envs) {
 			} else {
 				node.classList.remove(name);
 			}
-		}));
+		}, true));
 	}
 	// TODO: 创建组件
 	return ()=> {

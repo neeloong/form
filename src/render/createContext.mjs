@@ -3,7 +3,7 @@
 
 import { Signal } from 'signal-polyfill';
 import EventEmitter from './EventEmitter.mjs';
-import watch from './watch.mjs';
+import watch from '../watch.mjs';
 
 /** @type {Record<string, Component.Event.Filter>} */
 const eventFilters = {
@@ -159,7 +159,7 @@ export default function createContext(component, env) {
 				const o = old;
 				old = v;
 				fn(v, o, name);
-			});
+			}, true);
 			attrWatchers.add(w);
 
 			return () => {

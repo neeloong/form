@@ -1,4 +1,4 @@
-import watch from './watch.mjs';
+import watch from '../watch.mjs';
 import Environment from './Environment/index.mjs';
 import { Signal } from 'signal-polyfill';
 
@@ -76,7 +76,7 @@ export default function renderEnum(parent, next, getter, env, renderItem) {
 			parent.insertBefore(old[1], nextNode);
 		}
 		destroyMap(oldSeMap);
-	});
+	}, true);
 
 	return () => {
 		start.remove();
