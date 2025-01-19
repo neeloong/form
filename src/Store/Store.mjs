@@ -415,7 +415,8 @@ export default class Store {
 
 	get value() { return this.#value.get(); }
 	set value(v) {
-		const val = this.#setValue?.(v) || v;
+		const newValue = this.#setValue?.(v)
+		const val = newValue === undefined ? v : newValue;
 		this.#value.set(val);
 		if (!this.#set) {
 			this.#initValue.set(val);
@@ -426,7 +427,8 @@ export default class Store {
 
 	get state() { return this.#state.get(); }
 	set state(v) {
-		const sta = this.#setState?.(v) || v;
+		const newState = this.#setState?.(v)
+		const sta = newState === undefined ? v : newState;
 		this.#state.set(sta);
 		this.#onUpdateState?.(sta, this.#index.get(), this);
 		this.#requestUpdate();
