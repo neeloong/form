@@ -6,6 +6,8 @@ import Store from './Store.mjs';
 let ObjectStore = null;
 /** @type {{new(...p: ConstructorParameters<typeof Store>): Store}?} */
 let ArrayStore = null;
+/** @type {Record<string, {new(...p: ConstructorParameters<typeof Store>): Store}?>} */
+let TypeStores = Object.create(null);
 /**
  * @param {Schema.Field} schema
  * @param {object} [options] 
@@ -21,6 +23,9 @@ export default function create(schema, options) {
 	let Class = Store;
 	if (schema.array && !(ArrayStore && options?.parent instanceof ArrayStore)) {
 		if (ArrayStore) { Class = ArrayStore; }
+	} else if (typeof type === 'string') {
+		const C = TypeStores[type];
+		if (C) { Class = C; }
 	} else if (type && typeof type === 'object') {
 		if (ObjectStore) { Class = ObjectStore; }
 	}
@@ -35,4 +40,11 @@ export function setObjectStore(Class) {
 /** @param {{new(...p: ConstructorParameters<typeof Store>): Store}} Class */
 export function setArrayStore(Class) {
 	ArrayStore = Class;
+}
+/**
+ * @param {string} type
+ * @param {{new(...p: ConstructorParameters<typeof Store>): Store}} Class
+ */
+export function setStore(type, Class) {
+	TypeStores[type] = Class;
 }

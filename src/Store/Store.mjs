@@ -3,7 +3,7 @@ import { createBooleanStates } from './createBooleanStates.mjs';
 import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
 import createRef from './ref.mjs';
-import create from './create.mjs';
+import create, { setStore } from './create.mjs';
 /** @import { Ref } from './ref.mjs' */
 /** @import { Schema } from '../types.mjs' */
 
@@ -55,6 +55,13 @@ export default class Store {
 	 */
 	static create(schema, options = {}) {
 		return create({type: schema}, { ...options, parent: null });
+	}
+	/**
+	 * @param {string} type
+	 * @param {{new(...p: ConstructorParameters<typeof Store>): Store}} Class
+	 */
+	static setStore(type, Class) {
+		return setStore(type, Class);
 	}
 	#null = false;
 	get null() { return this.#null; }
