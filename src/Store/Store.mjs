@@ -138,7 +138,7 @@ export default class Store {
 		/** @type {Signal.Computed<boolean>} */
 		let readonlyScript
 		if (typeof readonlyFn === 'function') {
-			readonlyScript = new Signal.Computed(() => Boolean(readonlyFn(this, this.root)))
+			readonlyScript = new Signal.Computed(() => Boolean(readonlyFn(this)))
 		} else {
 			const def = Boolean(readonlyFn)
 			readonlyScript = new Signal.Computed(() => def);

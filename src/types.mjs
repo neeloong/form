@@ -118,17 +118,17 @@
  * @property {any} [component]
  * @property {boolean} [immutable]
  * @property {boolean} [creatable]
- * @property {boolean | ((store: Store, root: Store) => boolean) | null} [hidden]
- * @property {boolean | ((store: Store, root: Store) => boolean) | null} [clearable]
- * @property {boolean | ((store: Store, root: Store) => boolean) | null} [required]
- * @property {boolean | ((store: Store, root: Store) => boolean) | null} [disabled]
- * @property {boolean | ((store: Store, root: Store) => boolean) | null} [readonly]
- * @property {string | ((store: Store, root: Store) => string) | null} [label] 字段标签
- * @property {string | ((store: Store, root: Store) => string) | null} [description] 字段描述
- * @property {string | ((store: Store, root: Store) => string) | null} [placeholder] 占位符
- * @property {number | ((store: Store, root: Store) => number) | null} [min] 日期、时间、数字的最小值
- * @property {number | ((store: Store, root: Store) => number) | null} [max] 日期、时间、数字的最大值
- * @property {number | ((store: Store, root: Store) => number) | null} [step] 日期、时间、数字的步长
+ * @property {boolean | ((store: Store) => boolean) | null} [hidden]
+ * @property {boolean | ((store: Store) => boolean) | null} [clearable]
+ * @property {boolean | ((store: Store) => boolean) | null} [required]
+ * @property {boolean | ((store: Store) => boolean) | null} [disabled]
+ * @property {boolean | ((store: Store) => boolean) | null} [readonly]
+ * @property {string | ((store: Store) => string?) | null} [label] 字段标签
+ * @property {string | ((store: Store) => string?) | null} [description] 字段描述
+ * @property {string | ((store: Store) => string?) | null} [placeholder] 占位符
+ * @property {number | ((store: Store) => number?) | null} [min] 日期、时间、数字的最小值
+ * @property {number | ((store: Store) => number?) | null} [max] 日期、时间、数字的最大值
+ * @property {number | ((store: Store) => number?) | null} [step] 日期、时间、数字的步长
  * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
  * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events]
  */

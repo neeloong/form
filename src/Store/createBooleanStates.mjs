@@ -5,7 +5,7 @@ import { Signal } from 'signal-polyfill';
  *
  * @param {Store} self
  * @param {boolean?} [defState]
- * @param {boolean | ((store: Store, root: Store) => boolean?) | null} [fn]
+ * @param {boolean | ((store: Store) => boolean?) | null} [fn]
  * @param {Signal.Computed<boolean>?} [parent]
  * @returns {[Signal.State<boolean?>, Signal.Computed<boolean>]}
  */
@@ -15,7 +15,7 @@ export const createBooleanStates = (self, defState, fn, parent) => {
 	/** @type {Signal.Computed<boolean>} */
 	let scriptState
 	if (typeof fn === 'function') {
-		scriptState = new Signal.Computed(() => Boolean(fn(self, self.root)))
+		scriptState = new Signal.Computed(() => Boolean(fn(self)))
 	} else {
 		const def = Boolean(fn)
 		scriptState = new Signal.Computed(() => def);
