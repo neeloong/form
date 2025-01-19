@@ -129,6 +129,9 @@
  * @property {number | ((store: Store) => number?) | null} [min] 日期、时间、数字的最小值
  * @property {number | ((store: Store) => number?) | null} [max] 日期、时间、数字的最大值
  * @property {number | ((store: Store) => number?) | null} [step] 日期、时间、数字的步长
+ * @property {number | ((store: Store) => number?) | null} [minLength]
+ * @property {number | ((store: Store) => number?) | null} [maxLength]
+ * @property {RegExp | ((store: Store) => RegExp?) | null} [pattern]
  * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
  * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events]
  */

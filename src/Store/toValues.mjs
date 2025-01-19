@@ -3,6 +3,8 @@
 export const string = v => typeof v === 'string' && v || null;
 /** @param {*} v  */
 export const number = v => typeof v === 'number' && v || null;
+/** @param {*} v  */
+export const regex = v =>v instanceof RegExp ? v : null;
 
 /** @type {(v: Schema.Value | Schema.Value.Group | null) => v is Schema.Value | Schema.Value.Group} */
 const valueFilter = /** @type {*} */(Boolean);

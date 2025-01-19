@@ -196,6 +196,9 @@ render(store, layouts, app);
    - `$min` 只读属性
    - `$max` 只读属性
    - `$step` 只读属性
+   - `$minLength` 只读属性
+   - `$maxLength` 只读属性
+   - `$pattern` 只读属性
    - `$values` 只读属性
    - `$type` 只读属性
    - `$meta` 只读属性

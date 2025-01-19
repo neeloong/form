@@ -90,6 +90,9 @@ export default class Store {
 	 * @param {number} [options.min] 日期、时间、数字的最小值
 	 * @param {number} [options.max] 日期、时间、数字的最大值
 	 * @param {number} [options.step] 日期、时间、数字的步长
+	 * @param {number} [options.minLength] 
+	 * @param {number} [options.maxLength] 
+	 * @param {RegExp} [options.pattern] 
 	 * @param {(Schema.Value.Group | Schema.Value | string | number)[]} [options.values] 可选值
 	 * 
 	 * @param {Ref?} [options.ref]
@@ -106,7 +109,7 @@ export default class Store {
 		setValue, setState, convert, onUpdate, onUpdateState,
 		index, length, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
-		label, description, placeholder, min, max, step, values
+		label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
 	} = {}) {
 		this.schema = schema;
 		this.#state.set(typeof state === 'object' && state || {});
@@ -165,6 +168,9 @@ export default class Store {
 		[this.#selfMin, this.#min] = createState(this, toValues.number, min, schema.min);
 		[this.#selfMax, this.#max] = createState(this, toValues.number, max, schema.max);
 		[this.#selfStep, this.#step] = createState(this, toValues.number, step, schema.step);
+		[this.#selfMinLength, this.#minLength] = createState(this, toValues.number, minLength, schema.minLength);
+		[this.#selfMaxLength, this.#maxLength] = createState(this, toValues.number, maxLength, schema.maxLength);
+		[this.#selfPattern, this.#pattern] = createState(this, toValues.regex, pattern, schema.pattern);
 		// @ts-ignore
 		[this.#selfValues, this.#values] = createState(this, toValues.values, values, schema.values);
 
@@ -351,6 +357,33 @@ export default class Store {
 	set selfStep(v) { this.#selfStep.set(toValues.number(v)); }
 	get step() { return this.#step.get(); }
 	set step(v) { this.#selfStep.set(toValues.number(v)); }
+
+	/** @readonly @type {Signal.State<number?>} */
+	#selfMinLength
+	/** @readonly @type {Signal.Computed<number?>} */
+	#minLength
+	get selfMinLength() { return this.#selfMinLength.get(); }
+	set selfMinLength(v) { this.#selfMinLength.set(toValues.number(v)); }
+	get minLength() { return this.#minLength.get(); }
+	set minLength(v) { this.#selfMinLength.set(toValues.number(v)); }
+
+	/** @readonly @type {Signal.State<number?>} */
+	#selfMaxLength
+	/** @readonly @type {Signal.Computed<number?>} */
+	#maxLength
+	get selfMaxLength() { return this.#selfMaxLength.get(); }
+	set selfMaxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
+	get maxLength() { return this.#maxLength.get(); }
+	set maxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
+
+	/** @readonly @type {Signal.State<RegExp?>} */
+	#selfPattern
+	/** @readonly @type {Signal.Computed<RegExp?>} */
+	#pattern
+	get selfPattern() { return this.#selfPattern.get(); }
+	set selfPattern(v) { this.#selfPattern.set(toValues.regex(v)); }
+	get pattern() { return this.#pattern.get(); }
+	set pattern(v) { this.#selfPattern.set(toValues.regex(v)); }
 
 
 	/** @readonly @type {Signal.State<(Schema.Value.Group | Schema.Value)[] | null>} */

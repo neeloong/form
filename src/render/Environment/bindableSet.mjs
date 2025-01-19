@@ -31,6 +31,9 @@ const bindable = {
 	min: true,
 	max: true,
 	step: true,
+	minLength: true,
+	maxLength: true,
+	pattern: true,
 	values: true,
 
 	null: true,
