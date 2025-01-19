@@ -412,21 +412,29 @@ export default class Store {
 	}
 	/**
 	 * 
-	 * @param {*} value 
+	 * @param {*} v 
 	 * @returns 
 	 */
-	#reset(value) {
-		this.#value.set(value);
-		this.#initValue.set(value);
+	#reset(v) {
+		const newValue = this.#setValue?.(v)
+		const value = newValue === undefined ? v : newValue;
+		this.#set = true;
 		if (!value || typeof value !== 'object') {
 			for (const [, field] of this) {
 				field.#reset(null);
 			}
-			return;
+			this.#value.set(value);
+			this.#initValue.set(value);
+			return value;
 		}
+		/** @type {*} */
+		const newValues = Array.isArray(value) ? [...value] : {...value};
 		for (const [key, field] of this) {
-			field.#reset(value[key]);
+			newValues[key] = field.#reset(newValues[key]);
 		}
+		this.#value.set(newValues);
+		this.#initValue.set(newValues);
+		return newValues;
 	}
 
 
