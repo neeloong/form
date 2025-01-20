@@ -1,6 +1,6 @@
 {
   "name": "@neeloong/form",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "description": "",
   "keywords": [ "from", "layout", "schema", "template", "render" ],
