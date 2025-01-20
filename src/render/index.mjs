@@ -1,7 +1,7 @@
 /** @import Store from '../Store/index.mjs' */
 import Environment from './Environment/index.mjs';
 import { ArrayStore, ObjectStore } from '../Store/index.mjs';
-/** @import { Component } from '../types.mjs' */
+/** @import { Component, Relatedness } from '../types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 import bindAttrs from './bindAttrs.mjs';
 import bindBaseAttrs from './bindBaseAttrs.mjs';
@@ -23,7 +23,7 @@ import bindBase from './bindBase.mjs';
  * @param {Environment} env
  * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
- * @param {((store: Store, el: Element) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  */
 function renderItem(layout, parent, next, env, templates, componentPath, relate, getComponent) {
@@ -102,7 +102,7 @@ function renderItem(layout, parent, next, env, templates, componentPath, relate,
  * @param {Environment} env
  * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
- * @param {((store: Store, el: Element) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  * @returns {() => void}
  */
@@ -135,7 +135,7 @@ function render(layout, parent, next, env, templates, componentPath, relate, get
  * @param {object} [options] 
  * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [options.global] 
  * @param {(path: string[]) => Component?} [options.component] 
- * @param {(store: Store, el: Element) => () => void} [options.relate]
+ * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
  * @returns {() => void}
  */
 export default function (store, layouts, parent, {component, global, relate} = {}) {

@@ -1,4 +1,4 @@
-/** @import { Component } from '../types.mjs' */
+/** @import { Component, Relatedness } from '../types.mjs' */
 /** @import Store from '../Store/index.mjs' */
 /** @import Environment from './Environment/index.mjs' */
 
@@ -128,7 +128,7 @@ const eventFilters = {
  * @param {Component | string} component 
  * @param {Environment} env 
  * @param {Store?} store 
- * @param {((store: Store, el: Element) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
  * @returns 
  */
 export default function createContext(component, env, store, relate) {
