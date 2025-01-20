@@ -23,9 +23,10 @@ import bindBase from './bindBase.mjs';
  * @param {Environment} env
  * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
+ * @param {((store: Store, el: Element) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  */
-function renderItem(layout, parent, next, env, templates, componentPath, getComponent) {
+function renderItem(layout, parent, next, env, templates, componentPath, relate, getComponent) {
 	env = env.set(layout.aliases, layout.vars);
 	const bind = layout.directives.bind;
 	const fragment = layout.directives.fragment;
@@ -34,18 +35,18 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
 		if (!template) { return () => {}; }
 		const [templateLayout, templateEnv] = template;
 		const newEnv = templateEnv.params(templateLayout, layout, env, bind);
-		return render(templateLayout, parent, next, newEnv, templates, componentPath, getComponent);
+		return render(templateLayout, parent, next, newEnv, templates, componentPath, relate, getComponent);
 	}
 	if (!layout.name || layout.directives.fragment) {
 		return renderFillDirectives(parent, next, env, layout.directives) || 
 			renderList(layout.children || [], parent, next, env, templates, (layout, templates) => {
-				return render(layout, parent, next, env, templates, componentPath, getComponent);
+				return render(layout, parent, next, env, templates, componentPath, relate, getComponent);
 			});
 	}
 	const path = [...componentPath, layout.name];
 	const component = getComponent?.(path);
 	if (getComponent && !component) { return () => { }; }
-	const { context, handler } = createContext(component ? component : layout.name, env);
+	const { context, handler } = createContext(component ? component : layout.name, env, relate);
 
 
 	const componentAttrs = component?.attrs
@@ -72,7 +73,7 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
 	const children = slot ? 
 		renderFillDirectives(slot, null, env, layout.directives)
 		|| renderList(layout.children || [], slot, null, env,  templates, (layout, templates) => {
-			return render(layout, slot, null, env, templates, componentPath, getComponent);
+			return render(layout, slot, null, env, templates, componentPath, relate, getComponent);
 		}) : () => {};
 
 
@@ -97,16 +98,17 @@ function renderItem(layout, parent, next, env, templates, componentPath, getComp
  * @param {Environment} env
  * @param {Record<string, [Layout.Node, Environment]>} templates
  * @param {string[]} componentPath
+ * @param {((store: Store, el: Element) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  * @returns {() => void}
  */
-function render(layout, parent, next, env, templates, componentPath, getComponent) {
+function render(layout, parent, next, env, templates, componentPath, relate, getComponent) {
 	const { directives } = layout;
 	const newEnv = env.child(directives.value);
 	if (!newEnv) { return () => {}; }
 	const list = newEnv.enum(directives.enum);
 	/** @type {(next: Node | null, env: any) => () => void} */
-	const r = (next, env) => renderItem(layout, parent, next, env, templates, componentPath, getComponent);
+	const r = (next, env) => renderItem(layout, parent, next, env, templates, componentPath, relate, getComponent);
 	if (list === true) {
 		return r(next, newEnv);
 	}
@@ -123,36 +125,20 @@ function render(layout, parent, next, env, templates, componentPath, getComponen
 }
 
 /**
- * @overload
  * @param {Store} store
  * @param {(Layout.Node | string)[]} layouts 
  * @param {Element} parent 
- * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [global] 
- * @param {(path: string[]) => Component?} [components] 
+ * @param {object} [options] 
+ * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [options.global] 
+ * @param {(path: string[]) => Component?} [options.component] 
+ * @param {(store: Store, el: Element) => () => void} [options.relate]
  * @returns {() => void}
  */
-/**
- * @overload
- * @param {Store} store
- * @param {(Layout.Node | string)[]} layouts 
- * @param {Element} parent 
- * @param {Component.Getter?} [components] 
- * @returns {() => void}
- */
-/**
- * @param {Store} store
- * @param {(Layout.Node | string)[]} layouts 
- * @param {Element} parent 
- * @param {Component.Getter | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt1] 
- * @param {Component.Getter | Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }> | null} [opt2] 
- */
-export default function (store, layouts, parent, opt1, opt2) {
-	const options = [opt1, opt2];
-	const components = options.find(v => typeof v === 'function')
-	const global = options.find(v => typeof v === 'object');
+export default function (store, layouts, parent, {component, global, relate} = {}) {
 	const env = new Environment(store, global);
 	const templates = Object.create(null)
+	const relateFn = typeof relate  === 'function' ? relate : null;
 	return renderList(layouts, parent, null, env, templates, (layout, templates) => {
-		return render(layout, parent, null, env, templates, [], components);
+		return render(layout, parent, null, env, templates, [], relateFn, component);
 	});
 }

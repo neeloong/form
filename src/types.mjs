@@ -33,6 +33,7 @@
  * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events
  * @property {Record<string, any>} tagAttrs
  * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watchAttr
+ * @property {(el: Element) => () => void} relate
  * @property {boolean} destroyed
  * @property {boolean} init
  * @property {<K extends keyof Component.Context.Events>(event: K, listener: (...p: Component.Context.Events[K]) => void) => () => void} listen

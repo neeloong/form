@@ -1,4 +1,5 @@
 /** @import { Component } from '../types.mjs' */
+/** @import Store from '../Store/index.mjs' */
 /** @import Environment from './Environment/index.mjs' */
 
 import { Signal } from 'signal-polyfill';
@@ -126,9 +127,10 @@ const eventFilters = {
  * 
  * @param {Component | string} component 
  * @param {Environment} env 
+ * @param {((store: Store, el: Element) => () => void)?} [relate]
  * @returns 
  */
-export default function createContext(component, env) {
+export default function createContext(component, env, relate) {
 	const tag = typeof component === 'string' ? component : component.tag;
 	const { attrs, events } = typeof component !== 'string' && component || { attrs: null, events: null };
 
@@ -140,7 +142,8 @@ export default function createContext(component, env) {
 	const attrStates = Object.create(null);
 	const tagAttrs = Object.create(null);
 
-	const attrWatchers = new Set();
+	/** @type {Set<() => void>} */
+	const cancelFns = new Set();
 
 	/** @type {[string, ($event: any) => void, AddEventListenerOptions][]} */
 	const allEvents = [];
@@ -160,12 +163,27 @@ export default function createContext(component, env) {
 				old = v;
 				fn(v, o, name);
 			}, true);
-			attrWatchers.add(w);
+			cancelFns.add(w);
 
 			return () => {
-				attrWatchers.delete(w);
+				cancelFns.delete(w);
 				w();
 			};
+		},
+		relate(el) {
+			if (!relate || destroyed) { return () => { }; }
+			try {
+				const w = relate(env.store, el);
+				if (typeof w !== 'function') { return () => { }; }
+				cancelFns.add(w);
+				return () => {
+					cancelFns.delete(w);
+					w();
+				};
+			} catch {
+				return () => { };
+			}
+
 		},
 		get destroyed() { return destroyedState.get(); },
 		get init() { return mountedState.get(); },
@@ -235,7 +253,7 @@ export default function createContext(component, env) {
 			if (destroyed) { return; }
 			destroyed = true;
 			destroyedState.set(true);
-			for (const w of attrWatchers) {
+			for (const w of cancelFns) {
 				w();
 			}
 			stateEmitter.emit('destroy');
