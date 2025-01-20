@@ -204,12 +204,17 @@ render(store, layouts, app);
    - `$meta` 只读属性
    - `$component` 只读属性
    - `$kind` 只读属性
+   - `$error` 只读属性
+   - `$errors` 只读属性
 1. 数组字段扩展隐式函数（只在事件中可用）
    - `$insert(index, value)`
    - `$add(value)`
    - `$remove(index)`
    - `$move(from, to)`
    - `$exchange(a, b)`
+   - `$reset()`
+   - `$validate()`
+   - `$validate(true)`
 1. 数组成员字段扩展隐式属性
    - `$upMovable` 只读属性
    - `$downMovable` 只读属性

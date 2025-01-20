@@ -40,6 +40,9 @@ const bindable = {
 	index: true,
 	no: true,
 	length: true,
+
+	error: true,
+	errors: true,
 }
 /** @type {Set<keyof typeof bindable>} */
 // @ts-ignore

@@ -128,6 +128,9 @@ export default class Environment {
 			'$click': v => {store.emit('click', v); },
 			'$focus': v => {store.emit('focus', v); },
 			'$blur': v => {store.emit('blur', v); },
+			'$reset': v => {store.reset(); },
+			// @ts-ignore
+			'$validate': v => {store.validate(v ? [] : null); },
 		}
 	}
 

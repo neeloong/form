@@ -569,6 +569,7 @@ export default class Store {
 	/**
 	 * 
 	 * @overload
+	 * @param {null} [path]
 	 * @returns {Promise<string[] | null>}
 	 */
 	/**
@@ -578,7 +579,7 @@ export default class Store {
 	 */
 	/**
 	 * 
-	 * @param {(string | number)[]} [path] 
+	 * @param {(string | number)[]?} [path] 
 	 * @returns {Promise<string[] | { path: (string | number)[]; store: Store; errors: string[] | null;}[] | null>}
 	 */
 	validate(path) {
