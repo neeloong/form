@@ -4,8 +4,9 @@ import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
 import createRef from './ref.mjs';
 import create, { setStore } from './create.mjs';
+import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
 /** @import { Ref } from './ref.mjs' */
-/** @import { Schema } from '../types.mjs' */
+/** @import { AsyncValidator, Schema, Validator } from '../types.mjs' */
 
 /**
  * @template [T=any]
@@ -94,6 +95,8 @@ export default class Store {
 	 * @param {number} [options.maxLength] 
 	 * @param {RegExp} [options.pattern] 
 	 * @param {(Schema.Value.Group | Schema.Value | string | number)[]} [options.values] 可选值
+	 * @param {Validator | Validator[] | null} [options.validator]
+	 * @param {{[k in keyof Schema.Events]?: AsyncValidator | AsyncValidator[] | null}} [options.validators]
 	 * 
 	 * @param {Ref?} [options.ref]
 	 * 
@@ -107,6 +110,7 @@ export default class Store {
 	constructor(schema, {
 		null: isNull, state, ref,
 		setValue, setState, convert, onUpdate, onUpdateState,
+		validator, validators,
 		index, length, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
 		label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
@@ -174,6 +178,19 @@ export default class Store {
 		// @ts-ignore
 		[this.#selfValues, this.#values] = createState(this, toValues.values, values, schema.values);
 
+		const validatorResult = createValidator(this, schema.validator, validator);
+
+		const [changed, changedResult, cancelChange] = createAsyncValidator(this, schema.validators?.change, validators?.change);
+		const [blurred, blurredResult, cancelBlur] = createAsyncValidator(this, schema.validators?.blur, validators?.blur);
+		this.listen('change', () => {changed()});
+		this.listen('blur', () => {blurred()});
+		this.#errors = merge(validatorResult, changedResult, blurredResult)
+		this.#validatorResult = validatorResult;
+		this.#changed = changed;
+		this.#blurred = blurred;
+		this.#cancelChange = cancelChange;
+		this.#cancelBlur = cancelBlur;
+		
 		if (length instanceof Signal.State || length instanceof Signal.Computed) {
 			this.#length = length;
 		} else {
@@ -395,6 +412,22 @@ export default class Store {
 	get values() { return this.#values.get(); }
 	set values(v) { this.#selfValues.set(toValues.values(v)); }
 
+
+	/** @type {Signal.Computed<string[]>} */
+	#errors
+	/** @type {Signal.Computed<string[]>} */
+	#validatorResult
+	/** @type {() => Promise<string[]>} */
+	#changed
+	/** @type {() => Promise<string[]>} */
+	#blurred
+	/** @type {() => void} */
+	#cancelChange
+	/** @type {() => void} */
+	#cancelBlur
+	get errors() { return this.#errors.get(); }
+	get error() { return this.#errors.get()[0]; }
+
 	/** @returns {IterableIterator<[key: string | number, value: Store]>} */
 	*[Symbol.iterator]() {}
 	/**
@@ -453,6 +486,8 @@ export default class Store {
 	#reset(v) {
 		const newValue = this.#setValue?.(v)
 		const value = newValue === undefined ? v : newValue;
+		this.#cancelChange();
+		this.#cancelBlur();
 		this.#set = true;
 		if (!value || typeof value !== 'object') {
 			for (const [, field] of this) {
@@ -531,5 +566,36 @@ export default class Store {
 		}
 		return [val, sta];
 	}
-
+	/**
+	 * 
+	 * @overload
+	 * @returns {Promise<string[] | null>}
+	 */
+	/**
+	 * @overload
+	 * @param {(string | number)[]} path 
+	 * @returns {Promise<{ path: (string | number)[]; store: Store; errors: string[]}[]>}
+	 */
+	/**
+	 * 
+	 * @param {(string | number)[]} [path] 
+	 * @returns {Promise<string[] | { path: (string | number)[]; store: Store; errors: string[] | null;}[] | null>}
+	 */
+	validate(path) {
+		if (!Array.isArray(path)) {
+			return Promise.all([this.#validatorResult.get(), this.#changed(), this.#blurred()])
+				.then(v => {
+					const errors = v.flat();
+					return errors.length ? errors : null
+				});
+		}
+		const list = [this.validate().then(errors => {
+			if (!errors?.length) {return [];}
+			return [{path: [...path], store: /** @type {Store} */(this), errors}]
+		})];
+		for (const [key, field] of this) {
+			list.push(field.validate([...path, key]))
+		}
+		return Promise.all(list).then(v => v.flat())
+	}
 }

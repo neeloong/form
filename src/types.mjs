@@ -113,6 +113,17 @@
  * @property {Event} blur
  */
 /**
+ * @callback Validator
+ * @param {Store} store
+ * @returns {string | string[] | void | null}
+ */
+/**
+ * @callback AsyncValidator
+ * @param {Store} store
+ * @param {AbortSignal} signal
+ * @returns {PromiseLike<string | string[] | void | null> | string | string[] | void | null}
+ */
+/**
  * @typedef {object} Schema.Attr
  * @property {any} [meta]
  * @property {any} [component]
@@ -134,4 +145,6 @@
  * @property {RegExp | ((store: Store) => RegExp?) | null} [pattern]
  * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
  * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events]
+ * @property {Validator | Validator[] | null} [validator]
+ * @property {{[k in 'change' | 'blur']?: AsyncValidator | AsyncValidator[] | null}} [validators]
  */
