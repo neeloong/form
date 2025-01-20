@@ -215,6 +215,9 @@ function *getElementModel2(el, attr) {
 export default function (context, name, is) {
 	const node = document.createElement(name, {is: is || undefined});
 	const { watchAttr, props } = context;
+	if(['input', 'textarea', 'select'].includes(name.toLowerCase())) {
+		context.relate(node);
+	}
 
 	context.listen('init', ({events})=> {
 		const e = tagBindMap[name.toLowerCase()];
