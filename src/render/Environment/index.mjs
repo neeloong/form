@@ -51,6 +51,14 @@ export default class Environment {
 		return store instanceof Store ? store : item.get;
 
 	}
+	/**
+	 * @param {string | boolean | null} [name]
+	 */
+	getStore(name) {
+		if (!name) { return null; }
+		const item = this.#items[name === true ? '' : name];
+		return item?.get && item.store || null
+	}
 
 	/**
 	 * @param {string | true} name

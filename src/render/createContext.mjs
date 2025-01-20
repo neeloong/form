@@ -127,10 +127,11 @@ const eventFilters = {
  * 
  * @param {Component | string} component 
  * @param {Environment} env 
+ * @param {Store?} store 
  * @param {((store: Store, el: Element) => () => void)?} [relate]
  * @returns 
  */
-export default function createContext(component, env, relate) {
+export default function createContext(component, env, store, relate) {
 	const tag = typeof component === 'string' ? component : component.tag;
 	const { attrs, events } = typeof component !== 'string' && component || { attrs: null, events: null };
 
@@ -171,9 +172,9 @@ export default function createContext(component, env, relate) {
 			};
 		},
 		relate(el) {
-			if (!relate || destroyed) { return () => { }; }
+			if (!store || !relate || destroyed) { return () => { }; }
 			try {
-				const w = relate(env.store, el);
+				const w = relate(store, el);
 				if (typeof w !== 'function') { return () => { }; }
 				cancelFns.add(w);
 				return () => {

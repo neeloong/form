@@ -46,8 +46,12 @@ function renderItem(layout, parent, next, env, templates, componentPath, relate,
 	const path = [...componentPath, layout.name];
 	const component = getComponent?.(path);
 	if (getComponent && !component) { return () => { }; }
-	const { context, handler } = createContext(component ? component : layout.name, env, relate);
-
+	const { context, handler } = createContext(
+		component ? component : layout.name,
+		env,
+		env.getStore(bind),
+		relate
+	);
 
 	const componentAttrs = component?.attrs
 	const attrs = componentAttrs
