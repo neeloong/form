@@ -25,6 +25,14 @@ export { default as stringify } from './stringify.mjs';
 
 
 /**
+ * @typedef {object} Enhancement
+ * @property {Record<string, string | EventListener>} events
+ * @property {Record<string, string | Calc>} attrs
+ * @property {string | Calc | null} value
+ * @property {boolean | string | null} bind
+ */
+
+/**
  * @typedef {object} Options
  * @property {(t: string) => Calc} [options.createCalc]
  * @property {(t: string) => EventListener} [options.createEvent]
@@ -43,6 +51,7 @@ export { default as stringify } from './stringify.mjs';
  * @property {Record<string, string | Calc>} vars
  * @property {Record<string, string | Calc>} aliases
  * @property {Directives} directives
+ * @property {Record<string, Enhancement>} enhancements
  * @property {(Node | string)[]} children
  */
 

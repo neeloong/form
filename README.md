@@ -144,7 +144,7 @@ render(store, layouts, app);
 
 ### 别名与计算值
 
-```
+```html
 <div *alias1="v1" *computed="v1 + v2"></div>
 ```
 
@@ -155,6 +155,11 @@ render(store, layouts, app);
 <div +var1="123"></div>
 ```
 
+### 增强
+```html
+<div ~en:attr="a" ~en@event="show($event)" ~en!bind="bindValue" ~en="value"></div>
+
+```
 
 ### 各用法的优先级
 

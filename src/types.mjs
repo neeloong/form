@@ -157,3 +157,25 @@
  * @property {Element} [input]
  * @property {Element} [root]
  */
+
+
+/**
+ * @callback Enhancement
+ * @param {Enhancement.Context} context
+ */
+
+
+
+
+/**
+ * @typedef {object} Enhancement.Context
+ * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events
+ * @property {Record<string, any>} attrs
+ * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watchAttr
+ * @property {boolean} destroyed
+ * @property {(event: 'destroy', listener: () => void) => () => void} listen
+ * @property {any} tag
+ * @property {Element} root
+ * @property {Element?} [slot]
+ * @property {any} value
+ */

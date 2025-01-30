@@ -33,6 +33,22 @@ export default class Environment {
 	}
 	/**
 	 * @param {string | Layout.Calc} value
+	 */
+	get(value) {
+		if (typeof value === 'string') {
+			const item = this.#items[value];
+			if (typeof item?.get !== 'function') { return }
+			const{get, set} = item;
+			return {get, set};
+		}
+		if (typeof value !== 'function') {
+			return null;
+		}
+		const c = new Signal.Computed(() => value(this.getters))
+		return {get: () => c.get() };
+	}
+	/**
+	 * @param {string | Layout.Calc} value
 	 * @param {(value: any) => void} cb 
 	 */
 	watch(value, cb) { return watch(() => this.exec(value), cb, true); }
@@ -97,6 +113,29 @@ export default class Environment {
 		/** @type {Record<string, ((cb: (value: any) => void) => () => void) | void> | void} */
 		const res = Object.fromEntries([...bindableSet].map(v => [
 			`$${v}`, cb => watch(() => store[v], cb, true)
+		]));
+		return res;
+	}
+	/**
+	 * @param {string | true} name
+	 * @returns {Record<string, {get(): any; set?(v: any): void}> | void}
+	 */
+	getBindAll(name) {
+		const item = this.#items[name === true ? '' : name];
+		if (!item?.get) { return {}; }
+		const { store } = item;
+		if (!store) {
+			const { get, set } = item;
+			return { '$value': {get,set} }
+		}
+		/** @type {Record<string, {get(): any; set?(v: any): void}> | void} */
+		const res = Object.fromEntries([...bindableSet].map(v => [
+			`$${v}`, v === 'value' || v === 'state' ? {
+				get: () => store[v], 
+				set: (s)=>{store[v] = s}
+			} : {
+				get: () => store[v], 
+			}
 		]));
 		return res;
 	}

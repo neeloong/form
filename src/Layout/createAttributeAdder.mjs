@@ -2,30 +2,68 @@
 
 import ParseError from './ParseError.mjs';
 const attrPattern = /^(?<decorator>[:@!+*\.?]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
+const enhancementPattern = /^~(?<enhancement>[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_\d\.]*)(?:(?<decorator>[:@!])(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*))?$/u;
 const nameRegex = /^(?<name>[a-zA-Z$\p{Unified_Ideograph}_][\da-zA-Z$\p{Unified_Ideograph}_]*)?$/u;
+
+/**
+ * 
+ * @param {Record<string, Layout.Enhancement>} enhancements 
+ * @param {string} name 
+ */
+function getEnhancement(enhancements, name) {
+	const enhancement = enhancements[name];
+	if (enhancement) { return enhancement; }
+	/** @type {Layout.Enhancement} */
+	const e = {
+		value: null,
+		attrs: Object.create(null),
+		events: Object.create(null),
+		bind: null,
+	};
+	enhancements[name] = e;
+	return e;
+}
+
 /**
  * @param {Layout.Node} node
  * @param {Exclude<Layout.Options['createCalc'], undefined>} createCalc
  * @param {Exclude<Layout.Options['createEvent'], undefined>} createEvent
  */
 export default function createAttributeAdder(node, createCalc, createEvent) {
-	const { attrs, directives, events, classes, styles, vars, aliases, params } = node;
+	const { attrs, directives, events, classes, styles, vars, aliases, params, enhancements } = node;
 	/**
 	 * @param {string} qName
 	 * @param {string} value
 	 */
 	function addAttribute(qName, value) {
-		const attr = attrPattern.exec(qName
-			.replace(/．/g,'.')
-			.replace(/：/g,':')
-			.replace(/＠/g,'@')
-			.replace(/＋/g,'+')
-			.replace(/－/g,'-')
-			.replace(/[＊×]/g,'*')
-			.replace(/！/g, '!'))?.groups;
+		const qn = qName
+		.replace(/．/g,'.')
+		.replace(/：/g,':')
+		.replace(/＠/g,'@')
+		.replace(/＋/g,'+')
+		.replace(/－/g,'-')
+		.replace(/[＊×]/g,'*')
+		.replace(/！/g, '!');
+		const attr = (attrPattern.exec(qn) || enhancementPattern.exec(qn))?.groups;
 		if (!attr) { throw new ParseError('ATTR', qName); }
-		const { name } = attr;
+		const { name, enhancement } = attr;
 		const decorator = attr.decorator?.toLowerCase();
+		if (enhancement) {
+			if (decorator === ':') {
+				getEnhancement(enhancements, enhancement).attrs[name] = nameRegex.test(value) ? value : createCalc(value);
+			} else if (decorator === '@') {
+				getEnhancement(enhancements, enhancement).events[name] = nameRegex.test(value) ? value : createEvent(value);
+			} else if (decorator === '!') {
+				switch(name) {
+					case 'bind':
+						getEnhancement(enhancements, enhancement).bind = value || true;
+						break;
+				}
+			} else {
+				getEnhancement(enhancements, enhancement).value = nameRegex.test(value) ? value : createCalc(value);
+			}
+			return;
+		}
 		if (!decorator) {
 			attrs[name] = value;
 		} else if (decorator === ':') {
