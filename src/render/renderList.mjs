@@ -94,6 +94,7 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 			renderItem(layout, currentTemplates)
 		);
 	}
+	renderIf(ifList);
 
 	return () => {
 		if (!bkList) { return; }

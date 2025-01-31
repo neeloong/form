@@ -23,11 +23,11 @@ const template = `
 	</li>
 </ul>
 <option !template="options" !fragment ?list="[]" !enum="select$values">
-		<optgroup !if="$value.children" :label="$value.label">
-			<option !enum="$value.children" :value="$value.value" !text="$value.value"></option>
-		</optgroup>
-		<option !else :value="$value.value" !text="$value.value"></option>
-	</option>
+	<optgroup !if="$value.children" :label="$value.label">
+		<option !enum="$value.children" :value="$value.value" !text="$value.value"></option>
+	</optgroup>
+	<option !else :value="$value.value" !text="$value.value"></option>
+</option>
 <select !bind="select">
 	<option value !text="select$placeholder"></option>
 	<option !fragment="options" :list="select$values" />
