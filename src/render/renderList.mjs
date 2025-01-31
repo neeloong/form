@@ -15,18 +15,18 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 
 	/** @type {Set<() => void>?} */
 	let bkList = new Set();
-	/** @type {[string | Layout.Calc | null, Layout.Node][]} */
+	/** @type {[Layout.Node.Name | Layout.Node.Calc | null, Layout.Node][]} */
 	let ifList = [];
 	/** @type {Record<string, [Layout.Node, Environment]>} */
 	let currentTemplates = Object.create(templates)
 	for (const layout of layouts) {
 		if (typeof layout === 'string') { continue; }
-		const name = layout.directives.template
+		const name = layout.template
 		if (!name) { continue; }
 		currentTemplates[name] = [layout, envs];
 	}
 
-	/** @param {[string | Layout.Calc | null, Layout.Node][]} list */
+	/** @param {[Layout.Node.Name | Layout.Node.Calc | null, Layout.Node][]} list */
 	function renderIf(list) {
 		if (!list.length || !bkList) { return; }
 		const end = parent.insertBefore(document.createComment(''), next);
@@ -50,7 +50,7 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 			end.remove();
 		});
 		bkList.add(watch(
-			() => list.findIndex(([ifv]) => ifv === null || envs.exec(ifv)),
+			() => list.findIndex(([ifv]) => !ifv || envs.exec(ifv)),
 			index => {
 				if (index === lastIndex) { return; }
 				lastIndex = index;
@@ -69,13 +69,13 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 			bkList.add(() => node.remove());
 			continue;
 		}
-		if (layout.directives.template) {
+		if (layout.template) {
 			renderIf(ifList);
 			ifList = [];
 			continue;
 		}
-		if (ifList.length && layout.directives.else) {
-			const ifv = layout.directives.if || null;
+		if (ifList.length && layout.else) {
+			const ifv = layout.if || null;
 			ifList.push([ifv, layout]);
 			if (!ifv) {
 				renderIf(ifList);
@@ -85,7 +85,7 @@ export default function renderList(layouts, parent, next, envs, templates, rende
 		}
 		renderIf(ifList);
 		ifList = [];
-		const ifv = layout.directives.if;
+		const ifv = layout.if;
 		if (ifv) {
 			ifList.push([ifv, layout]);
 			continue;

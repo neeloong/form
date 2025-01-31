@@ -13,7 +13,6 @@ export default function createElement(name, is) {
 		children: [],
 		attrs: Object.create(null),
 		events: Object.create(null),
-		directives: Object.create(null),
 		classes: Object.create(null),
 		styles: Object.create(null),
 		vars: Object.create(null),

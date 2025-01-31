@@ -17,7 +17,7 @@ function toText(val) {
  * @param {Element} parent
  * @param {Node?} next
  * @param {Environment} envs
- * @param {Layout.Directives} layout
+ * @param {Layout.Node} layout
  */
 export default function renderFillDirectives(parent, next, envs, { text, html }) {
 	if (text != null) {

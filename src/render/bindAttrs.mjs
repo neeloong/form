@@ -6,44 +6,43 @@ import Environment from './Environment/index.mjs';
 /**
  * @param {Component.Handler} handler
  * @param {Environment} envs
- * @param {Record<string, string | {name: string} | Layout.Calc>} attrs
+ * @param {Record<string, Layout.Node.Value | Layout.Node.Name | Layout.Node.Calc>} attrs
  * @param {Record<string, Component.Attr>} componentAttrs
  * @param {string | boolean | null} [bindValue]
  */
 export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValue) {
 
 	let bk = new Set();
-	for (const [name, attr] of Object.entries(componentAttrs)) {
-		const attrValue = attrs[name];
-		if (name in attrs) {
-			if (typeof attrValue !== 'function' && typeof attrValue !== 'object') {
-				handler.set(name, attrValue);
+	for (const [key, attr] of Object.entries(componentAttrs)) {
+		if (key in attrs) {
+			const attrDefine = attrs[key]
+			const { name, calc, value } = attrs[key];
+			if (!name && !calc) {
+				handler.set(key, value);
 				continue;
 			}
-			const attrSchema = typeof attrValue === 'function' ? /** @type{Layout.Calc} */(attrValue) : attrValue.name;
 			if (attr.immutable) {
-				handler.set(name, envs.exec(attrSchema));
-				continue;
+				handler.set(key, envs.exec(attrDefine));
 			}
-			bk.add(envs.watch(attrSchema, v => handler.set(name, v)));
+			bk.add(envs.watch(attrDefine, v => handler.set(key, v)));
 			continue;
 		}
 		const bind = attr.bind;
 		if (!bindValue || !bind) {
-			handler.set(name, attr.default);
+			handler.set(key, attr.default);
 			continue;
 		}
 		if (typeof bind === 'string') {
-			const r = envs.bind(bindValue, bind, v => handler.set(name, v));
+			const r = envs.bind(bindValue, bind, v => handler.set(key, v));
 			if (r) {
 				bk.add(r);
 			} else {
-				handler.set(name, attr.default);
+				handler.set(key, attr.default);
 			}
 			continue;
 		}
 		if (!Array.isArray(bind)) {
-			handler.set(name, attr.default);
+			handler.set(key, attr.default);
 			continue;
 		}
 		const [event, set, isState] = bind
@@ -52,11 +51,11 @@ export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValu
 		}
 		if (!isState) {
 			const bindKey = bindValue === true ? '' : bindValue;
-			bk.add(envs.watch(bindKey, v => handler.set(name, v)));
+			bk.add(envs.watch({name: bindKey}, v => handler.set(key, v)));
 			handler.addEvent(event, (...args) => { envs.all[bindKey] = set(...args)});
 			continue;
 		}
-		const r = envs.bind(bindValue, 'state', v => handler.set(name, v));
+		const r = envs.bind(bindValue, 'state', v => handler.set(key, v));
 		if (!r) { continue; }
 		bk.add(r);
 		const s = envs.bindSet(bindValue, 'state');

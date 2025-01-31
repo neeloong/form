@@ -30,8 +30,8 @@ import bindEnhancements from './bindEnhancements.mjs';
  */
 function renderItem(layout, parent, next, env, templates, componentPath, enhancements, relate, getComponent) {
 	env = env.set(layout.aliases, layout.vars);
-	const bind = layout.directives.bind;
-	const fragment = layout.directives.fragment;
+	const bind = layout.bind;
+	const fragment = layout.fragment;
 	if (fragment && typeof fragment === 'string') {
 		const template = templates[fragment];
 		if (!template) { return () => {}; }
@@ -39,8 +39,8 @@ function renderItem(layout, parent, next, env, templates, componentPath, enhance
 		const newEnv = templateEnv.params(templateLayout, layout, env, bind);
 		return render(templateLayout, parent, next, newEnv, templates, componentPath, enhancements, relate, getComponent);
 	}
-	if (!layout.name || layout.directives.fragment) {
-		return renderFillDirectives(parent, next, env, layout.directives) || 
+	if (!layout.name || layout.fragment) {
+		return renderFillDirectives(parent, next, env, layout) || 
 			renderList(layout.children || [], parent, next, env, templates, (layout, templates) => {
 				return render(layout, parent, next, env, templates, componentPath, enhancements, relate, getComponent);
 			});
@@ -77,7 +77,7 @@ function renderItem(layout, parent, next, env, templates, componentPath, enhance
 	const slot = Array.isArray(r) ? r[1] : root;
 	parent.insertBefore(root, next);
 	const children = slot ? 
-		renderFillDirectives(slot, null, env, layout.directives)
+		renderFillDirectives(slot, null, env, layout)
 		|| renderList(layout.children || [], slot, null, env,  templates, (layout, templates) => {
 			return render(layout, slot, null, env, templates, componentPath, enhancements, relate, getComponent);
 		}) : () => {};
@@ -114,10 +114,9 @@ function renderItem(layout, parent, next, env, templates, componentPath, enhance
  * @returns {() => void}
  */
 function render(layout, parent, next, env, templates, componentPath, enhancements, relate, getComponent) {
-	const { directives } = layout;
-	const newEnv = env.child(directives.value);
+	const newEnv = env.child(layout.value);
 	if (!newEnv) { return () => {}; }
-	const list = newEnv.enum(directives.enum);
+	const list = newEnv.enum(layout.enum);
 	/** @type {(next: Node | null, env: any) => () => void} */
 	const r = (next, env) => renderItem(layout, parent, next, env, templates, componentPath, enhancements, relate, getComponent);
 	if (list === true) {

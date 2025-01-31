@@ -15,10 +15,8 @@ function getEnhancement(enhancements, name) {
 	if (enhancement) { return enhancement; }
 	/** @type {Layout.Enhancement} */
 	const e = {
-		value: null,
 		attrs: Object.create(null),
 		events: Object.create(null),
-		bind: null,
 	};
 	enhancements[name] = e;
 	return e;
@@ -30,7 +28,7 @@ function getEnhancement(enhancements, name) {
  * @param {Exclude<Layout.Options['createEvent'], undefined>} createEvent
  */
 export default function createAttributeAdder(node, createCalc, createEvent) {
-	const { attrs, directives, events, classes, styles, vars, aliases, params, enhancements } = node;
+	const { attrs, events, classes, styles, vars, aliases, params, enhancements } = node;
 	/**
 	 * @param {string} qName
 	 * @param {string} value
@@ -50,9 +48,9 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 		const decorator = attr.decorator?.toLowerCase();
 		if (enhancement) {
 			if (decorator === ':') {
-				getEnhancement(enhancements, enhancement).attrs[name] = nameRegex.test(value) ? value : createCalc(value);
+				getEnhancement(enhancements, enhancement).attrs[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
 			} else if (decorator === '@') {
-				getEnhancement(enhancements, enhancement).events[name] = nameRegex.test(value) ? value : createEvent(value);
+				getEnhancement(enhancements, enhancement).events[name] = nameRegex.test(value) ? {name: value} : {event: createEvent(value)};
 			} else if (decorator === '!') {
 				switch(name) {
 					case 'bind':
@@ -60,44 +58,65 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 						break;
 				}
 			} else {
-				getEnhancement(enhancements, enhancement).value = nameRegex.test(value) ? value : createCalc(value);
+				getEnhancement(enhancements, enhancement).value = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
 			}
 			return;
 		}
 		if (!decorator) {
-			attrs[name] = value;
-		} else if (decorator === ':') {
-			attrs[name] = nameRegex.test(value) ? {name: value} : createCalc(value);
-		} else if (decorator === '.') {
-			classes[name] = !value ? true : nameRegex.test(value) ? value : createCalc(value);
-		} else if (decorator === 'style:') {
-			styles[name] = nameRegex.test(value) ? value : createCalc(value);
-		} else if (decorator === '@') {
-			events[name] = nameRegex.test(value) ? value : createEvent(value);
-		} else if (decorator === '+') {
-			vars[name] = !value ? '' : nameRegex.test(value) ? value : createCalc(value);
-		} else if (decorator === '*') {
-			aliases[name] = nameRegex.test(value) ? value : createCalc(value);
-		} else if (decorator === '?') {
-			params[name] = nameRegex.test(value) ? value : createCalc(value);
-		} else if (decorator === '!') {
-			const key = name.toString();
-			switch (key) {
-				case 'fragment': directives.fragment = value || true; break;
-				case 'else': directives.else = true; break;
-				case 'enum':
-					directives.enum = value ? nameRegex.test(value) ? value : createCalc(value) : true;
-					break;
-				case 'if':
-				case 'text':
-				case 'html':
-					directives[key] = nameRegex.test(value) ? value : createCalc(value);
-					break;
-				case 'template': directives.template = value; break;
-				case 'bind': directives.bind = value || true; break;
-				case 'value': directives.value = value; break;
-				case 'comment': directives.comment = value; break;
-			}
+			attrs[name] = {value};
+			return;
+		}
+		if (decorator === ':') {
+			attrs[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			return;
+		}
+		if (decorator === '.') {
+			classes[name] = !value ? {value: true} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			return;
+		}
+		if (decorator === 'style:') {
+			styles[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			return;
+		}
+		if (decorator === '@') {
+			events[name] = nameRegex.test(value) ? {name: value} : {event: createEvent(value)};
+			return;
+		}
+		if (decorator === '+') {
+			vars[name] = !value ? {value: ''} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			return;
+		}
+		if (decorator === '*') {
+			aliases[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			return;
+		}
+		if (decorator === '?') {
+			params[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			return;
+		}
+		if (decorator !== '!') {
+			return;
+		}
+		const key = name.toString();
+		switch (key) {
+			case 'fragment': node.fragment = value || true; break;
+			case 'else': node.else = true; break;
+			case 'enum':
+				node.enum = value ? nameRegex.test(value) ? {name: value} : {calc: createCalc(value)} : {value: true};
+				break;
+			case 'if':
+				node.if = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				break;
+			case 'text':
+				node.text = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				break;
+			case 'html':
+				node.html = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				break;
+			case 'template': node.template = value; break;
+			case 'bind': node.bind = value || true; break;
+			case 'value': node.value = value; break;
+			case 'comment': node.comment = value; break;
 		}
 	}
 	return addAttribute;

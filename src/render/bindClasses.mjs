@@ -6,7 +6,7 @@ import watch from '../watch.mjs';
 /**
  * @param {Node} node
  * @param {Environment} envs
- * @param {Record<string, string | boolean | Layout.Calc>} classes
+ * @param {Record<string, Layout.Node.Value<boolean> | Layout.Node.Name | Layout.Node.Calc>} classes
  */
 export default function bindClasses(node, classes, envs) {
 	if (!(node instanceof Element)) {
@@ -15,17 +15,16 @@ export default function bindClasses(node, classes, envs) {
 
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
-	for (const [name, attr] of Object.entries(classes)) {
-		if (!attr) { continue; }
-		if (attr === true) {
-			node.classList.add(name);
+	for (const [key, attr] of Object.entries(classes)) {
+		if (attr.value) {
+			node.classList.add(key);
 			continue;
 		}
 		bk.add(watch(() => Boolean(envs.exec(attr)), value => {
 			if (value) {
-				node.classList.add(name);
+				node.classList.add(key);
 			} else {
-				node.classList.remove(name);
+				node.classList.remove(key);
 			}
 		}, true));
 	}

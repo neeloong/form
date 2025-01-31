@@ -86,8 +86,9 @@ export default function bindEnhancements(tag, enhancementDefine, env, enhancemen
 			}
 
 		}
-		enhancement({
-			value,
+		/**@type {Enhancement.Context} */
+		const context = {
+			get value() { return null; },
 			events: allEvents,
 			attrs: attrs,
 			watchAttr(name, fn) {
@@ -109,7 +110,14 @@ export default function bindEnhancements(tag, enhancementDefine, env, enhancemen
 			listen(name, listener) { return stateEmitter.listen(name, listener); },
 			root, slot,
 			tag,
-		});
+		}
+		if (value) {
+			const s = env.get(value);
+			if (s) {
+				Object.defineProperty(context, 'value', { ...s, configurable: true, enumerable: true });
+			}
+		}
+		enhancement(context);
 	}
 	return () => {
 		const list = bk;

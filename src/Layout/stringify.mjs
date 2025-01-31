@@ -14,87 +14,84 @@ function _xmlEncoder(c) {
 }
 
 /**
+ * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Event | Layout.Node.Value} def 
+ */
+function toValue({name, calc, event}) {
+	return toAttrValue(name || calc || event);
+}
+/**
+ * @param {string | Function | null} [value] 
+ */
+function toAttrValue(value) {
+	return String(value).replace(/[<&"]/g, _xmlEncoder);
+}
+
+/**
+ * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Event | Layout.Node.Value>} values
+ * @param {string} [prefix]  
+ */
+function *values(values, prefix) {
+	if (prefix) {
+		for (const [key, {name, calc, event}] of Object.entries(values)) {
+			yield* [' ', prefix, key];
+			if (!name || calc || event) { continue; }
+			yield* ['="', String(name || calc || event).replace(/[<&"]/g, _xmlEncoder), '"'];
+		}
+		return;
+	}
+	for (const [key, attr] of Object.entries(values)) {
+		if (!attr) { continue; }
+		const {name, value, calc} = attr;
+		if (name || calc || typeof value !== 'string') {
+			yield* [' :', key, '="', toAttrValue(name || calc || value), '"'];
+			continue;
+		}
+		yield* [' ', key];
+		if (value) {
+			yield* ['="', toAttrValue(value), '"'];
+		}
+	}
+}
+
+
+/**
  * 
  * @param {Layout.Node} node 
  * @param {number} [level] 
  * @returns {Iterable<string>}
  */
 export function* nodeToString(node, level = 0) {
-	const { attrs, events, directives, children, is, name, params, classes, styles, aliases, vars } = node;
+	const { children, is, name } = node;
 	const pad = level > 0 ? ''.padEnd(level, '\t') : '';
 
 	yield pad;
 	yield* ['<', name || '-'];
 	if (is) { yield* ['|', is]; }
-
-	for (const [name, value] of Object.entries(params)) {
-		if (value == null) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		yield* [' ?', name];
-		if (val && typeof val === 'string') {
-			yield* ['="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
+	if (node.template) {
+		yield ` !template="${toAttrValue(node.template)}"`;
+		yield* values(node.params, '?');
 	}
-	for (const [name, value] of Object.entries(directives)) {
-		if (value === false || value == null) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		yield* [' !', name];
-		if (val && typeof val === 'string') {
-			yield* ['="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
+	if (node.fragment) { yield node.fragment === true ? ` !fragment` : ` !fragment="${toAttrValue(node.fragment)}"`; }
+	if (node.else) { yield ` !else`; }
+	if (node.if) { yield ` !if="${toValue(node.if)}"`; }
+	if (node.value) { yield ` !value="${toAttrValue(node.value)}"`; }
+	if (node.enum) { yield node.enum.value === true ? ` !enum` : ` !enum="${toValue(node.enum)}"`; }
+	yield* values(node.aliases, '*');
+	yield* values(node.vars, '+');
+	if (node.bind) { yield node.bind === true ? ` !bind` : ` !bind="${toAttrValue(node.bind)}"`; }
+	yield* values(node.attrs);
+	yield* values(node.events, '@');
+	yield* values(node.classes, '.');
+	yield* values(node.styles, 'style:');
+	for (const [k, en] of Object.entries(node.enhancements)) {
+		if (en.bind) { yield en.bind === true ? ` ~${k}!bind` : ` ~${k}!bind="${toAttrValue(en.bind)}"`; }
+		if (en.value) { yield ` ~${k}="${toValue(en.value)}"`; }
+		yield* values(en.attrs, `~${k}:`);
+		yield* values(en.events, `~${k}@`);
 	}
-	for (const [name, value] of Object.entries(aliases)) {
-		if (value == null) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		yield* [' *', name];
-		if (val && typeof val === 'string') {
-			yield* ['="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
-	}
-	for (const [name, value] of Object.entries(vars)) {
-		if (value == null) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		yield* [' +', name];
-		if (val && typeof val === 'string') {
-			yield* ['="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
-	}
-	for (const [name, value] of Object.entries(attrs)) {
-		if (value == null) { continue; }
-		if (typeof value === 'string') {
-			yield* [' ', name];
-			if (value) {
-				yield* ['="', value.replace(/[<&"]/g, _xmlEncoder), '"'];
-			}
-			continue;
-		}
-		const val = typeof value === 'function' ? String(value) : typeof value === 'object' ? value.name : value;
-		if (val && typeof val === 'string') {
-			yield* [' :', name, '="', val.replace(/[<&"]/g, _xmlEncoder) || '', '"'];
-		}
-	}
-	for (const [name, value] of Object.entries(events)) {
-		if (value == null) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		if (val && typeof val === 'string') {
-			yield* [' @', name, '="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
-	}
-	for (const [name, value] of Object.entries(classes)) {
-		if (value == null || value == false) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		yield* [' .', name];
-		if (val && typeof val === 'string') {
-			yield* [' .', name, '="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
-	}
-	for (const [name, value] of Object.entries(styles)) {
-		if (value == null) { continue; }
-		const val = typeof value === 'function' ? String(value) : value;
-		if (val && typeof val === 'string') {
-			yield* [' style:', name, '="', val.replace(/[<&"]/g, _xmlEncoder), '"'];
-		}
-	}
+	if (node.text) { yield ` !text="${toValue(node.text)}"`; }
+	if (node.html) { yield ` !html="${toValue(node.html)}"`; }
+	if (node.comment) { yield ` !comment="${toAttrValue(node.comment)}"`; }
 	if (!children.length) {
 		yield '/>';
 		if (level >= 0) { yield '\n'; }

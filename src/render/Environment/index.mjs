@@ -19,47 +19,49 @@ import addStore from './addStore.mjs';
  */
 export default class Environment {
 	/**
-	 * @param {string | Layout.Calc} value
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} value
 	 */
-	exec(value) {
-		if (typeof value === 'string') {
-			const item = this.#items[value];
+	exec({name, calc, value}) {
+		if (typeof name === 'string') {
+			const item = this.#items[name];
 			if (typeof item?.get !== 'function') { return }
 			return item.get();
 		}
-		if (typeof value === 'function') {
-			return value(this.getters);
+		if (typeof calc === 'function') {
+			return calc(this.getters);
 		}
+		return value;
 	}
 	/**
-	 * @param {string | Layout.Calc} value
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} value
 	 */
-	get(value) {
-		if (typeof value === 'string') {
-			const item = this.#items[value];
+	get({name, calc, value}) {
+		if (typeof name === 'string') {
+			const item = this.#items[name];
 			if (typeof item?.get !== 'function') { return }
 			const{get, set} = item;
 			return {get, set};
 		}
-		if (typeof value !== 'function') {
-			return null;
+		if (typeof calc === 'function') {
+			const c = new Signal.Computed(() => calc(this.getters))
+			return {get: () => c.get() };
 		}
-		const c = new Signal.Computed(() => value(this.getters))
-		return {get: () => c.get() };
+		return {get: () => value };
 	}
 	/**
-	 * @param {string | Layout.Calc} value
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} value
 	 * @param {(value: any) => void} cb 
 	 */
 	watch(value, cb) { return watch(() => this.exec(value), cb, true); }
 
 	/**
-	 * @param {string | Layout.Calc | boolean | null} [name]
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value<true> | null} [en]
 	 */
-	enum(name) {
-		if (!name) { return true; }
-		if (name === true) { return this.store; }
-		if (typeof name === 'function') { return () => name(this.getters); }
+	enum(en) {
+		if (!en) { return true; }
+		const {name, value, calc} = en;
+		if (value) { return this.store; }
+		if (typeof calc === 'function') { return () => calc(this.getters); }
 		if (typeof name !== 'string') { return null; }
 		const item = this.#items[name];
 		if (typeof item?.get !== 'function') { return null }
@@ -182,12 +184,12 @@ export default class Environment {
 	}
 
 	/**
-	 * @param {string | Layout.EventListener} event
+	 * @param {Layout.Node.Name | Layout.Node.Event} event
 	 * @returns {Layout.EventListener?}
 	 */
-	getEvent(event) {
+	getEvent({name, event}) {
 		if (typeof event === 'function') { return event }
-		const item = this.#items[event];
+		const item = this.#items[name];
 		if (!item) { return null }
 		const {exec, calc} = item;
 		if (typeof exec === 'function') { return exec }
@@ -305,45 +307,51 @@ export default class Environment {
 		const items = cloned.#items;
 		for (const [key, param] of Object.entries(params)) {
 			const attr = key in attrs ? attrs[key] : null;
-			if (typeof attr === 'string') {
-				explicit[key] = items[key] = {get: () => attr};
-			} else if (attr && typeof attr === 'object') {
-				const item = sourceEnv.#items[attr.name];
-				if (!item?.get) { continue; }
-				if (!item.store) {
-					explicit[key] = items[key] = item;
+			if (attr) {
+				const {name, calc, value} = attr;
+				if (name) {
+					const item = sourceEnv.#items[name];
+					if (!item?.get) { continue; }
+					if (!item.store) {
+						explicit[key] = items[key] = item;
+						continue;
+					}
+					for (const [k, it] of toItem(item.store, key)) {
+						explicit[k] = items[k] = it;
+					}
 					continue;
+				} else if (typeof calc === 'function') {
+					const val = new Signal.Computed(() => calc(sourceEnv.getters));
+					explicit[key] = items[key] = {
+						get: () => { return val.get(); },
+					};
+					continue;
+				} else {
+					explicit[key] = items[key] = {get: () => value};
 				}
-				for (const [k, it] of toItem(item.store, key)) {
-					explicit[k] = items[k] = it;
-				}
-				continue;
-
-			} else if (typeof attr === 'function') {
-				const val = new Signal.Computed(() => attr(sourceEnv.getters));
-				explicit[key] = items[key] = {
-					get: () => { return val.get(); },
-				};
-				continue;
-			} else if (typeof param === 'function') {
-				const getters = cloned.getters;
-				cloned.#getters = null;
-				const val = new Signal.Computed(() => param(getters));
-				explicit[key] = items[key] = {
-					get: () => { return val.get(); },
-				};
 				continue;
 			} else {
-				const item = items[param];
-				if (!item?.get) { continue; }
-				if (!item.store) {
-					explicit[key] = items[key] = item;
+				const {name, calc} = param;
+				if (typeof calc === 'function') {
+					const getters = cloned.getters;
+					cloned.#getters = null;
+					const val = new Signal.Computed(() => calc(getters));
+					explicit[key] = items[key] = {
+						get: () => { return val.get(); },
+					};
+					continue;
+				} else if (name) {
+					const item = items[name];
+					if (!item?.get) { continue; }
+					if (!item.store) {
+						explicit[key] = items[key] = item;
+						continue;
+					}
+					for (const [k, it] of toItem(item.store, key)) {
+						explicit[k] = items[k] = it;
+					}
 					continue;
 				}
-				for (const [k, it] of toItem(item.store, key)) {
-					explicit[k] = items[k] = it;
-				}
-				continue;
 			}
 		}
 		return cloned;
@@ -356,8 +364,8 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Record<string, string | Layout.Calc>} aliases 
-	 * @param {Record<string, string | Layout.Calc>} vars 
+	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc>} aliases 
+	 * @param {Record<string, Layout.Node.Value<''> | Layout.Node.Name | Layout.Node.Calc>} vars 
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
@@ -366,11 +374,11 @@ export default class Environment {
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
 		const items = cloned.#items;
-		for (const [key, name] of Object.entries(aliases)) {
-			if (typeof name === 'function') {
+		for (const [key, {name, calc}] of Object.entries(aliases)) {
+			if (typeof calc === 'function') {
 				const getters = cloned.getters;
 				cloned.#getters = null;
-				const val = new Signal.Computed(() => name(getters));
+				const val = new Signal.Computed(() => calc(getters));
 				explicit[key] = items[key] = {
 					get: () => { return val.get(); },
 				};
@@ -386,15 +394,15 @@ export default class Environment {
 				explicit[k] = items[k] = it;
 			}
 		}
-		for (const [k,v] of Object.entries(vars)) {
+		for (const [k,{name, calc}] of Object.entries(vars)) {
 			
 			const val = new Signal.State(/** @type {any} */(null));
-			if (typeof v === 'function') {
+			if (typeof calc === 'function') {
 				const settable = cloned.settable;
 				cloned.#settable = null;
-				val.set(v(settable));
-			} else if (v && typeof v === 'string') {
-				const item = items[v];
+				val.set(calc(settable));
+			} else if (name) {
+				const item = items[name];
 				if (!item?.get) { continue }
 				val.set(item.get());
 			}

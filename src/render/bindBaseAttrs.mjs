@@ -6,27 +6,27 @@ import Environment from './Environment/index.mjs';
 /**
  * @param {Component.Handler} handler
  * @param {Environment} envs
- * @param {Record<string, string | {name: string} | Layout.Calc>} attrs
+ * @param {Record<string, Layout.Node.Value | Layout.Node.Name | Layout.Node.Calc>} attrs
  */
 export default function bindBaseAttrs(handler, envs, attrs) {
 	const tag = handler.tag;
 	let bk = new Set();
 	/** @type {Record<string, string?>} */
 	const attrValues = {};
-	for (const [name, attr] of Object.entries(attrs)) {
-		if (typeof attr !== 'function' && typeof attr !== 'object') {
-			handler.set(name, attr);
-			attrValues[name] = String(attr);
+	for (const [key, attr] of Object.entries(attrs)) {
+		const {name, calc, value} = attr;
+		if (!name && !calc) {
+			handler.set(key, value);
+			attrValues[key] = String(value);
 			continue;
 		}
-		const attrSchema = typeof attr === 'function' ? /** @type{Layout.Calc} */(attr) : attr.name;
-		if (typeof tag === 'string' && tag.toLocaleLowerCase() === 'input' && name.toLocaleLowerCase() === 'type') {
-			const value = envs.exec(attrSchema);
-			attrValues[name] = String(value);
-			handler.set(name, value);
+		if (typeof tag === 'string' && tag.toLocaleLowerCase() === 'input' && key.toLocaleLowerCase() === 'type') {
+			const value = envs.exec(attr);
+			attrValues[key] = String(value);
+			handler.set(key, value);
 			continue;
 		}
-		bk.add(envs.watch(attrSchema, val => handler.set(name, val)));
+		bk.add(envs.watch(attr, val => handler.set(key, val)));
 	}
 
 	return ()=> {
