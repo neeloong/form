@@ -19,9 +19,9 @@ import addStore from './addStore.mjs';
  */
 export default class Environment {
 	/**
-	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} value
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value | Layout.Node.Null} value
 	 */
-	exec({name, calc, value}) {
+	exec({name, calc, value, null: isNull}) {
 		if (typeof name === 'string') {
 			const item = this.#items[name];
 			if (typeof item?.get !== 'function') { return }
@@ -30,6 +30,7 @@ export default class Environment {
 		if (typeof calc === 'function') {
 			return calc(this.getters);
 		}
+		if (isNull) { return true; }
 		return value;
 	}
 	/**

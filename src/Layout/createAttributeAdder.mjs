@@ -71,7 +71,7 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 			return;
 		}
 		if (decorator === '.') {
-			classes[name] = !value ? {value: true} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			classes[name] = !value ? {null: true} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
 			return;
 		}
 		if (decorator === 'style:') {

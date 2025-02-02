@@ -46,7 +46,7 @@ export { default as stringify } from './stringify.mjs';
  * @property {string} [id]
  * @property {Record<string, Node.Value | Node.Name | Node.Calc>} attrs
  * @property {Record<string, Node.Name | Node.Calc>} params
- * @property {Record<string, Node.Value<true> | Node.Name | Node.Calc>} classes
+ * @property {Record<string, Node.Null | Node.Name | Node.Calc>} classes
  * @property {Record<string, Node.Name | Node.Calc>} styles
  * @property {Record<string, Node.Name | Node.Event>} events
  * @property {Record<string, Node.Null | Node.Name | Node.Calc>} vars
