@@ -19,9 +19,9 @@ import addStore from './addStore.mjs';
  */
 export default class Environment {
 	/**
-	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value | Layout.Node.Null} value
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} value
 	 */
-	exec({name, calc, value, null: isNull}) {
+	exec({name, calc, value }) {
 		if (typeof name === 'string') {
 			const item = this.#items[name];
 			if (typeof item?.get !== 'function') { return }
@@ -30,7 +30,6 @@ export default class Environment {
 		if (typeof calc === 'function') {
 			return calc(this.getters);
 		}
-		if (isNull) { return true; }
 		return value;
 	}
 	/**
@@ -56,7 +55,7 @@ export default class Environment {
 	watch(value, cb) { return watch(() => this.exec(value), cb, true); }
 
 	/**
-	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Null | null} [en]
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value | null} [en]
 	 */
 	enum(en) {
 		if (!en) { return true; }
@@ -332,7 +331,7 @@ export default class Environment {
 				}
 				continue;
 			} else {
-				const {name, calc} = param;
+				const {name, calc, value} = param;
 				if (typeof calc === 'function') {
 					const getters = cloned.getters;
 					cloned.#getters = null;
@@ -352,6 +351,10 @@ export default class Environment {
 						explicit[k] = items[k] = it;
 					}
 					continue;
+				} else {
+					explicit[key] = items[key] = {get: () => value};
+					continue;
+
 				}
 			}
 		}
@@ -365,8 +368,8 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc>} aliases 
-	 * @param {Record<string, Layout.Node.Null | Layout.Node.Name | Layout.Node.Calc>} vars 
+	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} aliases 
+	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} vars 
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
@@ -375,7 +378,7 @@ export default class Environment {
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
 		const items = cloned.#items;
-		for (const [key, {name, calc}] of Object.entries(aliases)) {
+		for (const [key, {name, calc, value}] of Object.entries(aliases)) {
 			if (typeof calc === 'function') {
 				const getters = cloned.getters;
 				cloned.#getters = null;
@@ -385,19 +388,24 @@ export default class Environment {
 				};
 				continue;
 			}
-			const item = items[name];
-			if (!item) { continue; }
-			if (!item.get || !item.store) {
-				explicit[key] = items[key] = item;
+			if (name) {
+				const item = items[name];
+				if (!item) { continue; }
+				if (!item.get || !item.store) {
+					explicit[key] = items[key] = item;
+					continue;
+				}
+				for (const [k, it] of toItem(item.store, key)) {
+					explicit[k] = items[k] = it;
+				}
 				continue;
 			}
-			for (const [k, it] of toItem(item.store, key)) {
-				explicit[k] = items[k] = it;
-			}
+			explicit[key] = items[key] = { get: () => { return value; } };
+			continue;
 		}
-		for (const [k,{name, calc}] of Object.entries(vars)) {
+		for (const [k,{name, calc, value}] of Object.entries(vars)) {
 			
-			const val = new Signal.State(/** @type {any} */(null));
+			const val = new Signal.State(/** @type {any} */(value));
 			if (typeof calc === 'function') {
 				const settable = cloned.settable;
 				cloned.#settable = null;

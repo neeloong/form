@@ -12,8 +12,8 @@ export { default as stringify } from './stringify.mjs';
 /**
  * @typedef {object} Enhancement
  * @property {Record<string, Node.Name | Node.Event>} events
- * @property {Record<string, Node.Name | Node.Calc>} attrs
- * @property {Node.Name | Node.Calc} [value]
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} attrs
+ * @property {Node.Name | Node.Calc | Node.Value} [value]
  * @property {boolean | string} [bind]
  */
 
@@ -24,47 +24,44 @@ export { default as stringify } from './stringify.mjs';
  * @property {Set<string>} [options.simpleTag]
  */
 /**
- * @typedef {{null: true; name?: undefined; calc?: undefined; value?: undefined; event?: undefined}} Node.Null
- */
-/**
  * @template [T=any]
- * @typedef {{value: T; name?: undefined; calc?: undefined; event?: undefined; null?: undefined}} Node.Value
+ * @typedef {{value: T; name?: undefined; calc?: undefined; event?: undefined}} Node.Value
  */
 /**
- * @typedef {{name: string; value?: undefined; calc?: undefined; event?: undefined; null?: undefined}} Node.Name
+ * @typedef {{name: string; value?: undefined; calc?: undefined; event?: undefined}} Node.Name
  */
 /**
- * @typedef {{event: EventListener; name?: undefined; calc?: undefined; value?: undefined; null?: undefined}} Node.Event
+ * @typedef {{event: EventListener; name?: undefined; calc?: undefined; value?: undefined}} Node.Event
  */
 /**
- * @typedef {{calc: Calc; name?: undefined; value?: undefined; event?: undefined; null?: undefined}} Node.Calc
+ * @typedef {{calc: Calc; name?: undefined; value?: undefined; event?: undefined}} Node.Calc
  */
 /**
  * @typedef {object} Node
  * @property {string} name
  * @property {string?} [is]
  * @property {string} [id]
- * @property {Record<string, Node.Value | Node.Name | Node.Calc>} attrs
- * @property {Record<string, Node.Name | Node.Calc>} params
- * @property {Record<string, Node.Null | Node.Name | Node.Calc>} classes
- * @property {Record<string, Node.Name | Node.Calc>} styles
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} attrs
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} params
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} classes
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} styles
  * @property {Record<string, Node.Name | Node.Event>} events
- * @property {Record<string, Node.Null | Node.Name | Node.Calc>} vars
- * @property {Record<string, Node.Name | Node.Calc>} aliases
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} vars
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} aliases
  * @property {Record<string, Enhancement>} enhancements
  * 
  * @property {string} [template]
  * @property {boolean | string} [fragment]
  * 
- * @property {Node.Name | Node.Calc} [if]
+ * @property {Node.Name | Node.Calc | Node.Value} [if]
  * @property {boolean} [else]
  * 
- * @property {string} [value] 值关联（关联为列表）
- * @property {Node.Null | Node.Name | Node.Calc} [enum] 列表属性枚举
+ * @property {string} [value] 值关联
+ * @property {Node.Name | Node.Calc | Node.Value} [enum] 列表属性枚举
  * 
  * @property {boolean | string} [bind]
- * @property {Node.Name | Node.Calc} [text]
- * @property {Node.Name | Node.Calc} [html]
+ * @property {Node.Name | Node.Value | Node.Calc} [text]
+ * @property {Node.Name | Node.Value | Node.Calc} [html]
  * 
  * @property {string} [comment] 注释
  * 

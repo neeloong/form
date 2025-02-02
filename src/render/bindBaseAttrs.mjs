@@ -6,7 +6,7 @@ import Environment from './Environment/index.mjs';
 /**
  * @param {Component.Handler} handler
  * @param {Environment} envs
- * @param {Record<string, Layout.Node.Value | Layout.Node.Name | Layout.Node.Calc>} attrs
+ * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} attrs
  */
 export default function bindBaseAttrs(handler, envs, attrs) {
 	const tag = handler.tag;

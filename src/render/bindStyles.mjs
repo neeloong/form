@@ -69,7 +69,7 @@ function toStyle(name, value) {
 /**
  * @param {Element} node
  * @param {Environment} envs
- * @param {Record<string, Layout.Node.Name | Layout.Node.Calc>} classes
+ * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} classes
  */
 export default function bindStyles(node, classes, envs) {
 	if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {

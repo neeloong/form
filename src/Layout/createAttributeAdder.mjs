@@ -1,5 +1,6 @@
 /** @import * as Layout from './index.mjs' */
 
+import parseNumber from '../parseNumber.mjs';
 import ParseError from './ParseError.mjs';
 const attrPattern = /^(?<decorator>[:@!+*\.?]|style:|样式：)?(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*)$/u;
 const enhancementPattern = /^~(?<enhancement>[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_\d\.]*)(?:(?<decorator>[:@!])(?<name>-?[\w\p{Unified_Ideograph}_][-\w\p{Unified_Ideograph}_:\d\.]*))?$/u;
@@ -20,6 +21,22 @@ function getEnhancement(enhancements, name) {
 	};
 	enhancements[name] = e;
 	return e;
+}
+/**
+ * 
+ * @param {string} value 
+ * @param {Exclude<Layout.Options['createCalc'], undefined>} createCalc 
+ * @returns {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value}
+ */
+function parse(value, createCalc) {
+	const text = value.replace(/$\s+|\s+$/gs,'');
+	if (text === 'null') { return {value: null} }
+	if (text === 'true') { return {value: true} }
+	if (text === 'false') { return {value: false} }
+	const t = parseNumber(text);
+	if (!Number.isNaN(t)) { return {value: t}; }
+	if (nameRegex.test(text)) { return {name: text} }
+	return {calc: createCalc(value)};
 }
 
 /**
@@ -48,9 +65,9 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 		const decorator = attr.decorator?.toLowerCase();
 		if (enhancement) {
 			if (decorator === ':') {
-				getEnhancement(enhancements, enhancement).attrs[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				getEnhancement(enhancements, enhancement).attrs[name] = value ? parse(value, createCalc) : {name};
 			} else if (decorator === '@') {
-				getEnhancement(enhancements, enhancement).events[name] = nameRegex.test(value) ? {name: value} : {event: createEvent(value)};
+				getEnhancement(enhancements, enhancement).events[name] = value ? nameRegex.test(value) ? {name: value} : {event: createEvent(value)} : {name};
 			} else if (decorator === '!') {
 				switch(name) {
 					case 'bind':
@@ -58,7 +75,7 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 						break;
 				}
 			} else {
-				getEnhancement(enhancements, enhancement).value = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				getEnhancement(enhancements, enhancement).value = parse(value, createCalc);
 			}
 			return;
 		}
@@ -67,31 +84,31 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 			return;
 		}
 		if (decorator === ':') {
-			attrs[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			attrs[name] = value ? parse(value, createCalc) : {name};
 			return;
 		}
 		if (decorator === '.') {
-			classes[name] = !value ? {null: true} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			classes[name] = value ? parse(value, createCalc) : {name}
 			return;
 		}
 		if (decorator === 'style:') {
-			styles[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			styles[name] = parse(value, createCalc);
 			return;
 		}
 		if (decorator === '@') {
-			events[name] = nameRegex.test(value) ? {name: value} : {event: createEvent(value)};
+			events[name] = value ? nameRegex.test(value) ? {name: value} : {event: createEvent(value)} : {name};
 			return;
 		}
 		if (decorator === '+') {
-			vars[name] = !value ? {null: true} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			vars[name] = !value ? {value: undefined} : parse(value, createCalc);
 			return;
 		}
 		if (decorator === '*') {
-			aliases[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			aliases[name] = parse(value, createCalc);
 			return;
 		}
 		if (decorator === '?') {
-			params[name] = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			params[name] = parse(value, createCalc);
 			return;
 		}
 		if (decorator !== '!') {
@@ -102,16 +119,16 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 			case 'fragment': node.fragment = value || true; break;
 			case 'else': node.else = true; break;
 			case 'enum':
-				node.enum = value ? nameRegex.test(value) ? {name: value} : {calc: createCalc(value)} : {null: true};
+				node.enum = value ? parse(value, createCalc) : {value: true};
 				break;
 			case 'if':
-				node.if = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				node.if = parse(value, createCalc);
 				break;
 			case 'text':
-				node.text = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				node.text = parse(value, createCalc);
 				break;
 			case 'html':
-				node.html = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+				node.html = parse(value, createCalc);
 				break;
 			case 'template': node.template = value; break;
 			case 'bind': node.bind = value || true; break;

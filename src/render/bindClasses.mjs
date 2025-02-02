@@ -6,7 +6,7 @@ import watch from '../watch.mjs';
 /**
  * @param {Node} node
  * @param {Environment} envs
- * @param {Record<string, Layout.Node.Null | Layout.Node.Name | Layout.Node.Calc>} classes
+ * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} classes
  */
 export default function bindClasses(node, classes, envs) {
 	if (!(node instanceof Element)) {

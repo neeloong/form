@@ -17,8 +17,9 @@ function _xmlEncoder(c) {
  * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Event | Layout.Node.Value} def 
  */
 function toValue({name, calc, event, value}) {
+	if (value === true || value === undefined) { return ''; }
 	const val = typeof value === 'string' ? JSON.stringify(value) : name || calc || event || value;
-		return `"${toAttrValue(val)}"`;
+		return `="${toAttrValue(val)}"`;
 }
 /**
  * @param {string | Function | null} [value] 
@@ -28,15 +29,18 @@ function toAttrValue(value) {
 }
 
 /**
- * @param {Record<string, Layout.Node.Name | Layout.Node.Null | Layout.Node.Calc | Layout.Node.Event | Layout.Node.Value>} values
- * @param {string} [prefix]  
+ * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Event | Layout.Node.Value>} values
+ * @param {string} [prefix]
+ * @param {boolean | null} [isName]
  */
-function *values(values, prefix) {
+function *values(values, prefix, isName = false) {
 	if (prefix) {
 		for (const [key, {name, calc, event, value}] of Object.entries(values)) {
-			yield* [' ', prefix, key];
+			yield ` ${prefix}${key}`;
+			if (isName && name === key) { continue; }
 			const val = value && typeof value === 'string' ? JSON.stringify(value) : name || calc || event || value;
 			if (val == null) { continue; }
+			if (isName === false && val === true) { continue; }
 			yield `="${toAttrValue(val)}"`;
 		}
 		return;
@@ -44,11 +48,12 @@ function *values(values, prefix) {
 	for (const [key, attr] of Object.entries(values)) {
 		if (!attr) { continue; }
 		const {name, value, calc} = attr;
+		if (name === key) { yield ` :${key}`; continue; }
 		if (name || calc || typeof value !== 'string') {
-			yield* [' :', key, '="', toAttrValue(name || calc || value), '"'];
+			yield ` :${key}="${toAttrValue(name || calc || value)}"`;
 			continue;
 		}
-		yield* [' ', key];
+		yield ` ${key}`;
 		if (value) {
 			yield `="${toAttrValue(value)}"`;
 		}
@@ -71,28 +76,28 @@ export function* nodeToString(node, level = 0) {
 	if (is) { yield* ['|', is]; }
 	if (node.template) {
 		yield ` !template="${toAttrValue(node.template)}"`;
-		yield* values(node.params, '?');
+		yield* values(node.params, '?', null);
 	}
 	if (node.fragment) { yield node.fragment === true ? ` !fragment` : ` !fragment="${toAttrValue(node.fragment)}"`; }
 	if (node.else) { yield ` !else`; }
-	if (node.if) { yield ` !if=${toValue(node.if)}`; }
+	if (node.if) { yield ` !if${toValue(node.if)}`; }
 	if (node.value) { yield ` !value="${toAttrValue(node.value)}"`; }
-	if (node.enum) { yield node.enum.null ? ` !enum` : ` !enum=${toValue(node.enum)}`; }
-	yield* values(node.aliases, '*');
-	yield* values(node.vars, '+');
+	if (node.enum) { yield ` !enum${toValue(node.enum)}`; }
+	yield* values(node.aliases, '*', null);
+	yield* values(node.vars, '+', null);
 	if (node.bind) { yield node.bind === true ? ` !bind` : ` !bind="${toAttrValue(node.bind)}"`; }
 	yield* values(node.attrs);
-	yield* values(node.events, '@');
-	yield* values(node.classes, '.');
+	yield* values(node.events, '@', true);
+	yield* values(node.classes, '.', true);
 	yield* values(node.styles, 'style:');
 	for (const [k, en] of Object.entries(node.enhancements)) {
 		if (en.bind) { yield en.bind === true ? ` ~${k}!bind` : ` ~${k}!bind="${toAttrValue(en.bind)}"`; }
-		if (en.value) { yield ` ~${k}=${toValue(en.value)}`; }
-		yield* values(en.attrs, `~${k}:`);
-		yield* values(en.events, `~${k}@`);
+		if (en.value) { yield ` ~${k}${toValue(en.value)}`; }
+		yield* values(en.attrs, `~${k}:`, true);
+		yield* values(en.events, `~${k}@`, true);
 	}
-	if (node.text) { yield ` !text=${toValue(node.text)}`; }
-	if (node.html) { yield ` !html=${toValue(node.html)}`; }
+	if (node.text) { yield ` !text${toValue(node.text)}`; }
+	if (node.html) { yield ` !html${toValue(node.html)}`; }
 	if (node.comment) { yield ` !comment="${toAttrValue(node.comment)}"`; }
 	if (!children.length) {
 		yield '/>';
