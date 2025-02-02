@@ -14,6 +14,7 @@ export default function bindAttrs(handler, envs, attrs, componentAttrs, bindValu
 
 	let bk = new Set();
 	for (const [key, attr] of Object.entries(componentAttrs)) {
+		if (key === 'class' || key === 'style') { continue; }
 		if (key in attrs) {
 			const attrDefine = attrs[key]
 			const { name, calc, value } = attrs[key];

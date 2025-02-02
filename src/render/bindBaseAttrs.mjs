@@ -14,6 +14,7 @@ export default function bindBaseAttrs(handler, envs, attrs) {
 	/** @type {Record<string, string?>} */
 	const attrValues = {};
 	for (const [key, attr] of Object.entries(attrs)) {
+		if (key === 'class' || key === 'style') { continue; }
 		const {name, calc, value} = attr;
 		if (!name && !calc) {
 			handler.set(key, value);

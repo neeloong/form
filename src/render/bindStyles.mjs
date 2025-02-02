@@ -69,16 +69,20 @@ function toStyle(name, value) {
 /**
  * @param {Element} node
  * @param {Environment} envs
- * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} classes
+ * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} styles
+ * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} [styleAttr]
  */
-export default function bindStyles(node, classes, envs) {
+export default function bindStyles(node, envs, styles, styleAttr) {
 	if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {
 		return () => {};
+	}
+	if (styleAttr) {
+		node.setAttribute('style', node.getAttribute('style') + ';' + envs.exec(styleAttr));
 	}
 
 	/** @type {Set<() => void>?} */
 	let bk = new Set();
-	for (const [name, attr] of Object.entries(classes)) {
+	for (const [name, attr] of Object.entries(styles)) {
 		bk.add(watch(() => toStyle(name, envs.exec(attr)), value => {
 			if (value) {
 				node.style.setProperty(name, ...value);

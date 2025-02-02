@@ -7,10 +7,14 @@ import watch from '../watch.mjs';
  * @param {Node} node
  * @param {Environment} envs
  * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} classes
+ * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} [classAttr]
  */
-export default function bindClasses(node, classes, envs) {
+export default function bindClasses(node, envs, classes, classAttr) {
 	if (!(node instanceof Element)) {
 		return () => {};
+	}
+	if (classAttr) {
+		node.className += ' ' + envs.exec(classAttr);
 	}
 
 	/** @type {Set<() => void>?} */

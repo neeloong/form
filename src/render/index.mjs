@@ -83,8 +83,8 @@ function renderItem(layout, parent, next, env, templates, componentPath, enhance
 		}) : () => {};
 
 
-	const classes = bindClasses(root, layout.classes, env);
-	const styles = bindStyles(root, layout.styles, env);
+	const classes = bindClasses(root, env, layout.classes, layout.attrs.class);
+	const styles = bindStyles(root, env, layout.styles, layout.attrs.style);
 
 	handler.mount();
 	const enhancement = bindEnhancements(handler.tag, layout.enhancements, env, enhancements, root, slot);
