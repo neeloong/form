@@ -83,7 +83,7 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 			return;
 		}
 		if (decorator === '+') {
-			vars[name] = !value ? {value: ''} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
+			vars[name] = !value ? {null: true} : nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};
 			return;
 		}
 		if (decorator === '*') {
@@ -102,7 +102,7 @@ export default function createAttributeAdder(node, createCalc, createEvent) {
 			case 'fragment': node.fragment = value || true; break;
 			case 'else': node.else = true; break;
 			case 'enum':
-				node.enum = value ? nameRegex.test(value) ? {name: value} : {calc: createCalc(value)} : {value: true};
+				node.enum = value ? nameRegex.test(value) ? {name: value} : {calc: createCalc(value)} : {null: true};
 				break;
 			case 'if':
 				node.if = nameRegex.test(value) ? {name: value} : {calc: createCalc(value)};

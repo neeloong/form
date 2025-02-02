@@ -55,19 +55,19 @@ export default class Environment {
 	watch(value, cb) { return watch(() => this.exec(value), cb, true); }
 
 	/**
-	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value<true> | null} [en]
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Null | null} [en]
 	 */
 	enum(en) {
 		if (!en) { return true; }
-		const {name, value, calc} = en;
-		if (value) { return this.store; }
+		const {name, calc} = en;
 		if (typeof calc === 'function') { return () => calc(this.getters); }
-		if (typeof name !== 'string') { return null; }
-		const item = this.#items[name];
-		if (typeof item?.get !== 'function') { return null }
-		const store = item.store;
-		return store instanceof Store ? store : item.get;
-
+		if (typeof name === 'string') {
+			const item = this.#items[name];
+			if (typeof item?.get !== 'function') { return null }
+			const store = item.store;
+			return store instanceof Store ? store : item.get;
+		}
+		return this.store;
 	}
 	/**
 	 * @param {string | boolean | null} [name]
@@ -365,7 +365,7 @@ export default class Environment {
 	/**
 	 * 
 	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc>} aliases 
-	 * @param {Record<string, Layout.Node.Value<''> | Layout.Node.Name | Layout.Node.Calc>} vars 
+	 * @param {Record<string, Layout.Node.Null | Layout.Node.Name | Layout.Node.Calc>} vars 
 	 */
 	set(aliases, vars) {
 		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
