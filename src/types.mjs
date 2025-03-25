@@ -31,8 +31,8 @@
  * @typedef {object} Component.Context
  * @property {Set<string>?} [props]
  * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events
- * @property {Record<string, any>} tagAttrs
- * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watchAttr
+ * @property {Record<string, any>} attrs
+ * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watch
  * @property {(el: Element | Relatedness) => () => void} relate
  * @property {boolean} destroyed
  * @property {boolean} init
@@ -171,7 +171,7 @@
  * @typedef {object} Enhancement.Context
  * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events
  * @property {Record<string, any>} attrs
- * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watchAttr
+ * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watch
  * @property {boolean} destroyed
  * @property {(event: 'destroy', listener: () => void) => () => void} listen
  * @property {any} tag

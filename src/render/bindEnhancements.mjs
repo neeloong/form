@@ -91,7 +91,7 @@ export default function bindEnhancements(tag, enhancementDefine, env, enhancemen
 			get value() { return null; },
 			events: allEvents,
 			attrs: attrs,
-			watchAttr(name, fn) {
+			watch(name, fn) {
 				if (destroyed) { return () => { }; }
 				let old = attrs[name];
 				const w = watch(() => attrs[name], v => {

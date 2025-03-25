@@ -37,8 +37,8 @@ export default function createContext(component, env, store, relate) {
 	const context = {
 		events: allEvents,
 		props: attrs ? new Set(Object.entries(attrs).filter(([, a]) => a.isProp).map(([e]) => e)) : null,
-		tagAttrs,
-		watchAttr(name, fn) {
+		attrs: tagAttrs,
+		watch(name, fn) {
 			if (destroyed) { return () => { }; }
 			const state = attrStates[name];
 			if (!state) { return () => { }; }

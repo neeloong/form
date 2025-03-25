@@ -214,7 +214,7 @@ function *getElementModel2(el, attr) {
  */
 export default function (context, name, is) {
 	const node = document.createElement(name, {is: is || undefined});
-	const { watchAttr, props } = context;
+	const { watch, props } = context;
 	if(['input', 'textarea', 'select'].includes(name.toLowerCase())) {
 		context.relate(node);
 	}
@@ -235,8 +235,8 @@ export default function (context, name, is) {
 			node.addEventListener(type, listener, options);
 		}
 		if (props) {
-			for (const [name, attr] of Object.entries(context.tagAttrs)) {
-				watchAttr(name, v => {
+			for (const [name, attr] of Object.entries(context.attrs)) {
+				watch(name, v => {
 					// @ts-ignore
 					if (props.has(name)) { node[name] = v; } else {
 						const val = toAttrValue(v);
@@ -258,7 +258,7 @@ export default function (context, name, is) {
 			return;
 
 		}
-		for (const [name, attr] of Object.entries(context.tagAttrs)) {
+		for (const [name, attr] of Object.entries(context.attrs)) {
 			if (node instanceof HTMLInputElement && name.toLocaleLowerCase() === 'type') {
 				const value = toAttrValue(attr);
 				if (value !== null) {
@@ -268,7 +268,7 @@ export default function (context, name, is) {
 			}
 			if (name === '$hidden') {
 				if (attr) { node.hidden = attr; }
-				watchAttr(name, (val) => { node.hidden = val; });
+				watch(name, (val) => { node.hidden = val; });
 				continue;
 			}
 
@@ -276,7 +276,7 @@ export default function (context, name, is) {
 				const e = eAttrs[name];
 				if (e) {
 					e(attr, node);
-					watchAttr(name, (attr) => e(attr, node));
+					watch(name, (attr) => e(attr, node));
 				}
 				continue;
 			}
@@ -284,7 +284,7 @@ export default function (context, name, is) {
 			if (typeof prop === 'function') {
 				// @ts-ignore
 				node[name] = prop(attr);
-				watchAttr(name, (attr) => {
+				watch(name, (attr) => {
 					// @ts-ignore
 					node[name] = prop(attr);
 				});
@@ -293,7 +293,7 @@ export default function (context, name, is) {
 			if (prop) {
 				// @ts-ignore
 				node[name] = attr;
-				watchAttr(name, (attr) => {
+				watch(name, (attr) => {
 					// @ts-ignore
 					node[name] = attr;
 				});
@@ -303,7 +303,7 @@ export default function (context, name, is) {
 			if (value !== null) {
 				node.setAttribute(name, value);
 			}
-			watchAttr(name, (val) => {
+			watch(name, (val) => {
 				const value = toAttrValue(val);
 				if (value === null) {
 					node.removeAttribute(name);
