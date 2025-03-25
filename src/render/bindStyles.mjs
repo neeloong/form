@@ -77,7 +77,12 @@ export default function bindStyles(node, envs, styles, styleAttr) {
 		return () => {};
 	}
 	if (styleAttr) {
-		node.setAttribute('style', node.getAttribute('style') + ';' + envs.exec(styleAttr));
+		const oldStyle = node.getAttribute('style') || '';
+		const newStyle = envs.exec(styleAttr) || '';
+		const style = [oldStyle,newStyle].filter(Boolean).join(';');
+		if (style) {
+			node.setAttribute('style', style);
+		}
 	}
 
 	/** @type {Set<() => void>?} */
