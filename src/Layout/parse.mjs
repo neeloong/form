@@ -124,7 +124,20 @@ export default function parse(source, {
 		if (tagStart > index) {
 			appendText(tagStart);
 		}
-		if (source.charAt(tagStart + 1) === '/') {
+		const nextChar = source.charAt(tagStart + 1);
+		if (nextChar === '!') {
+			let begin = tagStart + 2;
+			let sign = '>';
+			if (source.slice(tagStart + 2, tagStart + 4) === '--') {
+				begin += 4;
+				sign = '-->'
+			}
+			index = source.indexOf(sign, begin);
+			if (index < 0) { break; }
+			index++;
+			continue;
+		}
+		if (nextChar === '/') {
 			index = source.indexOf('>', tagStart + 3);
 			let name = source.substring(tagStart + 2, index);
 			if (index < 0) {
