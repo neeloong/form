@@ -74,6 +74,7 @@ export default function parse(source, {
 	createCalc = () => { throw new ParseError('CALC'); },
 	createEvent = () => { throw new ParseError('EVENT'); },
 	simpleTag = new Set,
+	enableHTML = false,
 } = {}) {
 	/** @type {(Layout.Node | string)[]} */
 	const children = [];
@@ -205,7 +206,7 @@ export default function parse(source, {
 		currentNode = createElement(tagRes.name, tagRes.is);
 		current.children.push(currentNode);
 		current = currentNode;
-		const addAttribute = createAttributeAdder(currentNode, createCalc, createEvent);
+		const addAttribute = createAttributeAdder(currentNode, createCalc, createEvent, enableHTML);
 
 		let run = true;
 		let closed = false;
