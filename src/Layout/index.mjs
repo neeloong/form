@@ -14,6 +14,7 @@ export { default as stringify } from './stringify.mjs';
  * @typedef {object} Options 解析选项
  * @property {boolean} [enableHTML] 启用 `!html` 指令
  * @property {(t: string) => Calc} [createCalc] 创建计算属性的工厂函数
+ * @property {(t: string) => Calc} [createInit] 创建变量初始化的工厂函数
  * @property {(t: string) => EventListener} [createEvent] 创建事件监听器的工厂函数
  * @property {Set<string>} [simpleTag] 简单标签的集合
  */

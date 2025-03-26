@@ -72,6 +72,7 @@ function entityReplacer(a) {
  */
 export default function parse(source, {
 	createCalc = () => { throw new ParseError('CALC'); },
+	createInit = createCalc,
 	createEvent = () => { throw new ParseError('EVENT'); },
 	simpleTag = new Set,
 	enableHTML = false,
@@ -206,7 +207,7 @@ export default function parse(source, {
 		currentNode = createElement(tagRes.name, tagRes.is);
 		current.children.push(currentNode);
 		current = currentNode;
-		const addAttribute = createAttributeAdder(currentNode, createCalc, createEvent, enableHTML);
+		const addAttribute = createAttributeAdder(currentNode, createCalc, createInit, createEvent, enableHTML);
 
 		let run = true;
 		let closed = false;

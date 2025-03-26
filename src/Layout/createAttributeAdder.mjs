@@ -42,10 +42,11 @@ function parse(value, createCalc) {
 /**
  * @param {Layout.Node} node
  * @param {Exclude<Layout.Options['createCalc'], undefined>} createCalc
+ * @param {Exclude<Layout.Options['createInit'], undefined>} createInit
  * @param {Exclude<Layout.Options['createEvent'], undefined>} createEvent
  * @param {boolean} enableHTML
  */
-export default function createAttributeAdder(node, createCalc, createEvent, enableHTML) {
+export default function createAttributeAdder(node, createCalc, createInit, createEvent, enableHTML) {
 	const { attrs, events, classes, styles, vars, aliases, params, enhancements } = node;
 	/**
 	 * @param {string} qName
@@ -101,7 +102,7 @@ export default function createAttributeAdder(node, createCalc, createEvent, enab
 			return;
 		}
 		if (decorator === '+') {
-			vars[name] = !value ? {value: undefined} : parse(value, createCalc);
+			vars[name] = !value ? {value: undefined} : parse(value, createInit);
 			return;
 		}
 		if (decorator === '*') {
