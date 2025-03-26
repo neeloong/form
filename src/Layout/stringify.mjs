@@ -145,12 +145,12 @@ function* listToString(nodes, level = 0) {
 	}
 }
 /**
- * 
- * @param {Layout.Node | (Layout.Node |string)[]} value 
- * @param {boolean} [formable] 
+ * 将模板转为字符串
+ * @param {Layout.Node | (Layout.Node |string)[]} value 要转换的节点或节点数组
+ * @param {boolean} [formable] 是否对代码进行格式化
  * @returns {string}
  */
-export default function toString(value, formable) {
+export default function stringify(value, formable) {
 	const level = formable ? 0 : -1;
 	if (Array.isArray(value)) { return [...listToString(value, level)].join(''); }
 	return [nodeToString(value, level)].join();

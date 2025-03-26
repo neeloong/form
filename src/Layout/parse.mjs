@@ -65,9 +65,9 @@ function entityReplacer(a) {
 	return a;
 }
 /**
- *
- * @param {string} source
- * @param {Layout.Options} [options]
+ * 解析模板内容
+ * @param {string} source 输入源字符串
+ * @param {Layout.Options} [options] 解析选项
  * @returns {(Layout.Node | string)[]}
  */
 export default function parse(source, {
