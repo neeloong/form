@@ -1,4 +1,5 @@
 /** @import { Component, Relatedness } from '../types.mjs' */
+/** @import { ComponentHandler } from './types.mjs' */
 /** @import Store from '../Store/index.mjs' */
 /** @import Environment from './Environment/index.mjs' */
 
@@ -74,7 +75,7 @@ export default function createContext(component, env, store, relate) {
 		get init() { return mountedState.get(); },
 		listen(name, listener) { return stateEmitter.listen(name, listener); },
 	};
-	/** @type {Component.Handler} */
+	/** @type {ComponentHandler} */
 	const handler = {
 		tag,
 		set(name, value) {

@@ -1,10 +1,11 @@
 /** @import { Component } from '../types.mjs' */
+/** @import { ComponentHandler } from './types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 
 import Environment from './Environment/index.mjs';
 
 /**
- * @param {Component.Handler} handler
+ * @param {ComponentHandler} handler
  * @param {Environment} envs
  * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} attrs
  * @param {Record<string, Component.Attr>} componentAttrs

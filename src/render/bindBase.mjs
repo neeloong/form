@@ -1,9 +1,9 @@
-/** @import { Component } from '../types.mjs' */
+/** @import { ComponentHandler } from './types.mjs' */
 
 import Environment from './Environment/index.mjs';
 
 /**
- * @param {Component.Handler} handler
+ * @param {ComponentHandler} handler
  * @param {Environment} env
  * @param {string | boolean | null} [bind]
  */

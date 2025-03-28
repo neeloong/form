@@ -5,7 +5,7 @@ import effect from './effect.mjs';
  * @template T
  * @param {() => T} getter 取值方法
  * @param {(value: T) => void} callback 取值方法
- * @param {boolean} immediate 
+ * @param {boolean} immediate 是否立即执行一次
  * @returns {() => void}
  */
 export default function watch(getter, callback, immediate) {

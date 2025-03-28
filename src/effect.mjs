@@ -1,9 +1,9 @@
 import { Signal } from 'signal-polyfill';
 
 /**
- * 
- * @param {() => void} fn 
- * @returns {() => void}
+ * 相应式执行
+ * @param {() => void} fn 执行函数
+ * @returns {() => void} 取消函数
  */
 export default function effect(fn) {
 	let needsEnqueue = true;

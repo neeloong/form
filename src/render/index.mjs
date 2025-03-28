@@ -135,14 +135,14 @@ function render(layout, parent, next, env, templates, componentPath, enhancement
 }
 
 /**
- * @param {Store} store
- * @param {(Layout.Node | string)[]} layouts 
- * @param {Element} parent 
- * @param {object} [options] 
- * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [options.global] 
- * @param {(path: string[]) => Component?} [options.component] 
- * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
- * @param {Record<string, Enhancement>} [options.enhancements]
+ * @param {Store} store 存储实例
+ * @param {(Layout.Node | string)[]} layouts 布局信息
+ * @param {Element} parent 渲染节点
+ * @param {object} [options] 选项
+ * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [options.global] 全局数据
+ * @param {Component.Getter?} [options.component]  自定义组件
+ * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate] 关联函数
+ * @param {Record<string, Enhancement>} [options.enhancements] 增强信息
  * @returns {() => void}
  */
 export default function (store, layouts, parent, {component, global, relate, enhancements} = {}) {

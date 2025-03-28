@@ -9,13 +9,14 @@ import { createAsyncValidator, createValidator, merge } from './createValidator.
 /** @import { AsyncValidator, Schema, Validator } from '../types.mjs' */
 
 /**
+ * 管理单个表单字段的状态和行为
  * @template [T=any]
  */
 export default class Store {
 	/** @type {Map<string, Set<(value: any, store: any) => void | boolean | null>>} */
 	#events = new Map()
 	/**
-	 * 
+	 * 触发事件并通知监听器
 	 * @template {keyof Schema.Events} K
 	 * @param {K} event 
 	 * @param  {Schema.Events[K]} value 
@@ -30,7 +31,7 @@ export default class Store {
 		return !canceled;
 	}
 	/**
-	 * 
+	 * 监听事件
 	 * @template {keyof Schema.Events} K
 	 * @param {K} event 
 	 * @param  {(this: this, p: Schema.Events[K], store: this) => void | boolean | null} listener
@@ -50,14 +51,16 @@ export default class Store {
 
 	}
 	/**
-	 * @param {Schema} schema
-	 * @param {object} [options] 
-	 * @param {boolean} [options.new] 
+	 * 从数据结构模式创建存储
+	 * @param {Schema} schema 数据结构模式
+	 * @param {object} [options] 选项
+	 * @param {boolean} [options.new] 是否为新建环境
 	 */
 	static create(schema, options = {}) {
 		return create({type: schema}, { ...options, parent: null });
 	}
 	/**
+	 * 设置自定义类型的存储类
 	 * @param {string} type
 	 * @param {{new(...p: ConstructorParameters<typeof Store>): Store}} Class
 	 */
@@ -65,14 +68,16 @@ export default class Store {
 		return setStore(type, Class);
 	}
 	#null = false;
+	/** 是否为无效空存储 */
 	get null() { return this.#null; }
+	/** 存储类类别，继承的自定义类需要设置自定义的此只读属性 */
 	get kind() { return ''; }
 	/** @type {Ref?} */
 	#ref = null;
 	get ref() { return this.#ref || createRef(this); }
 	/**
-	 * @param {Schema.Field} schema
-	 * @param {object} [options] 
+	 * @param {Schema.Field} schema 字段的 Schema 定义
+	 * @param {object} [options] 可选配置
 	 * @param {*} [options.parent] 
 	 * @param {*} [options.state] 
 	 * @param {number | string | null} [options.index] 
@@ -236,19 +241,28 @@ export default class Store {
 	#meta;
 	/** @readonly @type {any} */
 	#component;
+	/** 存储对象自身 */
 	get store() { return this; }
+	/** 父级存储对象 */
 	get parent() { return this.#parent; }
+	/** 根节点的存储对象 */
 	get root() { return this.#root; }
+	/** 字段类型 */
 	get type() { return this.#type; }
+	/** 字段元信息 */
 	get meta() { return this.#meta; }
+	/** 自定义渲染组件信息 */
 	get component() { return this.#component; }
 
 	/** @type {Signal.State<number> | Signal.Computed<number>} */
 	#length;
+	/** 长度信息 */
 	get length() { return this.#length.get(); }
 	#index = new Signal.State(/** @type {string | number} */(''));
+	/** 索引信息 */
 	get index() { return this.#index.get(); }
 	set index(v) { this.#index.set(v); }
+	/** 数组项目的序号 */
 	get no() {
 		if (this.#null) { return ''; }
 		const index = this.index;
@@ -256,8 +270,10 @@ export default class Store {
 	}
 
 	#creatable = true;
+	/** 值是否可创建（`$new` 为 `true` 时，字段只读） */
 	get creatable() { return this.#creatable; }
 	#immutable = false;
+	/** 值是否不可改变（`$new` 为 `false` 时，字段只读） */
 	get immutable() { return this.#immutable; }
 
 	/** @readonly @type {Signal.Computed<boolean>} */
@@ -266,6 +282,7 @@ export default class Store {
 	#selfNew
 	get selfNew() { return this.#selfNew.get(); }
 	set selfNew(v) { this.#selfNew.set(Boolean(v)); }
+	/** 是否新建项 */
 	get new() { return this.#new.get(); }
 	set new(v) { this.#selfNew.set(Boolean(v)); }
 
@@ -275,6 +292,7 @@ export default class Store {
 	#hidden
 	get selfHidden() { return this.#selfHidden.get(); }
 	set selfHidden(v) { this.#selfHidden.set(typeof v === 'boolean' ? v : null); }
+	/** 是否可隐藏 */
 	get hidden() { return this.#hidden.get(); }
 	set hidden(v) { this.#selfHidden.set(typeof v === 'boolean' ? v : null); }
 
@@ -284,6 +302,7 @@ export default class Store {
 	#clearable
 	get selfClearable() { return this.#selfClearable.get(); }
 	set selfClearable(v) { this.#selfClearable.set(typeof v === 'boolean' ? v : null); }
+	/** 是否可清除 */
 	get clearable() { return this.#clearable.get(); }
 	set clearable(v) { this.#selfClearable.set(typeof v === 'boolean' ? v : null); }
 
@@ -293,6 +312,7 @@ export default class Store {
 	#required
 	get selfRequired() { return this.#selfRequired.get(); }
 	set selfRequired(v) { this.#selfRequired.set(typeof v === 'boolean' ? v : null); }
+	/** 是否必填 */
 	get required() { return this.#required.get(); }
 	set required(v) { this.#selfRequired.set(typeof v === 'boolean' ? v : null); }
 
@@ -302,6 +322,7 @@ export default class Store {
 	#disabled
 	get selfDisabled() { return this.#selfDisabled.get(); }
 	set selfDisabled(v) { this.#selfDisabled.set(typeof v === 'boolean' ? v : null); }
+	/** 是否禁用字段 */
 	get disabled() { return this.#disabled.get(); }
 	set disabled(v) { this.#selfDisabled.set(typeof v === 'boolean' ? v : null); }
 
@@ -311,6 +332,7 @@ export default class Store {
 	#readonly
 	get selfReadonly() { return this.#selfReadonly.get(); }
 	set selfReadonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
+	/** 是否只读 */
 	get readonly() { return this.#readonly.get(); }
 	set readonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
 
@@ -323,6 +345,7 @@ export default class Store {
 	#label
 	get selfLabel() { return this.#selfLabel.get(); }
 	set selfLabel(v) { this.#selfLabel.set(toValues.string(v)); }
+	/** 字段的标签信息 */
 	get label() { return this.#label.get(); }
 	set label(v) { this.#selfLabel.set(toValues.string(v)); }
 
@@ -333,6 +356,7 @@ export default class Store {
 	#description
 	get selfDescription() { return this.#selfDescription.get(); }
 	set selfDescription(v) { this.#selfDescription.set(toValues.string(v)); }
+	/** 字段的描述信息 */
 	get description() { return this.#description.get(); }
 	set description(v) { this.#selfDescription.set(toValues.string(v)); }
 
@@ -342,6 +366,7 @@ export default class Store {
 	#placeholder
 	get selfPlaceholder() { return this.#selfPlaceholder.get(); }
 	set selfPlaceholder(v) { this.#selfPlaceholder.set(toValues.string(v)); }
+	/** 字段的占位符信息 */
 	get placeholder() { return this.#placeholder.get(); }
 	set placeholder(v) { this.#selfPlaceholder.set(toValues.string(v)); }
 
@@ -352,6 +377,7 @@ export default class Store {
 	#min
 	get selfMin() { return this.#selfMin.get(); }
 	set selfMin(v) { this.#selfMin.set(toValues.number(v)); }
+	/** 数值字段的最小值限制 */
 	get min() { return this.#min.get(); }
 	set min(v) { this.#selfMin.set(toValues.number(v)); }
 
@@ -362,6 +388,7 @@ export default class Store {
 	#max
 	get selfMax() { return this.#selfMax.get(); }
 	set selfMax(v) { this.#selfMax.set(toValues.number(v)); }
+	/** 数值字段的最大值限制 */
 	get max() { return this.#max.get(); }
 	set max(v) { this.#selfMax.set(toValues.number(v)); }
 
@@ -372,6 +399,7 @@ export default class Store {
 	#step
 	get selfStep() { return this.#selfStep.get(); }
 	set selfStep(v) { this.#selfStep.set(toValues.number(v)); }
+	/** 数值字段的步长 */
 	get step() { return this.#step.get(); }
 	set step(v) { this.#selfStep.set(toValues.number(v)); }
 
@@ -381,6 +409,7 @@ export default class Store {
 	#minLength
 	get selfMinLength() { return this.#selfMinLength.get(); }
 	set selfMinLength(v) { this.#selfMinLength.set(toValues.number(v)); }
+	/** 最小长度 */
 	get minLength() { return this.#minLength.get(); }
 	set minLength(v) { this.#selfMinLength.set(toValues.number(v)); }
 
@@ -390,6 +419,7 @@ export default class Store {
 	#maxLength
 	get selfMaxLength() { return this.#selfMaxLength.get(); }
 	set selfMaxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
+	/** 最大长度 */
 	get maxLength() { return this.#maxLength.get(); }
 	set maxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
 
@@ -399,6 +429,7 @@ export default class Store {
 	#pattern
 	get selfPattern() { return this.#selfPattern.get(); }
 	set selfPattern(v) { this.#selfPattern.set(toValues.regex(v)); }
+	/** 模式 */
 	get pattern() { return this.#pattern.get(); }
 	set pattern(v) { this.#selfPattern.set(toValues.regex(v)); }
 
@@ -409,6 +440,7 @@ export default class Store {
 	#values
 	get selfValues() { return this.#selfValues.get(); }
 	set selfValues(v) { this.#selfValues.set(toValues.values(v)); }
+	/** 可选值列表 */
 	get values() { return this.#values.get(); }
 	set values(v) { this.#selfValues.set(toValues.values(v)); }
 
@@ -425,13 +457,15 @@ export default class Store {
 	#cancelChange
 	/** @type {() => void} */
 	#cancelBlur
+	/** 所有校验错误列表 */
 	get errors() { return this.#errors.get(); }
+	/** 字段校验错误信息 */
 	get error() { return this.#errors.get()[0]; }
 
 	/** @returns {IterableIterator<[key: string | number, value: Store]>} */
 	*[Symbol.iterator]() {}
 	/**
-	 * 
+	 * 获取子存储
 	 * @param {string | number} key 
 	 * @returns {Store?}
 	 */
@@ -444,8 +478,10 @@ export default class Store {
 	
 	#state = new Signal.State(/** @type {any} */(null));
 
+	/** 内容是否已改变 */
 	get changed() { return this.#value.get() === this.#initValue.get(); }
 
+	/** 字段当前值 */
 	get value() { return this.#value.get(); }
 	set value(v) {
 		const newValue = this.#setValue?.(v)
@@ -458,6 +494,7 @@ export default class Store {
 		this.#requestUpdate();
 	}
 
+	/** 字段状态 */
 	get state() { return this.#state.get(); }
 	set state(v) {
 		const newState = this.#setState?.(v)
@@ -475,6 +512,7 @@ export default class Store {
 			this.#runUpdate(oldValue, oldState);
 		});
 	}
+	/** 重置数据 */
 	reset(value = this.#initValue.get()) {
 		this.#reset(value);
 	}
@@ -567,18 +605,19 @@ export default class Store {
 		return [val, sta];
 	}
 	/**
-	 * 
+	 * 异步校验
 	 * @overload
 	 * @param {null} [path]
 	 * @returns {Promise<string[] | null>}
 	 */
 	/**
+	 * 异步校验
 	 * @overload
-	 * @param {(string | number)[]} path 
+	 * @param {(string | number)[]} path 到当前层级的路径
 	 * @returns {Promise<{ path: (string | number)[]; store: Store; errors: string[]}[]>}
 	 */
 	/**
-	 * 
+	 * 异步校验
 	 * @param {(string | number)[]?} [path] 
 	 * @returns {Promise<string[] | { path: (string | number)[]; store: Store; errors: string[] | null;}[] | null>}
 	 */
