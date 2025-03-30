@@ -368,22 +368,39 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} aliases 
-	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value>} vars 
+	 * @param {Layout.Variable[]} [vars] 
+	 * @returns 
 	 */
-	set(aliases, vars) {
-		if (Object.keys(aliases).length + Object.keys(vars).length === 0) { return this; }
+	set(vars) {
+		if (!vars?.length) { return this; }
 		const cloned = new Environment(this.store, this);
 		cloned.#parent = this.#parent;
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
 		const items = cloned.#items;
-		for (const [key, {name, calc, value}] of Object.entries(aliases)) {
+		for (const {variable, name, calc, value, init } of vars) {
+			if (init) {
+				const val = new Signal.State(/** @type {any} */(value));
+				if (typeof calc === 'function') {
+					const settable = cloned.settable;
+					cloned.#settable = null;
+					val.set(calc(settable));
+				} else if (name) {
+					const item = items[name];
+					if (!item?.get) { continue }
+					val.set(item.get());
+				}
+				explicit[variable] = items[variable] = {
+					get: () => { return val.get(); },
+					set: (v) => { val.set(v) },
+				};
+				continue;
+			}
 			if (typeof calc === 'function') {
 				const getters = cloned.getters;
 				cloned.#getters = null;
 				const val = new Signal.Computed(() => calc(getters));
-				explicit[key] = items[key] = {
+				explicit[variable] = items[variable] = {
 					get: () => { return val.get(); },
 				};
 				continue;
@@ -392,33 +409,16 @@ export default class Environment {
 				const item = items[name];
 				if (!item) { continue; }
 				if (!item.get || !item.store) {
-					explicit[key] = items[key] = item;
+					explicit[variable] = items[variable] = item;
 					continue;
 				}
-				for (const [k, it] of toItem(item.store, key)) {
+				for (const [k, it] of toItem(item.store, variable)) {
 					explicit[k] = items[k] = it;
 				}
 				continue;
 			}
-			explicit[key] = items[key] = { get: () => { return value; } };
+			explicit[variable] = items[variable] = { get: () => { return value; } };
 			continue;
-		}
-		for (const [k,{name, calc, value}] of Object.entries(vars)) {
-			
-			const val = new Signal.State(/** @type {any} */(value));
-			if (typeof calc === 'function') {
-				const settable = cloned.settable;
-				cloned.#settable = null;
-				val.set(calc(settable));
-			} else if (name) {
-				const item = items[name];
-				if (!item?.get) { continue }
-				val.set(item.get());
-			}
-			explicit[k] = items[k] = {
-				get: () => { return val.get(); },
-				set: (v) => { val.set(v) },
-			};
 		}
 		return cloned;
 	}

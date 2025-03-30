@@ -83,8 +83,14 @@ export function* nodeToString(node, level = 0) {
 	if (node.if) { yield ` !if${toValue(node.if)}`; }
 	if (node.value) { yield ` !value="${toAttrValue(node.value)}"`; }
 	if (node.enum) { yield ` !enum${toValue(node.enum)}`; }
-	yield* values(node.aliases, '*', null);
-	yield* values(node.vars, '+', null);
+	for (const {variable, name, calc, value, init} of node.vars) {
+		const prefix = init ? '+' : '*';
+		yield ` ${prefix}${variable}`;
+		/** @type {*} */
+		const val = value && typeof value === 'string' ? JSON.stringify(value) : name || calc || value;
+		if (val == null) { continue; }
+		yield `="${toAttrValue(val)}"`;
+	}
 	if (node.bind) { yield node.bind === true ? ` !bind` : ` !bind="${toAttrValue(node.bind)}"`; }
 	yield* values(node.attrs);
 	yield* values(node.events, '@', true);

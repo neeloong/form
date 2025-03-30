@@ -15,8 +15,7 @@ export default function createElement(name, is) {
 		events: Object.create(null),
 		classes: Object.create(null),
 		styles: Object.create(null),
-		vars: Object.create(null),
-		aliases: Object.create(null),
+		vars: [],
 		params: Object.create(null),
 		enhancements: Object.create(null),
 	};

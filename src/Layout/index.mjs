@@ -31,6 +31,19 @@ export { default as stringify } from './stringify.mjs';
 /**
  * @typedef {{calc: Calc; name?: undefined; value?: undefined; event?: undefined}} Node.Calc 计算
  */
+
+/**
+ * 
+ * @template [T=unknown]
+ * @typedef {object} Variable 变量定义
+ * @property {string} variable
+ * @property {string} [name]
+ * @property {Calc} [calc]
+ * @property {T} [value]
+ * @property {boolean} [init] 是否普通变量
+ * @property {string} [comment] 注释
+ */
+
 /**
  * @typedef {object} Node 布局节点
  * @property {string} name 标签名
@@ -41,8 +54,7 @@ export { default as stringify } from './stringify.mjs';
  * @property {Record<string, Node.Name | Node.Calc | Node.Value>} classes 类名
  * @property {Record<string, Node.Name | Node.Calc | Node.Value>} styles 样式
  * @property {Record<string, Node.Name | Node.Event>} events 事件
- * @property {Record<string, Node.Name | Node.Calc | Node.Value>} vars 局部变量
- * @property {Record<string, Node.Name | Node.Calc | Node.Value>} aliases 别名/计算名
+ * @property {Variable[]} vars 局部变量/别名/计算名
  * @property {Record<string, Enhancement>} enhancements 增强
  * 
  * @property {string} [template] 模板定义的名称

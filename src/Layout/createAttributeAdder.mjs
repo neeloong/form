@@ -47,7 +47,7 @@ function parse(value, createCalc) {
  * @param {boolean} enableHTML
  */
 export default function createAttributeAdder(node, createCalc, createInit, createEvent, enableHTML) {
-	const { attrs, events, classes, styles, vars, aliases, params, enhancements } = node;
+	const { attrs, events, classes, styles, vars, params, enhancements } = node;
 	/**
 	 * @param {string} qName
 	 * @param {string} value
@@ -102,11 +102,11 @@ export default function createAttributeAdder(node, createCalc, createInit, creat
 			return;
 		}
 		if (decorator === '+') {
-			vars[name] = !value ? {value: undefined} : parse(value, createInit);
+			vars.push({...value ? parse(value, createInit) : {value: undefined}, variable: name, init: true});
 			return;
 		}
 		if (decorator === '*') {
-			aliases[name] = parse(value, createCalc);
+			vars.push({...parse(value, createCalc), variable: name, init: false });
 			return;
 		}
 		if (decorator === '?') {

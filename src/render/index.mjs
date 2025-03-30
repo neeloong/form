@@ -29,7 +29,7 @@ import bindEnhancements from './bindEnhancements.mjs';
  * @param {Component.Getter?} [getComponent]
  */
 function renderItem(layout, parent, next, env, templates, componentPath, enhancements, relate, getComponent) {
-	env = env.set(layout.aliases, layout.vars);
+	env = env.set(layout.vars);
 	const bind = layout.bind;
 	const fragment = layout.fragment;
 	if (fragment && typeof fragment === 'string') {
