@@ -1,4 +1,6 @@
 /** @import * as Layout from './index.mjs' */
+/** @import { OldNode } from './createElement.mjs' */
+import convert from './convert.mjs';
 import createAttributeAdder from './createAttributeAdder.mjs';
 import createElement from './createElement.mjs';
 import entityMap from './entityMap.mjs';
@@ -68,7 +70,7 @@ function entityReplacer(a) {
  * 解析模板内容
  * @param {string} source 输入源字符串
  * @param {Layout.Options} [options] 解析选项
- * @returns {(Layout.Node | string)[]}
+ * @returns {Layout.Child[]}
  */
 export default function parse(source, {
 	createCalc = () => { throw new ParseError('CALC'); },
@@ -77,15 +79,15 @@ export default function parse(source, {
 	simpleTag = new Set,
 	enableHTML = false,
 } = {}) {
-	/** @type {(Layout.Node | string)[]} */
+	/** @type {(OldNode | string)[]} */
 	const children = [];
 
 	const doc = { children };
-	/** @type {(Layout.Node | null)[]} */
+	/** @type {(OldNode | null)[]} */
 	const stack = [];
-	/** @type {Layout.Node?} */
+	/** @type {OldNode?} */
 	let currentNode = null;
-	/** @type {typeof doc | Layout.Node} */
+	/** @type {typeof doc | OldNode} */
 	let current = doc;
 	function endElement() {
 		currentNode = stack.pop() || null;
@@ -261,5 +263,5 @@ export default function parse(source, {
 			endElement();
 		}
 	}
-	return children;
+	return convert(children);
 }

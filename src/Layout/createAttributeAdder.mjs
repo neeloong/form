@@ -1,4 +1,5 @@
 /** @import * as Layout from './index.mjs' */
+/** @import { OldNode } from './createElement.mjs' */
 
 import parseNumber from '../parseNumber.mjs';
 import ParseError from './ParseError.mjs';
@@ -40,7 +41,7 @@ function parse(value, createCalc) {
 }
 
 /**
- * @param {Layout.Node} node
+ * @param {OldNode} node
  * @param {Exclude<Layout.Options['createCalc'], undefined>} createCalc
  * @param {Exclude<Layout.Options['createInit'], undefined>} createInit
  * @param {Exclude<Layout.Options['createEvent'], undefined>} createEvent

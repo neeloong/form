@@ -17,18 +17,18 @@ function toText(val) {
  * @param {Element} parent
  * @param {Node?} next
  * @param {Environment} envs
- * @param {Layout.Node} layout
+ * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} value
+ * @param {boolean} [isHtml]
  */
-export default function renderFillDirectives(parent, next, envs, { text, html }) {
-	if (text != null) {
+export default function renderFillDirectives(parent, next, envs, value, isHtml) {
+	if (!isHtml) {
 		const node = parent.insertBefore(document.createTextNode(''), next);
-		const stop = envs.watch(text, val => node.textContent = toText(val));
+		const stop = envs.watch(value, val => node.textContent = toText(val));
 		return () => {
 			node.remove();
 			stop();
 		};
 	}
-	if (html == null) { return; }
 	const start = parent.insertBefore(document.createComment(''), next);
 	const end = parent.insertBefore(document.createComment(''), next);
 	const div = document.createElement('div');
@@ -44,7 +44,7 @@ export default function renderFillDirectives(parent, next, envs, { text, html })
 			node.remove();
 		}
 	}
-	const result = envs.watch(html, val => {
+	const result = envs.watch(value, val => {
 		remove();
 		add(toText(val));
 	});

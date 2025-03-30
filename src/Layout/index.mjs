@@ -1,5 +1,4 @@
 export { default as parse } from './parse.mjs';
-export { default as stringify } from './stringify.mjs';
 
 
 /**
@@ -34,6 +33,10 @@ export { default as stringify } from './stringify.mjs';
 
 /**
  * 
+ * @typedef {Divergent | Select | Enum | Content | CallTemplate | Fragment | Node | string} Child 分歧
+ */
+/**
+ * 
  * @template [T=unknown]
  * @typedef {object} Variable 变量定义
  * @property {string} variable
@@ -43,37 +46,107 @@ export { default as stringify } from './stringify.mjs';
  * @property {boolean} [init] 是否普通变量
  * @property {string} [comment] 注释
  */
+/**
+ * @typedef {object} Template
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} params 模板参数定义
+ * @property {Child[]} children 子元素
+ * @property {string} [comment] 注释
+ */
+/**
+ * 
+ * @typedef {object} DivergentChildren 分歧项
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {Child[]} children 子元素
+ * @property {string} [comment] 注释
+ */
+/**
+ * 
+ * @typedef {object} Divergent 分歧
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {'divergent'} type
+ * @property {[children: DivergentChildren, condition?: Node.Name | Node.Calc | Node.Value | null][]} children
+ * @property {string} [comment] 注释
+ */
+/**
+ * 
+ * @typedef {object} Select 选值
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {'value'} type
+ * @property {string} name
+ * @property {Child[]} children 子元素
+ * @property {string} [comment] 注释
+ */
+/**
+ * 
+ * @typedef {object} Enum 枚举
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {'enum'} type
+ * @property {Node.Name | Node.Calc | Node.Value} value
+ * @property {Child[]} children 子元素
+ * @property {string} [comment] 注释
+ */
+/**
+ * 
+ * @typedef {object} Content 内容填充
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {'content'} type
+ * @property {Node.Name | Node.Calc | Node.Value} value
+ * @property {boolean} [html]
+ * @property {string} [comment] 注释
+ */
+/**
+ * 
+ * @typedef {object} CallTemplate 模板调用
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {'template'} type
+ * @property {string} template 模板名
+ * @property {Record<string, Node.Name | Node.Calc | Node.Value>} attrs 属性
+ * @property {boolean | string} [bind] 绑定内容
+ * @property {Child[]} children 子元素
+ * @property {string} [comment] 注释
+ */
+
+/**
+ * @typedef {object} Fragment 片段
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {'fragment'} type
+ * @property {Child[]} children 子元素
+ * @property {string} [comment] 注释
+ */
+
 
 /**
  * @typedef {object} Node 布局节点
+ * @property {Variable[]?} [vars] 局部变量/别名/计算名
+ * @property {Record<string, Template>} [templates]
+ * @property {null} [type]
+ * 
  * @property {string} name 标签名
  * @property {string?} [is]
  * @property {string} [id]
  * @property {Record<string, Node.Name | Node.Calc | Node.Value>} attrs 属性
- * @property {Record<string, Node.Name | Node.Calc | Node.Value>} params 模板参数定义
  * @property {Record<string, Node.Name | Node.Calc | Node.Value>} classes 类名
  * @property {Record<string, Node.Name | Node.Calc | Node.Value>} styles 样式
  * @property {Record<string, Node.Name | Node.Event>} events 事件
- * @property {Variable[]} vars 局部变量/别名/计算名
  * @property {Record<string, Enhancement>} enhancements 增强
  * 
- * @property {string} [template] 模板定义的名称
- * @property {boolean | string} [fragment] 是否为片段或模板调用
- * 
- * @property {Node.Name | Node.Calc | Node.Value} [if] 分歧条件
- * @property {boolean} [else] 否定
- * 
- * @property {string} [value] 值关联
- * @property {Node.Name | Node.Calc | Node.Value} [enum] 列表属性枚举
  * 
  * @property {boolean | string} [bind] 绑定内容
- * @property {Node.Name | Node.Value | Node.Calc} [text] 文本渲染
- * @property {Node.Name | Node.Value | Node.Calc} [html] HTML 渲染
  * 
  * @property {string} [comment] 注释
  * 
- * @property {(Node | string)[]} children 子元素
+ * @property {Child[]} children 子元素
  */
+
 
 /**
  * @callback Calc 计算函数

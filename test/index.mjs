@@ -31,8 +31,6 @@ const defaultValue = {
 }
 fetch('./template').then(v => v.text()).then(template => {
 	const layouts = Layout.parse(template, layoutOptions);
-	console.log(Layout.stringify(layouts, true))
-	console.log(Layout.stringify(layouts))
 
 	const store = Store.create(schema);
 	store.value = defaultValue

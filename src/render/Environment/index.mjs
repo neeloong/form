@@ -284,12 +284,12 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Layout.Node} template 
-	 * @param {Layout.Node} source 
+	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value<any>>} params 
+	 * @param {Record<string, Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value<any>>} attrs 
 	 * @param {Environment} sourceEnv 
 	 * @param {string | null | boolean} [bind] 
 	 */
-	params({params}, {attrs}, sourceEnv, bind) {
+	params(params, attrs, sourceEnv, bind) {
 		/** @type {Store} */
 		let store = this.store;
 		if (bind === true) {
@@ -368,7 +368,7 @@ export default class Environment {
 	}
 	/**
 	 * 
-	 * @param {Layout.Variable[]} [vars] 
+	 * @param {Layout.Variable[]?} [vars] 
 	 * @returns 
 	 */
 	set(vars) {
@@ -378,7 +378,7 @@ export default class Environment {
 		cloned.#object = this.#object;
 		const explicit = cloned.#explicit;
 		const items = cloned.#items;
-		for (const {variable, name, calc, value, init } of vars) {
+		for (const { variable, name, calc, value, init } of vars) {
 			if (init) {
 				const val = new Signal.State(/** @type {any} */(value));
 				if (typeof calc === 'function') {
@@ -387,12 +387,12 @@ export default class Environment {
 					val.set(calc(settable));
 				} else if (name) {
 					const item = items[name];
-					if (!item?.get) { continue }
+					if (!item?.get) { continue; }
 					val.set(item.get());
 				}
 				explicit[variable] = items[variable] = {
 					get: () => { return val.get(); },
-					set: (v) => { val.set(v) },
+					set: (v) => { val.set(v); },
 				};
 				continue;
 			}
