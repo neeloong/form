@@ -15,11 +15,11 @@
 				</li>
 				<li>
 					<button @click="$add()">添加</button>
-					<button @click="$add({d: $length + 1})">添加(<span !fragment !text="$length + 1"></span>)</button>
+					<button @click="$add({d: $size + 1})">添加(<span !fragment !text="$size + 1"></span>)</button>
 				</li>
-				<li>当前数量<span !text="$length"></span></li>
+				<li>当前数量<span !text="$size"></span></li>
 			</li>
-			<li !value="x" !enum +b=x$length +a=2>
+			<li !value="x" !enum +b=x$size +a=2>
 				<button @click="a+=1">a+1:<span !fragment !text="a"></span></button>
 				<button @click="b+=1">b+1:<span !fragment !text="b"></span></button>
 					<input !bind=a type=number />

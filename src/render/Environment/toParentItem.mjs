@@ -24,7 +24,7 @@ export default function *toParentItem(parent, val, key = '', sign = '$') {
 	yield [`${key}${sign}downMovable`, {get: () => {
 		const s = val.index;
 		if (typeof s !== 'number') { return false; }
-		if (s >= parent.length - 1) { return false; }
+		if (s >= parent.size - 1) { return false; }
 		return true;
 	}}]
 	yield [`${key}${sign}remove`, {exec: () => parent.remove(Number(val.index))}]
@@ -37,7 +37,7 @@ export default function *toParentItem(parent, val, key = '', sign = '$') {
 	yield [`${key}${sign}downMove`, {exec: () => {
 		const s = val.index;
 		if (typeof s !== 'number') { return; }
-		if (s >= parent.length - 1) { return; }
+		if (s >= parent.size - 1) { return; }
 		parent.move(s, s + 1);
 	}}]
 }

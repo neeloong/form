@@ -31,7 +31,7 @@ export default class ObjectStore extends Store {
 		const childrenTypes = Object.entries(schema.type);
 		super(schema, {
 			parent, index, new: isNew, onUpdate, onUpdateState,
-			length: childrenTypes.length,
+			size: childrenTypes.length,
 			setValue(v) { return typeof v === 'object' ? v : null; },
 			setState(v) { return typeof v === 'object' ? v : null; },
 			convert(v, state) {

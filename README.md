@@ -14,7 +14,7 @@ const template = `
 	<li !value="list" !enum>
 		<input !bind="b" />
 		<ul !value="c" +x="0">
-			<li !enum +b=alias$length +a=2 +k="++x">
+			<li !enum +b=alias$size +a=2 +k="++x">
 				<div !fragment !text="k"></div>
 				<button @click="a+=1">a+1:<span !fragment !text="a"></span></button>
 				<button @click="b+=1">b+1:<span !fragment !text="b"></span></button>
@@ -24,7 +24,7 @@ const template = `
 				<button @click="$upMove" :disabled="!$upMovable">上移</button>
 				<button @click="$downMove()" :disabled="!$downMovable">下移</button>
 			</li>
-			<li><button @click="$add(0)">添加</button><button @click="$add( - $length - 1)">添加(<span !fragment !text=" - $length - 1"></span>)</button></li>
+			<li><button @click="$add(0)">添加</button><button @click="$add( - $size - 1)">添加(<span !fragment !text=" - $size - 1"></span>)</button></li>
 		</ul>
 	</li>
 </ul>
@@ -127,7 +127,7 @@ render(store, layouts, app);
 - **别名（`*alias`）**：  
   为复杂表达式或字段设置别名，简化引用。  
   ```html
-  <div *len="array$length" !text="len"></div> <!-- 别名 len 指向当前数组长度 -->
+  <div *len="array$size" !text="len"></div> <!-- 别名 len 指向当前数组长度 -->
   ```
 
 - **计算值（`*computed`）**：  
@@ -179,9 +179,9 @@ render(store, layouts, app);
 #### 嵌套循环
 
 ```html
-<div !enum="outerArray" *outerLen="$length">
+<div !enum="outerArray" *outerLen="$size">
   <div !enum="innerArray">
-    <span !text="outerLen + ' + ' + $length"></span> <!-- 外层长度 + 内层长度 -->
+    <span !text="outerLen + ' + ' + $size"></span> <!-- 外层长度 + 内层长度 -->
   </div>
 </div>
 ```
@@ -300,7 +300,7 @@ render(store, layouts, app);
    - `$null` 只读 是否为空元素
    - `$index` 只读 当前项的索引
    - `$no` 只读 数组项目的序号
-   - `$length` 只读 数组的长度、对象的成员数
+   - `$size` 只读 数组的长度、对象的成员数
    - `$creatable` 只读 值是否可创建（`$new` 为 `true` 时，字段只读）
    - `$immutable` 只读 值是否不可改变（`$new` 为 `false` 时，字段只读）
    - `$new` 只读 是否新建项

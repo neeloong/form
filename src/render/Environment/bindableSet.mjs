@@ -39,7 +39,7 @@ const bindable = {
 	null: true,
 	index: true,
 	no: true,
-	length: true,
+	size: true,
 
 	error: true,
 	errors: true,

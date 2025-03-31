@@ -57,7 +57,7 @@ export default class ArrayStore extends Store {
 		}
 		super(schema, {
 			index, new: isNew, parent,
-			length: new Signal.Computed(() => childrenState.get().length),
+			size: new Signal.Computed(() => childrenState.get().length),
 			state: [],
 			setValue(v) { return Array.isArray(v) ? v : v == null ? null : [v] },
 			setState(v) { return Array.isArray(v) ? v : v == null ? null : [v] },

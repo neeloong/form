@@ -83,7 +83,7 @@ export default class Store {
 	 * @param {*} [options.parent] 
 	 * @param {*} [options.state] 
 	 * @param {number | string | null} [options.index] 
-	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.length] 
+	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.size] 
 	 * @param {boolean} [options.null] 
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.hidden] 
@@ -118,7 +118,7 @@ export default class Store {
 		null: isNull, state, ref,
 		setValue, setState, convert, onUpdate, onUpdateState,
 		validator, validators,
-		index, length, new: isNew, parent: parentNode,
+		index, size, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly,
 		label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
 	} = {}) {
@@ -198,10 +198,10 @@ export default class Store {
 		this.#cancelChange = cancelChange;
 		this.#cancelBlur = cancelBlur;
 		
-		if (length instanceof Signal.State || length instanceof Signal.Computed) {
-			this.#length = length;
+		if (size instanceof Signal.State || size instanceof Signal.Computed) {
+			this.#size = size;
 		} else {
-			this.#length = new Signal.State(length || 0);
+			this.#size = new Signal.State(size || 0);
 		}
 
 		if (isNull) {
@@ -257,9 +257,9 @@ export default class Store {
 	get component() { return this.#component; }
 
 	/** @type {Signal.State<number> | Signal.Computed<number>} */
-	#length;
+	#size;
 	/** 长度信息 */
-	get length() { return this.#length.get(); }
+	get size() { return this.#size.get(); }
 	#index = new Signal.State(/** @type {string | number} */(''));
 	/** 索引信息 */
 	get index() { return this.#index.get(); }
