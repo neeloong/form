@@ -38,11 +38,13 @@ export default function renderEnum(parent, next, getter, env, renderItem) {
 			e.remove();
 		}
 	}
+	const count = new Signal.State(0);
 	const childrenResult = watch(() => list.get(), function render(children) {
 		if (!start.parentNode) { return; }
 		let nextNode = start.nextSibling;
 		const oldSeMap = seMap;
 		seMap = []
+		count.set(children.length);
 		for (const [value, index, key] of children) {
 			const index2 = oldSeMap.findIndex((v) => v[3] === key);
 			const [old] = index2 >= 0 ? oldSeMap.splice(index2, 1) : [];
@@ -52,6 +54,7 @@ export default function renderEnum(parent, next, getter, env, renderItem) {
 				const valueState = new Signal.State(value);
 				const indexState = new Signal.State(index);
 				const d = renderItem(itemEnd, env.setObject({
+					get count() { return count.get() },
 					get key() { return key; },
 					get value() { return valueState.get(); },
 					get index() { return indexState.get(); },

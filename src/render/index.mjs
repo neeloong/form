@@ -136,9 +136,6 @@ function renderChild(layout, parent, next, parentEnv, parentTemplates, component
 		const list = env.enum(layout.value);
 		/** @type {(next: Node | null, env: any) => () => void} */
 		const r = (next, env) => renderChildren(layout.children, parent, next, env, templates, componentPath, enhancements, relate, getComponent);
-		if (list === true) {
-			return r(next, env);
-		}
 		if (list instanceof ArrayStore) {
 			return renderArray(parent, next, list, env, r);
 		}

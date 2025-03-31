@@ -12,8 +12,12 @@ import Environment from './Environment/index.mjs';
 export default function renderObject(parent, next, store, env, renderItem) {
 	/** @type {(() => void)[]} */
 	const children = [];
-	for (const [k, child] of [...store]) {
-	children.push(renderItem(next, env.setStore(child, store)));
+	const childStores = [...store];
+	const count = childStores.length;
+	for (const [k, child] of childStores) {
+	children.push(renderItem(next, env.setStore(child, store, {
+		get count() { return count; },
+	})));
 	}
 
 	return () => {

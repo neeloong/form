@@ -8,7 +8,7 @@ const template = `
 	<li !enum="alias">
 		<input !bind="b" />
 		<ul !value="c" +x="0">
-			<li !enum +b=alias$length +a=2 +k="++x">
+			<li !enum +b=alias$size +a=2 +k="++x">
 				<div !fragment !text="k"></div>
 				<button @click="a+=1">a+1:<span !fragment !text="a"></span></button>
 				<button @click="b+=1">b+1:<span !fragment !text="b"></span></button>
@@ -18,7 +18,7 @@ const template = `
 				<button @click="$upMove" :disabled="!$upMovable">上移</button>
 				<button @click="$downMove()" :disabled="!$downMovable">下移</button>
 			</li>
-			<li><button @click="$add(0)">添加</button><button @click="$add( - $length - 1)">添加(<span !fragment !text=" - $length - 1"></span>)</button></li>
+			<li><button @click="$add(0)">添加</button><button @click="$add( - $size - 1)">添加(<span !fragment !text=" - $size - 1"></span>)</button></li>
 		</ul>
 	</li>
 </ul>

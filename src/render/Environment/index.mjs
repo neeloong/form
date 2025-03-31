@@ -55,10 +55,9 @@ export default class Environment {
 	watch(value, cb) { return watch(() => this.exec(value), cb, true); }
 
 	/**
-	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value | null} [en]
+	 * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} en
 	 */
 	enum(en) {
-		if (!en) { return true; }
 		const {name, calc} = en;
 		if (typeof calc === 'function') { return () => calc(this.getters); }
 		if (typeof name === 'string') {
@@ -263,11 +262,13 @@ export default class Environment {
 	 * 
 	 * @param {Store} store 
 	 * @param {Store} parent 
+	 * @param {Record<string, any>} [object] 
 	 */
-	setStore(store, parent) {
+	setStore(store, parent, object) {
 		const cloned = new Environment(store, this);
 		if (parent) { cloned.#parent = parent; }
 		setStore(cloned.#schemaItems, store, parent);
+		if (object) { cloned.#object = object; }
 		return cloned;
 	}
 	/**
