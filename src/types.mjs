@@ -139,7 +139,7 @@
  * @property {number | ((store: Store) => number?) | null} [minLength] 最小长度
  * @property {number | ((store: Store) => number?) | null} [maxLength] 最大长度
  * @property {RegExp | ((store: Store) => RegExp?) | null} [pattern] 模式规则
- * @property {(Schema.Value.Group.Define | Schema.Value.Define)[]} [values] 可选值
+ * @property {(Schema.Value.Group.Define | Schema.Value.Define)[] | ((store: Store) => (Schema.Value.Group.Define | Schema.Value.Define)[])} [values] 可选值
  * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events] 监听函数
  * @property {Validator | Validator[] | null} [validator] 同步验证器
  * @property {{[k in 'change' | 'blur']?: AsyncValidator | AsyncValidator[] | null}} [validators] 异步验证器
