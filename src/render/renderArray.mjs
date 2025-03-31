@@ -38,6 +38,9 @@ export default function renderArray(parent, next, store, env, renderItem) {
 				const itemEnd = parent.insertBefore(document.createComment(''), nextNode);
 				const d = renderItem(itemEnd, env.setStore(child, store, {
 					get count() { return count.get() },
+					get key() { return child.index; },
+					get index() { return child.index; },
+					get item() { return child.value; },
 				}));
 				seMap.set(child, [ItemStart, itemEnd, d]);
 				continue;

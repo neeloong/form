@@ -1,5 +1,5 @@
 import Environment from './Environment/index.mjs';
-/** @import { ObjectStore } from '../Store/index.mjs' */
+/** @import { ObjectStore, Store } from '../Store/index.mjs' */
 
 /**
  *
@@ -12,11 +12,15 @@ import Environment from './Environment/index.mjs';
 export default function renderObject(parent, next, store, env, renderItem) {
 	/** @type {(() => void)[]} */
 	const children = [];
-	const childStores = [...store];
+	/** @type {[string, Store<any, any>, number][]} */
+	const childStores = [...store].map(([k,v], i) => [k,v,i]);
 	const count = childStores.length;
-	for (const [k, child] of childStores) {
+	for (const [key, child, index] of childStores) {
 	children.push(renderItem(next, env.setStore(child, store, {
 		get count() { return count; },
+		get key() { return key; },
+		get index() { return index; },
+		get item() { return child.value; },
 	})));
 	}
 

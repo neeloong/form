@@ -56,7 +56,7 @@ export default function renderEnum(parent, next, getter, env, renderItem) {
 				const d = renderItem(itemEnd, env.setObject({
 					get count() { return count.get() },
 					get key() { return key; },
-					get value() { return valueState.get(); },
+					get item() { return valueState.get(); },
 					get index() { return indexState.get(); },
 				}));
 				seMap.push([ItemStart, itemEnd, d, key, valueState, indexState]);
