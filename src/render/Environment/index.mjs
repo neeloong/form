@@ -243,16 +243,15 @@ export default class Environment {
 		const store = this.store;
 		const parent = this.#parent;
 		const object = this.#object;
+		for (const [key, item] of toItem(store)) {
+			ais[key] = item;
+		}
+		for (const [key, item] of toParentItem(parent, store)) {
+			ais[key] = item;
+		}
 		if (object) {
 			for (const k of Object.keys(object)) {
 				ais[`$${k}`] = {get: () => object[k]};
-			}
-		} else {
-			for (const [key, item] of toItem(store)) {
-				ais[key] = item;
-			}
-			for (const [key, item] of toParentItem(parent, store)) {
-				ais[key] = item;
 			}
 		}
 		this.#allItems = ais;
