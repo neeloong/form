@@ -49,6 +49,7 @@ export default class ArrayStore extends Store {
 			for (let i = children.length; i < length; i++) {
 					children.push(this.#create(i));
 			}
+			children.length = length;
 			if (oldLength !== length) {
 				childrenState.set(children);
 			}
