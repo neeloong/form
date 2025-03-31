@@ -4,7 +4,8 @@ import Store from './Store.mjs';
 
 /**
  * @template {Record<string, any>} [T=Record<string, any>]
- * @extends {Store<T>}
+ * @template [M=any]
+ * @extends {Store<T, M>}
  */
 export default class ObjectStore extends Store {
 	get kind() { return 'object'; }
@@ -18,7 +19,7 @@ export default class ObjectStore extends Store {
 	 */
 	child(key) { return this.#children[key] || null; }
 	/**
-	 * @param {Schema.Object & Schema.Attr} schema
+	 * @param {Schema.Object<M> & Schema.Attr<M>} schema
 	 * @param {object} [options] 
 	 * @param {Store?} [options.parent] 
 	 * @param {number | string | null} [options.index] 

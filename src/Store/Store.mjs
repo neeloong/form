@@ -11,6 +11,7 @@ import { createAsyncValidator, createValidator, merge } from './createValidator.
 /**
  * 管理单个表单字段的状态和行为
  * @template [T=any]
+ * @template [M=any]
  */
 export default class Store {
 	/** @type {Map<string, Set<(value: any, store: any) => void | boolean | null>>} */
@@ -52,7 +53,8 @@ export default class Store {
 	}
 	/**
 	 * 从数据结构模式创建存储
-	 * @param {Schema} schema 数据结构模式
+	 * @template [M=any]
+	 * @param {Schema<M>} schema 数据结构模式
 	 * @param {object} [options] 选项
 	 * @param {boolean} [options.new] 是否为新建环境
 	 */
@@ -76,7 +78,7 @@ export default class Store {
 	#ref = null;
 	get ref() { return this.#ref || createRef(this); }
 	/**
-	 * @param {Schema.Field} schema 字段的 Schema 定义
+	 * @param {Schema.Field<M>} schema 字段的 Schema 定义
 	 * @param {object} [options] 可选配置
 	 * @param {*} [options.parent] 
 	 * @param {*} [options.state] 
@@ -237,7 +239,7 @@ export default class Store {
 	#root = this;
 	/** @readonly @type {any} */
 	#type;
-	/** @readonly @type {any} */
+	/** @readonly @type {M | void} */
 	#meta;
 	/** @readonly @type {any} */
 	#component;

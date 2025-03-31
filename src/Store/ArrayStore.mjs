@@ -7,7 +7,8 @@ import create, { setArrayStore } from './create.mjs';
 
 /**
  * @template [T=any]
- * @extends {Store<(T | null)[]>}
+ * @template [M=any]
+ * @extends {Store<(T | null)[], M>}
  */
 export default class ArrayStore extends Store {
 	/** @type {(index: number, isNew?: boolean) => Store} */
@@ -30,7 +31,7 @@ export default class ArrayStore extends Store {
 	}
 	get kind() { return 'array'; }
 	/**
-	 * @param {Schema.Field} schema
+	 * @param {Schema.Field<M>} schema
 	 * @param {object} [options] 
 	 * @param {Store?} [options.parent]
 	 * @param {string | number | null} [options.index] 

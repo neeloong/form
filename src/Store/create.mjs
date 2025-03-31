@@ -9,7 +9,8 @@ let ArrayStore = null;
 /** @type {Record<string, {new(...p: ConstructorParameters<typeof Store>): Store}?>} */
 let TypeStores = Object.create(null);
 /**
- * @param {Schema.Field} schema
+ * @template [M=any]
+ * @param {Schema.Field<M>} schema
  * @param {object} [options] 
  * @param {Store?} [options.parent]
  * @param {string | number | null} [options.index] 

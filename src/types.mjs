@@ -57,10 +57,12 @@
  * @returns {Component?}
  */
 /**
- * @typedef {(Schema.Object | Schema.Type) & Schema.Attr} Schema.Field 字段定义
+ * @template [M=any]
+ * @typedef {(Schema.Object<M> | Schema.Type) & Schema.Attr<M>} Schema.Field 字段定义
  */
 /**
- * @typedef {Record<string, Schema.Field>} Schema
+ * @template [M=any]
+ * @typedef {Record<string, Schema.Field<M>>} Schema
  */
 /**
  * @typedef {Schema.Value | string | number} Schema.Value.Define 可选值定义
@@ -85,8 +87,9 @@
  * @property {(Schema.Value.Group | Schema.Value)[]} children 子数据
  */
 /**
+ * @template [M=any]
  * @typedef {object} Schema.Object 对象类型定义
- * @property {Record<string, Schema.Field>} type 字段定义
+ * @property {Record<string, Schema.Field<M>>} type 字段定义
  * @property {boolean} [array] 是否为数组
  */
 /**
@@ -116,8 +119,9 @@
  * @returns {PromiseLike<string | string[] | void | null> | string | string[] | void | null} 错误信息
  */
 /**
+ * @template [M=any]
  * @typedef {object} Schema.Attr
- * @property {any} [meta] 元信息
+ * @property {M} [meta] 元信息
  * @property {any} [component] 自定义组件
  * @property {boolean} [immutable] 是否可修改
  * @property {boolean} [creatable] 是否可创建
