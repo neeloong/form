@@ -544,6 +544,7 @@ export default class Store {
 		}
 		this.#value.set(newValues);
 		this.#initValue.set(newValues);
+		this.#onUpdate?.(newValues, this.#index.get(), this);
 		return newValues;
 	}
 
