@@ -18,7 +18,11 @@ export default function *toItem(val, key = '', sign = '$') {
 	yield [`${key}${sign}reset`, {exec: () => val.reset()}]
 	// @ts-ignore
 	yield [`${key}${sign}validate`, {exec: v => val.validate(v ? [] : null)}]
-	if (!(val instanceof ArrayStore)) { return; }
+	if (!(val instanceof ArrayStore)) {
+		yield [`${key}${sign}addable`, {get: () => false}]
+		return;
+	}
+	yield [`${key}${sign}addable`, {get: () => val.addable}]
 	yield [`${key}${sign}insert`, {exec: (index, value) => val.insert(index, value)}]
 	yield [`${key}${sign}add`, {exec: (v) => val.add(v)}]
 	yield [`${key}${sign}remove`, {exec: (index) => val.remove(index)}]

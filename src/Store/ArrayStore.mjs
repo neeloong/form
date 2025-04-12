@@ -1,6 +1,7 @@
 import { Signal } from 'signal-polyfill';
 import Store from './Store.mjs';
 import create, { setArrayStore } from './create.mjs';
+import createBooleanStates from './createBooleanStates.mjs';
 /** @import { Schema } from '../types.mjs' */
 
 
@@ -36,10 +37,11 @@ export default class ArrayStore extends Store {
 	 * @param {Store?} [options.parent]
 	 * @param {string | number | null} [options.index] 
 	 * @param {boolean} [options.new] 
+	 * @param {boolean} [options.addable] 
 	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdate] 
 	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdateState] 
 	 */
-	constructor(schema, { parent, onUpdate, onUpdateState, index, new: isNew} = {}) {
+	constructor(schema, { parent, onUpdate, onUpdateState, index, new: isNew, addable} = {}) {
 		const childrenState = new Signal.State(/** @type {Store[]} */([]));
 		// @ts-ignore
 		const updateChildren = (list) => {
@@ -75,6 +77,9 @@ export default class ArrayStore extends Store {
 			},
 			onUpdateState,
 		});
+
+		[this.#selfAddable, this.#addable] = createBooleanStates(this, addable, schema.addable ?? true);
+		
 		this.#children = childrenState;
 		const childCommonOptions = {
 			parent: this,
@@ -105,6 +110,20 @@ export default class ArrayStore extends Store {
 			return child
 		}
 	}
+
+
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfAddable
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#addable
+	get selfAddable() { return this.#selfAddable.get(); }
+	set selfAddable(v) { this.#selfAddable.set(typeof v === 'boolean' ? v : null); }
+	/** 是否禁用字段 */
+	get addable() { return this.#addable.get(); }
+	set addable(v) { this.#selfAddable.set(typeof v === 'boolean' ? v : null); }
+
+
+
 	/**
 	 * 
 	 * @param {number} index 
@@ -113,6 +132,7 @@ export default class ArrayStore extends Store {
 	 * @returns 
 	 */
 	insert(index, value = null, isNew) {
+		if (!this.addable) { return false; }
 		const data = this.value || [];
 		if (!Array.isArray(data)) { return false; }
 		const children = [...this.#children.get()];

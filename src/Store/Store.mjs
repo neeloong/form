@@ -1,9 +1,9 @@
 import { Signal } from 'signal-polyfill';
-import { createBooleanStates } from './createBooleanStates.mjs';
+import createBooleanStates from './createBooleanStates.mjs';
 import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
 import createRef from './ref.mjs';
-import create, { setStore } from './create.mjs';
+import create, { ArrayStoreClass, setStore } from './create.mjs';
 import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
 /** @import { Ref } from './ref.mjs' */
 /** @import { AsyncValidator, Schema, Validator } from '../types.mjs' */
@@ -80,7 +80,7 @@ export default class Store {
 	/**
 	 * @param {Schema.Field<M>} schema 字段的 Schema 定义
 	 * @param {object} [options] 可选配置
-	 * @param {*} [options.parent] 
+	 * @param {Store?} [options.parent] 
 	 * @param {*} [options.state] 
 	 * @param {number | string | null} [options.index] 
 	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.size] 
@@ -89,8 +89,9 @@ export default class Store {
 	 * @param {boolean} [options.hidden] 
 	 * @param {boolean} [options.clearable] 
 	 * @param {boolean} [options.required] 
-	 * @param {boolean} [options.readonly] 
 	 * @param {boolean} [options.disabled] 
+	 * @param {boolean} [options.readonly] 
+	 * @param {boolean} [options.removable] 
 	 * 
 	 * @param {string} [options.label] 字段标签
 	 * @param {string} [options.description] 字段描述
@@ -119,7 +120,7 @@ export default class Store {
 		setValue, setState, convert, onUpdate, onUpdateState,
 		validator, validators,
 		index, size, new: isNew, parent: parentNode,
-		hidden, clearable, required, disabled, readonly,
+		hidden, clearable, required, disabled, readonly, removable,
 		label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
 	} = {}) {
 		this.schema = schema;
@@ -184,6 +185,8 @@ export default class Store {
 		[this.#selfPattern, this.#pattern] = createState(this, toValues.regex, pattern, schema.pattern);
 		// @ts-ignore
 		[this.#selfValues, this.#values] = createState(this, toValues.values, values, schema.values);
+
+		[this.#selfRemovable, this.#removable] = createBooleanStates(this, removable, schema.removable ?? true)
 
 		const validatorResult = createValidator(this, schema.validator, validator);
 
@@ -339,6 +342,15 @@ export default class Store {
 	set readonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
 
 
+	/** @readonly @type {Signal.State<boolean?>} */
+	#selfRemovable
+	/** @readonly @type {Signal.Computed<boolean>} */
+	#removable
+	get selfRemovable() { return this.#selfRemovable.get(); }
+	set selfRemovable(v) { this.#selfRemovable.set(typeof v === 'boolean' ? v : null); }
+	/** 是否只读 */
+	get removable() { return this.#removable.get(); }
+	set removable(v) { this.#selfRemovable.set(typeof v === 'boolean' ? v : null); }
 
 
 	/** @readonly @type {Signal.State<string?>} */
