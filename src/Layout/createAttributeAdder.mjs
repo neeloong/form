@@ -124,6 +124,9 @@ export default function createAttributeAdder(node, createCalc, createInit, creat
 			case 'enum':
 				node.enum = value ? parse(value, createCalc) : {value: true};
 				break;
+			case 'sort':
+				node.sort = value ? parse(value, createCalc) : {value: true};
+				break;
 			case 'if':
 				node.if = parse(value, createCalc);
 				break;

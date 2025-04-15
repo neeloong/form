@@ -175,6 +175,13 @@ render(store, layouts, app);
   <li !enum="items" !text="$item"></li> <!-- items 是数组 -->
 </ul>
 ```
+#### 自定义排序
+
+```html
+<ul>
+  <li !enum="object" !sort="$key" !text="$item"></li> <!-- object 是对象，将按照其键排序，渲染其值 -->
+</ul>
+```
 
 #### 嵌套循环
 
@@ -284,7 +291,7 @@ render(store, layouts, app);
 1. 模板定义: `!template`
 1. 条件: `!if` `!else`
 1. 子属性: `!value`
-1. 枚举: `!enum`
+1. 枚举: `!enum` `!sort`
 1. 别名、计算名与显式变量: `*别名` `*计算名` `+变量`
 1. 片段与模板调用: `!fragment` 
 1. 属性与事件: `:绑定属性` `@事件` `普通属性` `!bind`

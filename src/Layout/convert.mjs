@@ -134,7 +134,7 @@ function convertItem(layout) {
 	}
 	const enumValue = layout.enum;
 	const name = layout.value;
-	if (enumValue) { child = { type: 'enum', value: enumValue, vars, children: child ? [child] : [] }; vars = null; }
+	if (enumValue) { child = { type: 'enum', value: enumValue, sort: layout.sort, vars, children: child ? [child] : [] }; vars = null; }
 	if (name) { child = { type: 'value', name, vars, children: child ? [child] : [] }; vars = null; }
 	if (vars?.length) {
 		child = { type: 'fragment', vars, children: child ? [child] : [] };

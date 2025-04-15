@@ -21,6 +21,7 @@
  * 
  * @property {string} [value] 值关联
  * @property {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} [enum] 列表属性枚举
+ * @property {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} [sort]
  * 
  * @property {boolean | string} [bind] 绑定内容
  * @property {Layout.Node.Name | Layout.Node.Value | Layout.Node.Calc} [text] 文本渲染

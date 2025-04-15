@@ -1,6 +1,8 @@
 import watch from '../watch.mjs';
+import compare from './compare.mjs';
 import Environment from './Environment/index.mjs';
 import { Signal } from 'signal-polyfill';
+/** @import * as Layout from '../Layout/index.mjs' */
 
 /**
  *
@@ -9,24 +11,38 @@ import { Signal } from 'signal-polyfill';
  * @param {() => any} getter
  * @param {Environment} env
  * @param {(next: Node | null, env: any) => () => void} renderItem
+ * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} [sort]
  */
-export default function renderEnum(parent, next, getter, env, renderItem) {
+export default function renderEnum(parent, next, getter, env, renderItem, sort) {
 
-	/** @type {Signal.Computed<[value: any, index: number, kKey: any][]>} */
+	/** @type {Signal.Computed<[value: any, kKey: any][]>} */
 	const list = new Signal.Computed(() => {
 		const values = getter();
 		if (typeof values === 'number') {
 			const n = Math.floor(values);
 			if (!n) { return []; }
-			return Array(n).fill(0).map((_, i) => [i + 1, i, i]);
+			return Array(n).fill(0).map((_, i) => [i + 1, i]);
 		}
 		if (!values || typeof values !== 'object') { return []; }
 		if (Array.isArray(values)) {
-			return values.map((v, i) => [v, i, i]);
+			return values.map((v, i) => [v, i]);
 		}
 		// TODO: 转列表
-		return Object.entries(values).map(([k,v], i) => [v, i, k]);
+		return Object.entries(values).map(([k,v]) => [v, k]);
 	});
+	/** @type {Signal.Computed<[value: any, index: number, kKey: any][]>} */
+	const slotted = sort ? new Signal.Computed(() => {
+		const values = list.get();
+		return values
+			.map(([k,v], i) => [v, k, env.setObject({
+				get count() { return values.length },
+				get key() { return k; },
+				get item() { return v; },
+				get index() { return i; },
+			}).exec(sort)])
+			.sort(([,,a], [,,b]) => compare(a, b))
+			.map(([k, v], i) => [v, i, k]);
+	}) : new Signal.Computed(() => list.get().map(([k,v], i) => [v, i, k]));
 	const start = parent.insertBefore(document.createComment(''), next);
 	/** @type {[Comment, Comment, () => void, key: any, Signal.State<any>, Signal.State<any>][]} */
 	let seMap = []
@@ -39,7 +55,7 @@ export default function renderEnum(parent, next, getter, env, renderItem) {
 		}
 	}
 	const count = new Signal.State(0);
-	const childrenResult = watch(() => list.get(), function render(children) {
+	const childrenResult = watch(() => slotted.get(), function render(children) {
 		if (!start.parentNode) { return; }
 		let nextNode = start.nextSibling;
 		const oldSeMap = seMap;

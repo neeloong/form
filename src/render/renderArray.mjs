@@ -1,6 +1,7 @@
 import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
 import Environment from './Environment/index.mjs';
+/** @import * as Layout from '../Layout/index.mjs' */
 /** @import Store, { ArrayStore } from '../Store/index.mjs' */
 
 /**
@@ -10,8 +11,9 @@ import Environment from './Environment/index.mjs';
  * @param {ArrayStore} store
  * @param {Environment} env
  * @param {(next: Node | null, env: any) => () => void} renderItem
+ * @param {Layout.Node.Name | Layout.Node.Calc | Layout.Node.Value} [sort]
  */
-export default function renderArray(parent, next, store, env, renderItem) {
+export default function renderArray(parent, next, store, env, renderItem, sort) {
 	const start = parent.insertBefore(document.createComment(''), next);
 	/** @type {Map<Store, [Comment, Comment, () => void]>} */
 	let seMap = new Map();

@@ -137,13 +137,13 @@ function renderChild(layout, parent, next, parentEnv, parentTemplates, component
 		/** @type {(next: Node | null, env: any) => () => void} */
 		const r = (next, env) => renderChildren(layout.children, parent, next, env, templates, componentPath, enhancements, relate, getComponent);
 		if (list instanceof ArrayStore) {
-			return renderArray(parent, next, list, env, r);
+			return renderArray(parent, next, list, env, r, layout.sort);
 		}
 		if (list instanceof ObjectStore) {
-			return renderObject(parent, next, list, env, r);
+			return renderObject(parent, next, list, env, r, layout.sort);
 		}
 		if (typeof list === 'function') {
-			return renderEnum(parent, next, list, env, r);
+			return renderEnum(parent, next, list, env, r, layout.sort);
 		}
 		return () => { };
 	}

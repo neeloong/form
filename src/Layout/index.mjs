@@ -88,6 +88,7 @@ export { default as parse } from './parse.mjs';
  * @property {Record<string, Template>} [templates]
  * @property {'enum'} type
  * @property {Node.Name | Node.Calc | Node.Value} value
+ * @property {Node.Name | Node.Calc | Node.Value} [sort]
  * @property {Child[]} children 子元素
  * @property {string} [comment] 注释
  */
