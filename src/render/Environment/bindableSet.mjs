@@ -20,6 +20,7 @@ const bindable = {
 	immutable: true,
 	changed: true,
 
+	loading: true,
 	required: true,
 	clearable: true,
 	hidden: true,

@@ -311,6 +311,7 @@ render(store, layouts, app);
    - `$creatable` 只读 值是否可创建（`$new` 为 `true` 时，字段只读）
    - `$immutable` 只读 值是否不可改变（`$new` 为 `false` 时，字段只读）
    - `$new` 只读 是否新建项
+   - `$loading` 只读 加载状态
    - `$readonly` 只读 是否只读
    - `$hidden` 只读 是否可隐藏
    - `$clearable` 只读 是否可清除

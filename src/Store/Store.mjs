@@ -129,8 +129,12 @@ export default class Store {
 		if (parent) {
 			this.#parent = parent;
 			this.#root = parent.#root;
+			this.#loading = parent.#loading;
 			// TODO: 事件向上冒泡
 		}
+		const loading = new Signal.State(false);
+		this.#selfLoading = loading;
+		this.#loading = loading;
 		this.#type = schema.type;
 		this.#meta = schema.meta;
 		this.#component = schema.component;
@@ -246,6 +250,18 @@ export default class Store {
 	#meta;
 	/** @readonly @type {any} */
 	#component;
+	/** @type {Signal.State<boolean>?} */
+	#selfLoading = null
+	/** @type {Signal.State<boolean>} */
+	#loading;
+	get loading() {
+		return this.#loading.get();
+	}
+	set loading(loading) {
+		const s = this.#selfLoading;
+		if (!s) { return }
+		s.set(Boolean(loading))
+	}
 	/** 存储对象自身 */
 	get store() { return this; }
 	/** 父级存储对象 */
