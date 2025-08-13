@@ -17,7 +17,7 @@ function testKey(key) {
 	return '_$'.includes(key[1]);
 }
 /**
- * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>?} [global] 
+ * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?: any; calc?: any }>?} [global] 
  */
 export default function toGlobal(global) {
 	/** @type {Record<string, ValueDefine | ExecDefine | CalcDefine>} */
@@ -37,11 +37,11 @@ export default function toGlobal(global) {
 			items[key] = typeof set === 'function' ? {get,set} : {get};
 			continue;
 		}
-		if (typeof calc === 'function') {
+		if (calc) {
 			items[key] = {calc};
 			continue;
 		}
-		if (typeof exec === 'function') {
+		if (exec) {
 			items[key] = {exec};
 			continue;
 		}

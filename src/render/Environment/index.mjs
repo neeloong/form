@@ -11,8 +11,8 @@ import addStore from './addStore.mjs';
 
 
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; store?: Store; calc?: null; }} ValueDefine */
-/** @typedef {{get?: null; exec(...p: any[]): any;  calc?: null}} ExecDefine */
-/** @typedef {{get?: null; calc(...p: any[]): any;  exec?: null;}} CalcDefine */
+/** @typedef {{get?: null; exec: any;  calc?: null}} ExecDefine */
+/** @typedef {{get?: null; calc: any;  exec?: null;}} CalcDefine */
 
 /**
  * @template {Store} [T=Store]
