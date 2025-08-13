@@ -11,8 +11,8 @@ import addStore from './addStore.mjs';
 
 
 /** @typedef {{get(): any; set?(v: any): void; exec?: null; store?: Store; calc?: null; }} ValueDefine */
-/** @typedef {{get?: null; exec: any;  calc?: null}} ExecDefine */
-/** @typedef {{get?: null; calc: any;  exec?: null;}} CalcDefine */
+/** @typedef {{get?: null; exec: ((...v: any[]) => void) | Record<string, any>;  calc?: null}} ExecDefine */
+/** @typedef {{get?: null; calc: ((...v: any[]) => void) | Record<string, any>;  exec?: null;}} CalcDefine */
 
 /**
  * @template {Store} [T=Store]
@@ -191,7 +191,9 @@ export default class Environment {
 		const item = this.#items[name];
 		if (!item) { return null }
 		const {exec, calc} = item;
+		// @ts-ignore
 		if (typeof exec === 'function') { return exec }
+		// @ts-ignore
 		if (typeof calc === 'function') { return calc }
 		return null
 

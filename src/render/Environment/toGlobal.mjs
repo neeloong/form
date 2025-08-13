@@ -37,11 +37,11 @@ export default function toGlobal(global) {
 			items[key] = typeof set === 'function' ? {get,set} : {get};
 			continue;
 		}
-		if (calc) {
+		if (typeof calc === 'function' || calc && typeof calc === 'object') {
 			items[key] = {calc};
 			continue;
 		}
-		if (exec) {
+		if (typeof exec === 'function' || calc && typeof calc === 'object') {
 			items[key] = {exec};
 			continue;
 		}
