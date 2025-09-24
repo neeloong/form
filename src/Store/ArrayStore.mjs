@@ -76,6 +76,7 @@ export default class ArrayStore extends Store {
 				onUpdate?.(value, index, state);
 			},
 			onUpdateState,
+			default: schema.default ?? [],
 		});
 
 		[this.#selfAddable, this.#addable] = createBooleanStates(this, addable, schema.addable ?? true);
@@ -144,7 +145,7 @@ export default class ArrayStore extends Store {
 			children[i].index = i;
 		}
 		const val = [...data];
-		val.splice(insertIndex, 0, value);
+		val.splice(insertIndex, 0, value ?? item.createDefault());
 		const state = this.state;
 		if (Array.isArray(state)) {
 			const sta = [...state];

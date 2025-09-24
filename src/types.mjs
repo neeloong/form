@@ -122,6 +122,7 @@
  * @template [M=any]
  * @typedef {object} Schema.Attr
  * @property {M} [meta] 元信息
+ * @property {((store: Store) => any) | any} [default]
  * @property {any} [component] 自定义组件
  * @property {boolean} [immutable] 是否可修改
  * @property {boolean} [creatable] 是否可创建

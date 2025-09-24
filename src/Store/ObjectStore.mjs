@@ -29,6 +29,8 @@ export default class ObjectStore extends Store {
 	 */
 	constructor(schema,{ parent, index, new: isNew, onUpdate, onUpdateState } = {}) {
 		const childrenTypes = Object.entries(schema.type);
+		/** @type {Record<string, Store>} */
+		const children = Object.create(null);
 		super(schema, {
 			parent, index, new: isNew, onUpdate, onUpdateState,
 			size: childrenTypes.length,
@@ -40,8 +42,10 @@ export default class ObjectStore extends Store {
 					typeof state === 'object' ? state : {},
 				]
 			},
+			default: schema.default ?? (() => Object.fromEntries(
+				Object.entries(children).map(([k,v]) => [k, v.createDefault()])
+			)),
 		});
-		const children = Object.create(null);
 		const childCommonOptions = {
 			parent: this,
 			/** @param {*} value @param {*} index @param {Store} store */

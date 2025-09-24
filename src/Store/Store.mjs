@@ -5,6 +5,7 @@ import createState from './createState.mjs';
 import createRef from './ref.mjs';
 import create, { ArrayStoreClass, setStore } from './create.mjs';
 import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
+import makeDefault from './makeDefault.mjs';
 /** @import { Ref } from './ref.mjs' */
 /** @import { AsyncValidator, Schema, Validator } from '../types.mjs' */
 
@@ -81,6 +82,7 @@ export default class Store {
 	 * @param {Schema.Field<M>} schema 字段的 Schema 定义
 	 * @param {object} [options] 可选配置
 	 * @param {Store?} [options.parent] 
+	 * @param {((store: Store) => any) | any} [options.default]
 	 * @param {*} [options.state] 
 	 * @param {number | string | null} [options.index] 
 	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.size] 
@@ -116,7 +118,7 @@ export default class Store {
 	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdateState] 
 	 */
 	constructor(schema, {
-		null: isNull, state, ref,
+		null: isNull, state, ref, default: defaultValue,
 		setValue, setState, convert, onUpdate, onUpdateState,
 		validator, validators,
 		index, size, new: isNew, parent: parentNode,
@@ -132,6 +134,7 @@ export default class Store {
 			this.#loading = parent.#loading;
 			// TODO: 事件向上冒泡
 		}
+		this.#createDefault = makeDefault(this, defaultValue ?? schema.default)
 		const loading = new Signal.State(false);
 		this.#selfLoading = loading;
 		this.#loading = loading;
@@ -230,6 +233,8 @@ export default class Store {
 			this.listen(k, f);
 		}
 	}
+	#createDefault
+	createDefault() { return this.#createDefault(); }
 	/** @type {((value: any) => any)?} */
 	#setValue = null
 	/** @type {((value: any) => any)?} */
@@ -638,34 +643,35 @@ export default class Store {
 	/**
 	 * 异步校验
 	 * @overload
-	 * @param {null} [path]
+	 * @param {true} [path]
 	 * @returns {Promise<string[] | null>}
 	 */
 	/**
 	 * 异步校验
 	 * @overload
-	 * @param {(string | number)[]} path 到当前层级的路径
+	 * @param {(string | number)[] | false | null} [path] 到当前层级的路径
 	 * @returns {Promise<{ path: (string | number)[]; store: Store; errors: string[]}[]>}
 	 */
 	/**
 	 * 异步校验
-	 * @param {(string | number)[]?} [path] 
-	 * @returns {Promise<string[] | { path: (string | number)[]; store: Store; errors: string[] | null;}[] | null>}
+	 * @param {(string | number)[] | boolean | null} [path] 
+	 * @returns {Promise<string[] | { path: (string | number)[]; store: Store; errors: string[];}[] | null>}
 	 */
 	validate(path) {
-		if (!Array.isArray(path)) {
+		if (path === true) {
 			return Promise.all([this.#validatorResult.get(), this.#changed(), this.#blurred()])
 				.then(v => {
 					const errors = v.flat();
 					return errors.length ? errors : null
 				});
 		}
+		const selfPath = Array.isArray(path) ? path : [];
 		const list = [this.validate().then(errors => {
 			if (!errors?.length) {return [];}
-			return [{path: [...path], store: /** @type {Store} */(this), errors}]
+			return [{path: [...selfPath], store: /** @type {Store} */(this), errors}]
 		})];
 		for (const [key, field] of this) {
-			list.push(field.validate([...path, key]))
+			list.push(field.validate([...selfPath, key]))
 		}
 		return Promise.all(list).then(v => v.flat())
 	}
