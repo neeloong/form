@@ -1,10 +1,9 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { Relatedness } from '../types.mjs' */
 /** @import { FieldRenderer, GridFormItemTemplate } from './types.mjs' */
-/** @import { FieldStyle } from '@yongdall/web/types' */
-import { watch } from '@neeloong/form';
 import FormItem from './FormItem.mjs';
 import Form from './Form.mjs';
+import watch from '../watch.mjs';
 
 /**
  * 

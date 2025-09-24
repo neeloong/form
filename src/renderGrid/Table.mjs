@@ -1,7 +1,8 @@
 /** @import { Store, ArrayStore } from '../Store/index.mjs' */
 /** @import { Relatedness } from '../types.mjs' */
 /** @import { FieldRenderer, GridFormItemTemplate } from './types.mjs' */
-import { Signal, watch } from '@neeloong/form';
+import { Signal } from 'signal-polyfill';
+import watch from '../watch.mjs';
 import Line from './Line.mjs';
 
 /**

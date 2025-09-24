@@ -2,8 +2,7 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { Relatedness } from '../types.mjs' */
 /** @import { FieldRenderer, GridFormItemTemplate } from './types.mjs' */
-/** @import { FieldStyle } from '@yongdall/web/types' */
-import { ArrayStore } from '@neeloong/form';
+import { ArrayStore } from '../Store/index.mjs';
 
 import SubFieldFormItem from './Table.mjs';
 import Form from './Form.mjs';
