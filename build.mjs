@@ -42,12 +42,13 @@ const bundle = await rollup({
 		replace({ preventAssignment: true, values: { __VERSION__: version } }),
 	],
 });
-for (const ext of ['mjs']) {
+for (const ext of ['mjs','min.mjs']) {
 	const format = 'esm';
 	const output = `dist/index.${ext}`;
 	console.log(`  生成 ${output} ...`);
 	const { output: [chunk] } = await bundle.generate({
 		format, name: umdName, banner,
+		plugins: ext.includes('min') ? [terser()] : [],
 	});
 	// @ts-ignore
 	await fsPromise.writeFile(output, chunk.source || chunk.code || '');
@@ -64,7 +65,7 @@ const bundle2 = await rollup({
 		}),
 	],
 });
-for (const ext of ['js','min.mjs', 'min.js']) {
+for (const ext of ['full.js','full.min.mjs', 'full.min.js']) {
 	const format = ext.endsWith('mjs') ? 'esm' : 'umd';
 	const output = `dist/index.${ext}`;
 	console.log(`  生成 ${output} ...`);
@@ -91,16 +92,16 @@ await fsPromise.writeFile(`dist/package.json`, JSON.stringify({
 	author, license, homepage, repository, bugs,
 	type: 'module',
 	main: 'index.mjs',
-	unpkg: 'index.min.js',
-	jsdelivr: 'index.min.js',
+	unpkg: 'index.full.min.js',
+	jsdelivr: 'index.full.min.js',
 	types: './index.d.mts',
 	exports: {
 		'.': {
 			types: './index.d.mts',
 			main: './index.mjs',
 			module: './index.mjs',
-			unpkg: './index.min.js',
-			jsdelivr: './index.min.js',
+			unpkg: './index.full.min.js',
+			jsdelivr: './index.full.min.js',
 		},
 	},
 }, null, 2));
