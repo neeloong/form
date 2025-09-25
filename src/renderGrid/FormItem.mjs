@@ -59,9 +59,18 @@ export default function FormItem(store, fieldRenderer, editable, template, optio
 	const root = document.createElement('div');
 	root.className = "GridForm-item";
 	destroyList.push(effect(() => root.hidden = store.hidden));
-	const colSpan = store.meta.colSpan;
-	if (colSpan) {
-		root.style.gridColumn = `span ${colSpan}`;
+	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = template || {};
+	if (colStart) { root.style.gridColumnStart = `${colStart}`; }
+	if (colEnd) {
+		root.style.gridColumnEnd = `${colEnd}`;
+	} else if (colSpan) {
+		root.style.gridColumnEnd = `span ${colSpan}`;
+	}
+	if (rowStart) { root.style.gridRowStart = `${rowStart}`; }
+	if (rowEnd) {
+		root.style.gridRowEnd = `${rowEnd}`;
+	} else if (rowSpan) {
+		root.style.gridRowEnd = `span ${rowSpan}`;
 	}
 	const label = root.appendChild(document.createElement('div'));
 	label.className = 'GridForm-item-label';

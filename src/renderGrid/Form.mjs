@@ -30,7 +30,6 @@ export default function Form(store, fieldRenderer, editable, template, {parent, 
 		}
 	} else {
 		const fields = [...store].map(([, v]) => v)
-			.sort((a, b) => (a.meta.layoutOrder || 0) - (b.meta.layoutOrder || 0));
 
 
 		for (const field of fields) {

@@ -54,11 +54,6 @@ export default function Table(store, fieldRenderer, editable, template, options)
 			if (f) { columns.push(f); }
 		}
 	}
-	if (!columns.length) {
-		columns = fieldList
-			.filter(([, v]) => v.meta.headOrder)
-			.sort(([, a], [, b]) => (a.headOrder || 0) - (b.headOrder || 0));
-	}
 	if (!columns.length) { columns = fieldList.filter(([k, v]) => typeof v?.type !== 'object').slice(0, 3); }
 
 	const table = document.createElement('table');

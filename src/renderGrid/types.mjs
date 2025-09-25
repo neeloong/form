@@ -7,6 +7,12 @@
  * @property {GridFormTemplate?} [subFields]
  * @property {number} span
  * @property {string[]} [headers]
+ * @property {number} [colStart]
+ * @property {number} [colSpan]
+ * @property {number} [colEnd]
+ * @property {number} [rowStart]
+ * @property {number} [rowSpan]
+ * @property {number} [rowEnd]
  */
 /**
  * @typedef {GridFormItemTemplate[]} GridFormTemplate
