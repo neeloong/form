@@ -16,7 +16,7 @@ import FormItem from './FormItem.mjs';
  */
 export default function Form(store, fieldRenderer, editable, template, {parent, relate}) {
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
-	root.className = 'GridForm';
+	root.className = 'NeeloongFormGrid';
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 

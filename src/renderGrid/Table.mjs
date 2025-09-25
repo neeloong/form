@@ -28,7 +28,7 @@ function renderHead(parent, columns, add, addable, editable) {
 	}
 	const button = th.appendChild(document.createElement('button'));
 	button.addEventListener('click', add);
-	button.classList.add('GridForm-table-add');
+	button.classList.add('NeeloongFormGrid-table-add');
 	return watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true);
 }
 /**
@@ -57,7 +57,7 @@ export default function Table(store, fieldRenderer, editable, template, options)
 	if (!columns.length) { columns = fieldList.filter(([k, v]) => typeof v?.type !== 'object').slice(0, 3); }
 
 	const table = document.createElement('table');
-	table.className = 'GridForm-table'
+	table.className = 'NeeloongFormGrid-table'
 	const thead = table.appendChild(document.createElement('thead'));
 
 

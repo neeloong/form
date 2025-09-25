@@ -57,7 +57,7 @@ export default function FormItem(store, fieldRenderer, editable, template, optio
 	}
 
 	const root = document.createElement('div');
-	root.className = "GridForm-item";
+	root.className = "NeeloongFormGrid-item";
 	destroyList.push(effect(() => root.hidden = store.hidden));
 	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = template || {};
 	if (colStart) { root.style.gridColumnStart = `${colStart}`; }
@@ -73,15 +73,15 @@ export default function FormItem(store, fieldRenderer, editable, template, optio
 		root.style.gridRowEnd = `span ${rowSpan}`;
 	}
 	const label = root.appendChild(document.createElement('div'));
-	label.className = 'GridForm-item-label';
+	label.className = 'NeeloongFormGrid-item-label';
 	destroyList.push(effect(() => label.innerText = store.label || ''));
 
 
 	const content = root.appendChild(document.createElement('div'));
-	content.className = 'GridForm-item-content';
+	content.className = 'NeeloongFormGrid-item-content';
 
 	const description = root.appendChild(document.createElement('div'));
-	description.className = 'GridForm-item-description';
+	description.className = 'NeeloongFormGrid-item-description';
 	destroyList.push(effect(() => description.innerText = store.description || ''));
 	if (typeof component === 'function') {
 		const [el, destroy] = fieldRenderer(store, component, options);
