@@ -6,6 +6,7 @@ import { ArrayStore } from '../Store/index.mjs';
 
 import SubFieldFormItem from './Table.mjs';
 import Form from './Form.mjs';
+import effect from '../effect.mjs';
 
 /**
  * 
@@ -25,52 +26,62 @@ export default function FormItem(store, fieldRenderer, editable, template, optio
 		if (component) {
 			return fieldRenderer(store, component, options);
 		}
-		return [document.createElement('div'), () => {}];
+		return [document.createElement('div'), () => { }];
 	}
+	/** @type {(() => void)[]} */
+	const destroyList = [];
 	if (type && typeof type === 'object') {
 		const root = document.createElement('details');
 		root.open = true;
-		const summary = root.appendChild(document.createElement('summary'))
-		summary.innerText = store.label || '';
-		root.hidden = store.hidden;
+		const summary = root.appendChild(document.createElement('summary'));
+		destroyList.push(effect(() => summary.innerText = store.label || ''));
+		destroyList.push(effect(() => root.hidden = store.hidden));
 		if (!Array.isArray(subFields) && typeof component === 'function') {
-			const [el, destroy] = fieldRenderer(store, component, options)
+			const [el, destroy] = fieldRenderer(store, component, options);
 			root.appendChild(el);
-			return [root, destroy];
-		}
-		if (store instanceof ArrayStore) {
-			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, editable, template, options)
+			destroyList.push(destroy);
+		} else if (store instanceof ArrayStore) {
+			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, editable, template, options);
 			root.appendChild(table);
-			return [root, destroy];
+			destroyList.push(destroy);
 		} else {
-			const [form, destroy] = Form(store, fieldRenderer, editable, Array.isArray(subFields) ? subFields : null, options)
+			const [form, destroy] = Form(store, fieldRenderer, editable, Array.isArray(subFields) ? subFields : null, options);
 			root.appendChild(form);
-			return [root, destroy];
+			destroyList.push(destroy);
 		}
+		return [root, () => {
+			for (const destroy of destroyList) {
+				destroy();
+			}
+		}];
 	}
 
 	const root = document.createElement('div');
-	root.className = "GridForm-item"
-	root.hidden = store.hidden;
+	root.className = "GridForm-item";
+	destroyList.push(effect(() => root.hidden = store.hidden));
 	const colSpan = store.meta.colSpan;
 	if (colSpan) {
 		root.style.gridColumn = `span ${colSpan}`;
 	}
-	const label = root.appendChild(document.createElement('div'))
-	label.className = 'GridForm-item-label'
-	label.innerText = store.label || '';
+	const label = root.appendChild(document.createElement('div'));
+	label.className = 'GridForm-item-label';
+	destroyList.push(effect(() => label.innerText = store.label || ''));
 
 
-	const content = root.appendChild(document.createElement('div'))
+	const content = root.appendChild(document.createElement('div'));
 	content.className = 'GridForm-item-content';
 
-	const description = root.appendChild(document.createElement('div'))
-	description.className = 'GridForm-item-description'
-	description.innerText = store.description || '';
+	const description = root.appendChild(document.createElement('div'));
+	description.className = 'GridForm-item-description';
+	destroyList.push(effect(() => description.innerText = store.description || ''));
 	if (typeof component === 'function') {
 		const [el, destroy] = fieldRenderer(store, component, options);
 		content.appendChild(el);
-		return [root, destroy];
+		destroyList.push(destroy);
 	}
-	return [root, () => {}];
+	return [root, () => {
+		for (const destroy of destroyList) {
+			destroy();
+		}
+	}];
 }
