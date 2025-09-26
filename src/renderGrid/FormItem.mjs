@@ -59,17 +59,19 @@ export default function FormItem(store, fieldRenderer, editable, layout, options
 	root.className = "NeeloongFormGrid-item";
 	destroyList.push(effect(() => root.hidden = store.hidden));
 	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout || {};
-	if (colStart) { root.style.gridColumnStart = `${colStart}`; }
-	if (colEnd) {
-		root.style.gridColumnEnd = `${colEnd}`;
+	if (colStart && colEnd) {
+		root.style.gridColumn = `${colStart} / ${colEnd}`;
+	} else if (colStart && colSpan) {
+		root.style.gridColumn = `${colStart} / span ${colSpan}`;
 	} else if (colSpan) {
-		root.style.gridColumnEnd = `span ${colSpan}`;
+		root.style.gridColumn = `span ${colSpan}`;
 	}
-	if (rowStart) { root.style.gridRowStart = `${rowStart}`; }
-	if (rowEnd) {
-		root.style.gridRowEnd = `${rowEnd}`;
+	if (rowStart && rowEnd) {
+		root.style.gridRow = `${rowStart} / ${rowEnd}`;
+	} else if (rowStart && rowSpan) {
+		root.style.gridRow = `${rowStart} / span ${rowSpan}`;
 	} else if (rowSpan) {
-		root.style.gridRowEnd = `span ${rowSpan}`;
+		root.style.gridRow = `span ${rowSpan}`;
 	}
 	const label = root.appendChild(document.createElement('div'));
 	label.className = 'NeeloongFormGrid-item-label';
