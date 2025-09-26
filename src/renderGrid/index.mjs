@@ -1,5 +1,5 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { FieldRenderer, GridFormTemplate } from './types.mjs' */
+/** @import { FieldRenderer, GridLayout } from './types.mjs' */
 import Form from './Form.mjs';
 
 /**
@@ -8,10 +8,10 @@ import Form from './Form.mjs';
  * @param {HTMLElement} root 
  * @param {FieldRenderer} fieldRenderer 
  * @param {boolean} editable 
- * @param {GridFormTemplate?} [template] 
+ * @param {GridLayout?} [layout] 
  */
-export default function (store, root, fieldRenderer, editable, template) {
-	const s = Form(store, fieldRenderer, editable, template || null, {parent: root});
+export default function (store, root, fieldRenderer, editable, layout) {
+	const s = Form(store, fieldRenderer, editable, layout || null, {parent: root});
 	return s[1];
 }
 export * from './types.mjs'

@@ -1,7 +1,7 @@
 
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { Relatedness } from '../types.mjs' */
-/** @import { FieldRenderer, GridFormItemTemplate } from './types.mjs' */
+/** @import { FieldRenderer, GridFieldLayout } from './types.mjs' */
 import { ArrayStore } from '../Store/index.mjs';
 
 import SubFieldFormItem from './Table.mjs';
@@ -13,14 +13,13 @@ import effect from '../effect.mjs';
  * @param {Store<any, any>} store 
  * @param {FieldRenderer} fieldRenderer 
  * @param {boolean} editable 
- * @param {GridFormItemTemplate?} template
+ * @param {GridFieldLayout?} layout
  * @param {object} options
  * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
  * @param {boolean} [inline]
  * @returns {[HTMLElement, () => void]}
  */
-export default function FormItem(store, fieldRenderer, editable, template, options, inline = false) {
-	const subFields = template?.subFields;
+export default function FormItem(store, fieldRenderer, editable, layout, options, inline = false) {
 	const { type, component } = store;
 	if (inline) {
 		if (component) {
@@ -36,16 +35,16 @@ export default function FormItem(store, fieldRenderer, editable, template, optio
 		const summary = root.appendChild(document.createElement('summary'));
 		destroyList.push(effect(() => summary.innerText = store.label || ''));
 		destroyList.push(effect(() => root.hidden = store.hidden));
-		if (!Array.isArray(subFields) && typeof component === 'function') {
+		if (typeof component === 'function') {
 			const [el, destroy] = fieldRenderer(store, component, options);
 			root.appendChild(el);
 			destroyList.push(destroy);
 		} else if (store instanceof ArrayStore) {
-			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, editable, template, options);
+			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, editable, layout, options);
 			root.appendChild(table);
 			destroyList.push(destroy);
 		} else {
-			const [form, destroy] = Form(store, fieldRenderer, editable, Array.isArray(subFields) ? subFields : null, options);
+			const [form, destroy] = Form(store, fieldRenderer, editable, layout, options);
 			root.appendChild(form);
 			destroyList.push(destroy);
 		}
@@ -59,7 +58,7 @@ export default function FormItem(store, fieldRenderer, editable, template, optio
 	const root = document.createElement('div');
 	root.className = "NeeloongFormGrid-item";
 	destroyList.push(effect(() => root.hidden = store.hidden));
-	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = template || {};
+	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout || {};
 	if (colStart) { root.style.gridColumnStart = `${colStart}`; }
 	if (colEnd) {
 		root.style.gridColumnEnd = `${colEnd}`;

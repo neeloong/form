@@ -1,12 +1,16 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { Relatedness } from '../types.mjs' */
 
+
 /**
- * @typedef {object} GridFormItemTemplate
+ * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial'} GridFormItemTemplateTableAction
+ */
+/**
+ * @typedef {object} GridFieldLayout
  * @property {string} field
- * @property {GridFormTemplate?} [subFields]
- * @property {number} span
- * @property {string[]} [headers]
+ * @property {GridFieldLayout[]?} [fields]
+ * @property {'header' | 'add' | 'none'} [tableFoot]
+ * @property {(string | GridFormItemTemplateTableAction[])[]} [columns]
  * @property {number} [colStart]
  * @property {number} [colSpan]
  * @property {number} [colEnd]
@@ -15,7 +19,8 @@
  * @property {number} [rowEnd]
  */
 /**
- * @typedef {GridFormItemTemplate[]} GridFormTemplate
+ * @typedef {object} GridLayout
+ * @property {GridFieldLayout[]?} [fields]
  */
 
 /**

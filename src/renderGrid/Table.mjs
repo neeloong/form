@@ -1,6 +1,6 @@
 /** @import { Store, ArrayStore } from '../Store/index.mjs' */
 /** @import { Relatedness } from '../types.mjs' */
-/** @import { FieldRenderer, GridFormItemTemplate } from './types.mjs' */
+/** @import { FieldRenderer, GridFieldLayout, GridFormItemTemplateTableAction } from './types.mjs' */
 import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
 import Line from './Line.mjs';
@@ -8,65 +8,90 @@ import Line from './Line.mjs';
 /**
  * 
  * @param {HTMLElement} parent 
- * @param {[string, any][]} columns 
+ * @param {({ field: string; width: any; label: any; } | GridFormItemTemplateTableAction[])[]} columns 
  * @param {() => any} add 
  * @param {{get(): boolean}} addable 
  * @param {boolean?} [editable] 
  */
 function renderHead(parent, columns, add, addable, editable) {
 	const tr = parent.appendChild(document.createElement('tr'));
-	const th = tr.appendChild(document.createElement('th'));
-	for (const [, { width, label }] of columns) {
-		const td = tr.appendChild(document.createElement('td'));
-		if (width) {
-			td.setAttribute('width', width);
+	/** @type {(() => void)[]} */
+	const destroyList = [];
+	for (const col of columns) {
+		if (!Array.isArray(col)) {
+			const { width, label } = col;
+				const td = tr.appendChild(document.createElement('th'));
+				if (width) {
+					td.setAttribute('width', width);
+				}
+				td.innerText = label;
+			continue;
 		}
-		td.innerText = label;
+		const th = tr.appendChild(document.createElement('th'));
+		if (!editable) { continue; }
+		for (const it of col) {
+			switch (it) {
+				case 'add':
+					const button = th.appendChild(document.createElement('button'));
+					button.addEventListener('click', add);
+					button.classList.add('NeeloongFormGrid-table-add');
+					destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
+					continue;
+			}
+		}
 	}
-	if (!editable) {
-		return () => {}
-	}
-	const button = th.appendChild(document.createElement('button'));
-	button.addEventListener('click', add);
-	button.classList.add('NeeloongFormGrid-table-add');
-	return watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true);
+	return () => {
+		for (const destroy of destroyList) {
+			destroy();
+		}
+	};
 }
 /**
  *
  * @param {ArrayStore} store
  * @param {FieldRenderer} fieldRenderer 
  * @param {boolean} editable 
- * @param {GridFormItemTemplate?} template
+ * @param {GridFieldLayout?} layout
  * @param {object} options
  * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
  * @returns {[HTMLTableElement, () => void]}
  */
-export default function Table(store, fieldRenderer, editable, template, options) {
-	const headerColumns = template?.headers
-
-	const fieldList = Object.entries(store.type || {});
-	/** @type {typeof fieldList} */
+export default function Table(store, fieldRenderer, editable, layout, options) {
+	const headerColumns = layout?.columns;
+	const fieldList = Object.entries(store.type || {})
+		.filter(([k, v]) => typeof v?.type !== 'object')
+		.map(([field, {width, label}]) => ({field, width, label}));
+	/** @type {({ field: string; width: any; label: any; } | GridFormItemTemplateTableAction[])[]} */
 	let columns = [];
-	if (headerColumns) {
-		const map = new Map(fieldList.map(v => [v[0], v]));
-		for (const c of headerColumns) {
-			const f = map.get(c);
-			if (f) { columns.push(f); }
-		}
+	if (Array.isArray(headerColumns)) {
+		const map = new Map(fieldList.map(v => [v.field, v]));
+		columns = headerColumns.map(v => {
+			if (typeof v === 'string') { return map.get(v) || [] }
+			if (!Array.isArray(v)) { return []; }
+			/** @type {Set<GridFormItemTemplateTableAction>} */
+			const options = new Set(['add', 'move', 'trigger', 'remove', 'serial']);
+			return v.filter(v => options.delete(v));
+		}).filter(v => !Array.isArray(v) || v.length)
 	}
-	if (!columns.length) { columns = fieldList.filter(([k, v]) => typeof v?.type !== 'object').slice(0, 3); }
+	if (!columns.length) {
+		columns = [['add', 'trigger', 'move', 'remove', 'serial']];
+	}
+	if (!columns.find(v => !Array.isArray(v))) {
+		columns.push(...fieldList.slice(0, 3));
+	}
+
+
 
 	const table = document.createElement('table');
-	table.className = 'NeeloongFormGrid-table'
+	table.className = 'NeeloongFormGrid-table';
 	const thead = table.appendChild(document.createElement('thead'));
 
 
-	const tfoot = table.appendChild(document.createElement('tfoot'));
 
-	const addable = new Signal.Computed(() => store.addable)
+	const addable = new Signal.Computed(() => store.addable);
 	const deletable = { get: () => editable };
 	function add() {
-		const data = {}
+		const data = {};
 		store.add(data);
 
 	}
@@ -90,7 +115,6 @@ export default function Table(store, fieldRenderer, editable, template, options)
 			dragRow = index;
 		}
 	}
-	tfoot.addEventListener('dragenter', () => {dragenter()})
 	/**
 	 * 
 	 * @param {Store} child 
@@ -103,8 +127,31 @@ export default function Table(store, fieldRenderer, editable, template, options)
 		dragRow = -1;
 
 	}
-	renderHead(thead, columns, add, addable, editable);
-	renderHead(tfoot, columns, add, addable, editable);
+	/** @type {(() => void)[]} */
+	const destroyList = [];
+	destroyList.push(renderHead(thead, columns, add, addable, editable));
+	switch (layout?.tableFoot) {
+		default:
+		case 'header': {
+			const tfoot = table.appendChild(document.createElement('tfoot'));
+			tfoot.addEventListener('dragenter', () => { dragenter(); });
+			destroyList.push(renderHead(tfoot, columns, add, addable, editable));
+			break;
+		}
+		case 'add': {
+			const tfoot = table.appendChild(document.createElement('tfoot'));
+			tfoot.addEventListener('dragenter', () => { dragenter(); });
+			const tr = tfoot.appendChild(document.createElement('tr'));
+			const th = tr.appendChild(document.createElement('th'));
+			th.colSpan = columns.length;
+			const button = th.appendChild(document.createElement('button'));
+			button.addEventListener('click', add);
+			button.classList.add('NeeloongFormGrid-table-foot-add');
+			destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
+			break;
+		}
+		case 'none':
+	}
 	const start = thead;
 	/** @type {Map<Store, [HTMLTableSectionElement, () => void]>} */
 	let seMap = new Map();
@@ -116,7 +163,7 @@ export default function Table(store, fieldRenderer, editable, template, options)
 		}
 
 	}
-	const columnNames = columns.map(([v]) => v);
+	const columnNames = columns.map((v) => Array.isArray(v) ? v : v.field);
 	const childrenResult = watch(() => store.children, function render(children) {
 		let nextNode = thead.nextSibling;
 		const oldSeMap = seMap;
@@ -124,12 +171,12 @@ export default function Table(store, fieldRenderer, editable, template, options)
 		for (let child of children) {
 			const old = oldSeMap.get(child);
 			if (!old) {
-				const [el, destroy] = Line(child, fieldRenderer, editable, template, {
+				const [el, destroy] = Line(child, fieldRenderer, editable, layout, {
 					columns: columnNames,
 					remove: remove.bind(null, child),
 					dragenter: dragenter.bind(null, child),
 					dragstart: dragstart.bind(null, child),
-					dragend,	
+					dragend,
 					deletable,
 				}, options);
 				table.insertBefore(el, nextNode);
@@ -142,7 +189,6 @@ export default function Table(store, fieldRenderer, editable, template, options)
 				nextNode = nextNode.nextSibling;
 				continue;
 			}
-			console.log(table, old[0], nextNode)
 			table.insertBefore(old[0], nextNode);
 		}
 		destroyMap(oldSeMap);
@@ -153,5 +199,8 @@ export default function Table(store, fieldRenderer, editable, template, options)
 		thead.remove();
 		destroyMap(seMap);
 		childrenResult();
+		for (const destroy of destroyList) {
+			destroy();
+		}
 	}];
 }
