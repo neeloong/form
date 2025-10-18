@@ -1,20 +1,17 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { Relatedness } from '../types.mjs' */
-/** @import { FieldRenderer, GridLayout } from './types.mjs' */
+/** @import { StoreLayout } from '../types.mjs' */
 import FormItem from './FormItem.mjs';
 
 /**
  * 
  * @param {Store<any, any>} store 
- * @param {FieldRenderer} fieldRenderer 
- * @param {boolean} editable 
- * @param {GridLayout?} layout
- * @param {object} options
- * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
- * @param {HTMLElement} [options.parent]
+ * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout?} layout
+ * @param {StoreLayout.Options?} options
+ * @param {HTMLElement} [parent]
  * @returns {[HTMLElement, () => void]}
  */
-export default function Form(store, fieldRenderer, editable, layout, {parent, relate}) {
+export default function Form(store, fieldRenderer, layout, options, parent) {
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
 	root.className = 'NeeloongFormGrid';
 	/** @type {(() => void)[]} */
@@ -24,7 +21,7 @@ export default function Form(store, fieldRenderer, editable, layout, {parent, re
 		for (const fieldTemplate of fieldLayouts) {
 			const fieldStore = store.child(fieldTemplate.field);
 			if (!fieldStore) { continue; }
-			const [el, destroy] = FormItem(fieldStore, fieldRenderer, editable, fieldTemplate, {relate});
+			const [el, destroy] = FormItem(fieldStore, fieldRenderer, fieldTemplate, options);
 			root.appendChild(el);
 			destroyList.push(destroy);
 		}
@@ -33,7 +30,7 @@ export default function Form(store, fieldRenderer, editable, layout, {parent, re
 
 
 		for (const field of fields) {
-			const [el, destroy] = FormItem(field, fieldRenderer, editable, null, {relate});
+			const [el, destroy] = FormItem(field, fieldRenderer, null, options);
 			root.appendChild(el);
 			destroyList.push(destroy);
 		}

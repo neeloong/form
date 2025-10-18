@@ -1,27 +1,40 @@
-/** @import { Store } from './Store/index.mjs' */
-import { ArrayStore } from './Store/index.mjs';
-import watch from './watch.mjs';
+/** @import { Store } from '../Store/index.mjs' */
+/** @import { StoreLayout } from '../types.mjs' */
+import Form from './Form.mjs';
+import { ArrayStore } from '../Store/index.mjs';
+import watch from '../watch.mjs';
 
 
 /**
  * 
- * @param {(store: Store<any, any>, component: any) => [HTMLElement, () => void]?} renderField 
+ * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {Store} store 
  * @param {Node} node 
+ * @param {StoreLayout.Options?} options
+ * @param {StoreLayout} [layout] 
  * @param {Node} [anchor]
  * @param {(child?: Store<any, any> | undefined) => void} [dragenter]
  */
-function render(renderField, store, node, anchor, dragenter) {
+export default function renderHtml(store, fieldRenderer, node, options, layout, anchor, dragenter) {
 	if (node instanceof Element) {
 		const tagName = node.tagName.toLowerCase();
 		if (!node.parentNode) { return () => {}; }
 		if (tagName === 'nl-form-field') {
-			const name = node.getAttribute('name') || '';
-			const fieldStore = name ? store.child(name) : store;
+			const field = node.getAttribute('name') || '';
+			const mode = node.getAttribute('mode') || '';
+			const fieldStore = field ? store.child(field) : store;
+			const fieldLayout = field ? layout?.fields?.find(v => v.field === field) || null : null;
 			if (!fieldStore) { return () => {}}
 			const component = fieldStore.component;
-			if (typeof component === 'function') {
-				const res = renderField(fieldStore, component);
+			switch (mode) {
+				case 'grid': {
+					const [el, destroy] = Form(store, fieldRenderer, fieldLayout, options);
+					node.replaceWith(el);
+					return destroy;
+				}
+			}
+			if (component) {
+				const res = fieldRenderer(fieldStore, component, options);
 				if (res) {
 					const [el, destroy] = res;
 					node.replaceWith(el);
@@ -36,12 +49,14 @@ function render(renderField, store, node, anchor, dragenter) {
 		if (name) {
 			const array = name.endsWith('[]');
 			const field = array ? name.slice(0, name.length - 2) : name;
+			const fieldLayout = field ? layout?.fields?.find(v => v.field === field) : layout;
+
 			const fieldStore = field ? store.child(field) : store;
 			if (!fieldStore) {
 				return () => {}
 			}
 			node.removeAttribute('nl-form-field');
-			if (!array) { return render(renderField, fieldStore, node, anchor, dragenter); }
+			if (!array) { return renderHtml(fieldStore, fieldRenderer, node, options, fieldLayout, anchor, dragenter); }
 			if (!(fieldStore instanceof ArrayStore)) {
 				node.remove();
 				return () => {};
@@ -87,7 +102,7 @@ function render(renderField, store, node, anchor, dragenter) {
 					const old = oldSeMap.get(child);
 					if (!old) {
 						const el = parentElement.insertBefore(node.cloneNode(true), nextNode);
-						const d = render(renderField, child, el, el, newDragenter);
+						const d = renderHtml(child, fieldRenderer, el, options, fieldLayout, el, newDragenter);
 						el.addEventListener('dragenter', () => { newDragenter(child); })
 						el.addEventListener('dragstart', (event) => {
 							if (event.target !== event.currentTarget) { return; }
@@ -150,7 +165,7 @@ function render(renderField, store, node, anchor, dragenter) {
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	for (const n of [...node.children]) {
-		destroyList.push(render(renderField, store, n, anchor, dragenter));
+		destroyList.push(renderHtml(store, fieldRenderer, n, options, layout, anchor, dragenter));
 	}
 	return () => {
 		for (const destroy of destroyList) {
@@ -158,34 +173,4 @@ function render(renderField, store, node, anchor, dragenter) {
 		}
 	}
 
-}
-/**
- * 
- * @param {string | ParentNode} [html] 
- * @param {boolean} [clone] 
- */
-function getContent(html, clone) {
-	if (!html) {
-		return document.createElement('template').content;
-	}
-	if (typeof html === 'string') {
-	const template = document.createElement('template')
-	template.innerHTML = html;
-	return template.content;
-	}
-	return clone ? html : /** @type {ParentNode} */(html.cloneNode(true));
-}
-/**
- * 
- * @param {(store: Store<any, any>, component: any) => [HTMLElement, () => void]?} renderField 
- * @param {Store} store 
- * @param {HTMLElement} root 
- * @param {string | ParentNode} [html] 
- * @param {boolean} [clone] 
- */
-export default function renderHtml(renderField, store, root, html, clone) {
-	const content = getContent(html, clone);
-	const destroy = render(renderField, store, content);
-	root.appendChild(content);
-	return destroy;
 }

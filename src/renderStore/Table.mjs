@@ -1,6 +1,5 @@
 /** @import { Store, ArrayStore } from '../Store/index.mjs' */
-/** @import { Relatedness } from '../types.mjs' */
-/** @import { FieldRenderer, GridFieldLayout, GridFormItemTemplateTableAction } from './types.mjs' */
+/** @import { StoreLayout } from '../types.mjs' */
 import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
 import Line from './Line.mjs';
@@ -8,7 +7,7 @@ import Line from './Line.mjs';
 /**
  * 
  * @param {HTMLElement} parent 
- * @param {({ field: string; width: any; label: any; } | GridFormItemTemplateTableAction[])[]} columns 
+ * @param {({ field: string; width: any; label: any; } | StoreLayout.Action[])[]} columns 
  * @param {() => any} add 
  * @param {{get(): boolean}} addable 
  * @param {boolean?} [editable] 
@@ -49,26 +48,24 @@ function renderHead(parent, columns, add, addable, editable) {
 /**
  *
  * @param {ArrayStore} store
- * @param {FieldRenderer} fieldRenderer 
- * @param {boolean} editable 
- * @param {GridFieldLayout?} layout
- * @param {object} options
- * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
+ * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Options?} options
  * @returns {[HTMLTableElement, () => void]}
  */
-export default function Table(store, fieldRenderer, editable, layout, options) {
+export default function Table(store, fieldRenderer, layout, options) {
 	const headerColumns = layout?.columns;
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
 		.map(([field, {width, label}]) => ({field, width, label}));
-	/** @type {({ field: string; width: any; label: any; } | GridFormItemTemplateTableAction[])[]} */
+	/** @type {({ field: string; width: any; label: any; } | StoreLayout.Action[])[]} */
 	let columns = [];
 	if (Array.isArray(headerColumns)) {
 		const map = new Map(fieldList.map(v => [v.field, v]));
 		columns = headerColumns.map(v => {
 			if (typeof v === 'string') { return map.get(v) || [] }
 			if (!Array.isArray(v)) { return []; }
-			/** @type {Set<GridFormItemTemplateTableAction>} */
+			/** @type {Set<StoreLayout.Action>} */
 			const options = new Set(['add', 'move', 'trigger', 'remove', 'serial']);
 			return v.filter(v => options.delete(v));
 		}).filter(v => !Array.isArray(v) || v.length)
@@ -89,7 +86,7 @@ export default function Table(store, fieldRenderer, editable, layout, options) {
 
 
 	const addable = new Signal.Computed(() => store.addable);
-	const deletable = { get: () => editable };
+	const deletable = { get: () => Boolean(options?.editable) };
 	function add() {
 		const data = {};
 		store.add(data);
@@ -129,13 +126,13 @@ export default function Table(store, fieldRenderer, editable, layout, options) {
 	}
 	/** @type {(() => void)[]} */
 	const destroyList = [];
-	destroyList.push(renderHead(thead, columns, add, addable, editable));
+	destroyList.push(renderHead(thead, columns, add, addable, Boolean(options?.editable)));
 	switch (layout?.tableFoot) {
 		default:
 		case 'header': {
 			const tfoot = table.appendChild(document.createElement('tfoot'));
 			tfoot.addEventListener('dragenter', () => { dragenter(); });
-			destroyList.push(renderHead(tfoot, columns, add, addable, editable));
+			destroyList.push(renderHead(tfoot, columns, add, addable, Boolean(options?.editable)));
 			break;
 		}
 		case 'add': {
@@ -171,7 +168,7 @@ export default function Table(store, fieldRenderer, editable, layout, options) {
 		for (let child of children) {
 			const old = oldSeMap.get(child);
 			if (!old) {
-				const [el, destroy] = Line(child, fieldRenderer, editable, layout, {
+				const [el, destroy] = Line(child, fieldRenderer, layout, {
 					columns: columnNames,
 					remove: remove.bind(null, child),
 					dragenter: dragenter.bind(null, child),

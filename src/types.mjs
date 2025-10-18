@@ -177,3 +177,36 @@
  * @property {Element?} [slot] 槽元素
  * @property {any} value 传入的默认值
  */
+
+/**
+ * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial'} StoreLayout.Action
+ */
+/**
+ * @typedef {object} StoreLayout.Field
+ * @property {string} field
+ * @property {string | ParentNode | null} [template]
+ * @property {string | ParentNode | null} [inlineTemplate]
+ * @property {StoreLayout.Field[]?} [fields]
+ * @property {'header' | 'add' | 'none'} [tableFoot]
+ * @property {(string | StoreLayout.Action[])[]} [columns]
+ * @property {number} [colStart]
+ * @property {number} [colSpan]
+ * @property {number} [colEnd]
+ * @property {number} [rowStart]
+ * @property {number} [rowSpan]
+ * @property {number} [rowEnd]
+ */
+/**
+ * @typedef {object} StoreLayout
+ * @property {string | ParentNode | null} [template]
+ * @property {StoreLayout.Field[]?} [fields]
+ */
+
+/**
+ * @typedef {object} StoreLayout.Options
+ * @property {(store: Store, el: Element | Relatedness) => () => void} [relate]
+ * @property {boolean} [editable] 
+ */
+/**
+ * @typedef {(store: Store<any, any>, component: any, options?: StoreLayout.Options | null) => [HTMLElement, () => void]?} StoreLayout.Renderer
+ */

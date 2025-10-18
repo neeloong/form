@@ -1,6 +1,5 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { Relatedness } from '../types.mjs' */
-/** @import { FieldRenderer, GridFieldLayout, GridFormItemTemplateTableAction } from './types.mjs' */
+/** @import { StoreLayout } from '../types.mjs' */
 import FormItem from './FormItem.mjs';
 import Form from './Form.mjs';
 import watch from '../watch.mjs';
@@ -8,22 +7,20 @@ import watch from '../watch.mjs';
 /**
  * 
  * @param {Store<any, any>} store 
- * @param {FieldRenderer} fieldRenderer 
- * @param {boolean} editable 
- * @param {GridFieldLayout?} layout
+ * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout.Field?} layout
  * @param {object} option 
- * @param {(string | GridFormItemTemplateTableAction[])[]} option.columns 
+ * @param {(string | StoreLayout.Action[])[]} option.columns 
  * @param {() => void} option.remove 
  * @param {() => void} option.dragenter 
  * @param {() => void} option.dragstart 
  * @param {() => void} option.dragend 
  * @param {{get(): boolean}} option.deletable 
- * @param {object} options
- * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
+ * @param {StoreLayout.Options?} options
 
  * @returns {[HTMLTableSectionElement, () => void]}
  */
-export default function Line(store, fieldRenderer, editable, layout, {
+export default function Line(store, fieldRenderer, layout, {
 	columns,
 	remove, dragenter, dragstart, dragend, deletable
 }, options) {
@@ -50,7 +47,7 @@ export default function Line(store, fieldRenderer, editable, layout, {
 		const main = body.appendChild(document.createElement('td'));
 		main.colSpan = columns.length;
 
-		const [form, destroy] = Form(store, fieldRenderer, editable, layout, options);
+		const [form, destroy] = Form(store, fieldRenderer, layout, options);
 		main.appendChild(form);
 		destroyList.push(destroy);
 		body.hidden = true;
@@ -96,7 +93,7 @@ export default function Line(store, fieldRenderer, editable, layout, {
 			const td = head.appendChild(document.createElement('td'));
 			const child = store.child(name);
 			if (!child) { continue; }
-			const [el, destroy] = FormItem(child, fieldRenderer, editable, null, options, true);
+			const [el, destroy] = FormItem(child, fieldRenderer, null, options, true);
 			destroyList.push(destroy);
 			td.appendChild(el);
 			continue;
@@ -113,7 +110,7 @@ export default function Line(store, fieldRenderer, editable, layout, {
 					continue;
 				}
 				case 'move': {
-					if (!editable) { continue; }
+					if (!options?.editable) { continue; }
 					const move = handle.appendChild(document.createElement('button'));
 					move.classList.add('NeeloongFormGrid-table-move');
 					move.addEventListener('pointerdown', pointerdown);
@@ -123,7 +120,7 @@ export default function Line(store, fieldRenderer, editable, layout, {
 					continue;
 				}
 				case 'remove': {
-					if (!editable) { continue; }
+					if (!options?.editable) { continue; }
 					const del = handle.appendChild(document.createElement('button'));
 					del.classList.add('NeeloongFormGrid-table-remove');
 					del.addEventListener('click', remove);

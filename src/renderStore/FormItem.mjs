@@ -1,31 +1,36 @@
 
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { Relatedness } from '../types.mjs' */
-/** @import { FieldRenderer, GridFieldLayout } from './types.mjs' */
+/** @import { StoreLayout } from '../types.mjs' */
 import { ArrayStore } from '../Store/index.mjs';
 
 import SubFieldFormItem from './Table.mjs';
 import Form from './Form.mjs';
 import effect from '../effect.mjs';
+import renderHtml from './renderHtml.mjs';
+import getHtmlContent from './getHtmlContent.mjs';
 
 /**
  * 
  * @param {Store<any, any>} store 
- * @param {FieldRenderer} fieldRenderer 
- * @param {boolean} editable 
- * @param {GridFieldLayout?} layout
- * @param {object} options
- * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate]
+ * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Options?} options
  * @param {boolean} [inline]
- * @returns {[HTMLElement, () => void]}
+ * @returns {[ParentNode, () => void]}
  */
-export default function FormItem(store, fieldRenderer, editable, layout, options, inline = false) {
+export default function FormItem(store, fieldRenderer, layout, options, inline = false) {
+	const template = inline ? layout?.inlineTemplate : layout?.template;
+	if (template) {
+		const content = getHtmlContent(layout?.template);
+		const fields = Object.fromEntries(layout?.fields?.map(v => [v.field, v]) || []);
+		const destroy = renderHtml(store, fieldRenderer, content, fields);
+		return [content, destroy];
+	}
 	const { type, component } = store;
 	if (inline) {
-		if (component) {
-			return fieldRenderer(store, component, options);
-		}
-		return [document.createElement('div'), () => { }];
+		return component
+			&& fieldRenderer(store, component, options)
+			|| [document.createElement('div'), () => { }];
 	}
 	/** @type {(() => void)[]} */
 	const destroyList = [];
@@ -36,15 +41,18 @@ export default function FormItem(store, fieldRenderer, editable, layout, options
 		destroyList.push(effect(() => summary.innerText = store.label || ''));
 		destroyList.push(effect(() => root.hidden = store.hidden));
 		if (typeof component === 'function') {
-			const [el, destroy] = fieldRenderer(store, component, options);
-			root.appendChild(el);
-			destroyList.push(destroy);
+			const r = fieldRenderer(store, component, options);
+			if (r) {
+				const [el, destroy] = r;
+				root.appendChild(el);
+				destroyList.push(destroy);
+			}
 		} else if (store instanceof ArrayStore) {
-			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, editable, layout, options);
+			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, layout, options);
 			root.appendChild(table);
 			destroyList.push(destroy);
 		} else {
-			const [form, destroy] = Form(store, fieldRenderer, editable, layout, options);
+			const [form, destroy] = Form(store, fieldRenderer, layout, options);
 			root.appendChild(form);
 			destroyList.push(destroy);
 		}
@@ -85,9 +93,12 @@ export default function FormItem(store, fieldRenderer, editable, layout, options
 	description.className = 'NeeloongFormGrid-item-description';
 	destroyList.push(effect(() => description.innerText = store.description || ''));
 	if (typeof component === 'function') {
-		const [el, destroy] = fieldRenderer(store, component, options);
-		content.appendChild(el);
-		destroyList.push(destroy);
+		const r = fieldRenderer(store, component, options);
+		if (r) {
+			const [el, destroy] = r;
+			content.appendChild(el);
+			destroyList.push(destroy);
+		}
 	}
 	return [root, () => {
 		for (const destroy of destroyList) {
