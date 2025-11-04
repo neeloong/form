@@ -33,7 +33,7 @@ function renderHead(parent, columns, add, addable, editable) {
 				case 'add':
 					const button = th.appendChild(document.createElement('button'));
 					button.addEventListener('click', add);
-					button.classList.add('NeeloongFormGrid-table-add');
+					button.classList.add('NeeloongForm-table-add');
 					destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
 					continue;
 			}
@@ -80,7 +80,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 
 
 	const table = document.createElement('table');
-	table.className = 'NeeloongFormGrid-table';
+	table.className = 'NeeloongForm-table';
 	const thead = table.appendChild(document.createElement('thead'));
 
 
@@ -143,7 +143,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 			th.colSpan = columns.length;
 			const button = th.appendChild(document.createElement('button'));
 			button.addEventListener('click', add);
-			button.classList.add('NeeloongFormGrid-table-foot-add');
+			button.classList.add('NeeloongForm-table-foot-add');
 			destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
 			break;
 		}

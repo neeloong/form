@@ -8,22 +8,41 @@ import Form from './Form.mjs';
 import effect from '../effect.mjs';
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
+import createGridCell from './createGridCell.mjs';
+
 
 /**
  * 
  * @param {Store<any, any>} store 
  * @param {StoreLayout.Renderer} fieldRenderer 
- * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Item?} layout
  * @param {StoreLayout.Options?} options
  * @param {boolean} [inline]
  * @returns {[ParentNode, () => void]}
  */
 export default function FormItem(store, fieldRenderer, layout, options, inline = false) {
-	const template = inline ? layout?.inlineTemplate : layout?.template;
-	if (template) {
-		const content = getHtmlContent(layout?.template);
-		const fields = Object.fromEntries(layout?.fields?.map(v => [v.field, v]) || []);
-		const destroy = renderHtml(store, fieldRenderer, content, fields);
+
+	if (layout?.type === 'button') {
+		const [root, destroyList, content] = createGridCell(layout, layout || {});
+		const button = document.createElement('button');
+		button.innerText = layout.text || '';
+		button.className = 'NeeloongForm-item-button';
+		content.appendChild(button);
+		const click = layout.click;
+		if (typeof click === 'function') {
+			button.addEventListener('click', e => click(e, store, options));
+		}
+		return [root, () => {
+			for (const destroy of destroyList) {
+				destroy();
+			}
+		}];
+	}
+
+	const html = inline ? layout?.inlineHtml : layout?.html;
+	if (html) {
+		const content = getHtmlContent(html);
+		const destroy = renderHtml(store, fieldRenderer, content, options, layout);
 		return [content, destroy];
 	}
 	const { type, component } = store;
@@ -32,9 +51,9 @@ export default function FormItem(store, fieldRenderer, layout, options, inline =
 			&& fieldRenderer(store, component, options)
 			|| [document.createElement('div'), () => { }];
 	}
-	/** @type {(() => void)[]} */
-	const destroyList = [];
 	if (type && typeof type === 'object') {
+		/** @type {(() => void)[]} */
+		const destroyList = [];
 		const root = document.createElement('details');
 		root.open = true;
 		const summary = root.appendChild(document.createElement('summary'));
@@ -63,35 +82,9 @@ export default function FormItem(store, fieldRenderer, layout, options, inline =
 		}];
 	}
 
-	const root = document.createElement('div');
-	root.className = "NeeloongFormGrid-item";
+
+	const [root, destroyList, content] = createGridCell(layout, store);
 	destroyList.push(effect(() => root.hidden = store.hidden));
-	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout || {};
-	if (colStart && colEnd) {
-		root.style.gridColumn = `${colStart} / ${colEnd}`;
-	} else if (colStart && colSpan) {
-		root.style.gridColumn = `${colStart} / span ${colSpan}`;
-	} else if (colSpan) {
-		root.style.gridColumn = `span ${colSpan}`;
-	}
-	if (rowStart && rowEnd) {
-		root.style.gridRow = `${rowStart} / ${rowEnd}`;
-	} else if (rowStart && rowSpan) {
-		root.style.gridRow = `${rowStart} / span ${rowSpan}`;
-	} else if (rowSpan) {
-		root.style.gridRow = `span ${rowSpan}`;
-	}
-	const label = root.appendChild(document.createElement('div'));
-	label.className = 'NeeloongFormGrid-item-label';
-	destroyList.push(effect(() => label.innerText = store.label || ''));
-
-
-	const content = root.appendChild(document.createElement('div'));
-	content.className = 'NeeloongFormGrid-item-content';
-
-	const description = root.appendChild(document.createElement('div'));
-	description.className = 'NeeloongFormGrid-item-description';
-	destroyList.push(effect(() => description.innerText = store.description || ''));
 	if (typeof component === 'function') {
 		const r = fieldRenderer(store, component, options);
 		if (r) {

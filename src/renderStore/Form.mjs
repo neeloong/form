@@ -1,6 +1,7 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
 import FormItem from './FormItem.mjs';
+import FormButton from './FormButton.mjs';
 
 /**
  * 
@@ -13,12 +14,18 @@ import FormItem from './FormItem.mjs';
  */
 export default function Form(store, fieldRenderer, layout, options, parent) {
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
-	root.className = 'NeeloongFormGrid';
+	root.className = 'NeeloongForm';
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const fieldLayouts = layout?.fields
 	if (fieldLayouts) {
 		for (const fieldTemplate of fieldLayouts) {
+			if (fieldTemplate.type === 'button') {
+				const [el, destroy] = FormButton(store, fieldTemplate, options);
+				root.appendChild(el);
+				destroyList.push(destroy);
+				continue;
+			}
 			const fieldStore = store.child(fieldTemplate.field);
 			if (!fieldStore) { continue; }
 			const [el, destroy] = FormItem(fieldStore, fieldRenderer, fieldTemplate, options);

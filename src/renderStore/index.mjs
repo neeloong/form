@@ -13,11 +13,10 @@ import renderHtml from './renderHtml.mjs';
  * @param {StoreLayout.Options & {clone?: boolean} | null} [options]
  */
 export default function renderStore(store, fieldRenderer, root, layout, options) {
-	const template = layout?.template;
-	if (template) {
-		const content = getHtmlContent(template);
-		const fields = Object.fromEntries(layout?.fields?.map(v => [v.field, v]) || []);
-		const destroy = renderHtml(store, fieldRenderer, content, fields);
+	const html = layout?.html;
+	if (html) {
+		const content = getHtmlContent(html);
+		const destroy = renderHtml(store, fieldRenderer, content, options || null, layout);
 		root.appendChild(content);
 		return destroy;
 	}

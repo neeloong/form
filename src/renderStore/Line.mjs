@@ -55,14 +55,14 @@ export default function Line(store, fieldRenderer, layout, {
 			if (body.hidden) {
 				body.hidden = false;
 				for (const ext of triggerList) {
-					ext.classList.remove('NeeloongFormGrid-table-line-open');
-					ext.classList.add('NeeloongFormGrid-table-line-close');
+					ext.classList.remove('NeeloongForm-table-line-open');
+					ext.classList.add('NeeloongForm-table-line-close');
 				}
 			} else {
 				body.hidden = true;
 				for (const ext of triggerList) {
-					ext.classList.remove('NeeloongFormGrid-table-line-close');
-					ext.classList.add('NeeloongFormGrid-table-line-open');
+					ext.classList.remove('NeeloongForm-table-line-close');
+					ext.classList.add('NeeloongForm-table-line-open');
 				}
 			}
 		};
@@ -99,12 +99,12 @@ export default function Line(store, fieldRenderer, layout, {
 			continue;
 		}
 		const handle = head.appendChild(document.createElement('th'));
-		handle.classList.add('NeeloongFormGrid-table-line-handle');
+		handle.classList.add('NeeloongForm-table-line-handle');
 		for (const k of name) {
 			switch (k) {
 				case 'trigger': {
 					const ext = handle.appendChild(document.createElement('button'));
-					ext.classList.add('NeeloongFormGrid-table-line-open');
+					ext.classList.add('NeeloongForm-table-line-open');
 					triggerList.push(ext);
 					ext.addEventListener('click', trigger);
 					continue;
@@ -112,7 +112,7 @@ export default function Line(store, fieldRenderer, layout, {
 				case 'move': {
 					if (!options?.editable) { continue; }
 					const move = handle.appendChild(document.createElement('button'));
-					move.classList.add('NeeloongFormGrid-table-move');
+					move.classList.add('NeeloongForm-table-move');
 					move.addEventListener('pointerdown', pointerdown);
 					destroyList.push(watch(() => store.readonly || store.disabled, disabled => {
 						move.disabled = disabled;
@@ -122,7 +122,7 @@ export default function Line(store, fieldRenderer, layout, {
 				case 'remove': {
 					if (!options?.editable) { continue; }
 					const del = handle.appendChild(document.createElement('button'));
-					del.classList.add('NeeloongFormGrid-table-remove');
+					del.classList.add('NeeloongForm-table-remove');
 					del.addEventListener('click', remove);
 					destroyList.push(watch(() => !deletable.get() || store.readonly || store.disabled, disabled => {
 						del.disabled = disabled;
@@ -131,7 +131,7 @@ export default function Line(store, fieldRenderer, layout, {
 				}
 				case 'serial': {
 					const serial = handle.appendChild(document.createElement('span'));
-					serial.classList.add('NeeloongFormGrid-table-serial');
+					serial.classList.add('NeeloongForm-table-serial');
 					continue;
 				}
 			}

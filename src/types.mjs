@@ -183,10 +183,11 @@
  */
 /**
  * @typedef {object} StoreLayout.Field
+ * @property {'field'} [type]
  * @property {string} field
- * @property {string | ParentNode | null} [template]
- * @property {string | ParentNode | null} [inlineTemplate]
- * @property {StoreLayout.Field[]?} [fields]
+ * @property {string | ParentNode | null} [html]
+ * @property {string | ParentNode | null} [inlineHtml]
+ * @property {StoreLayout.Item[]?} [fields]
  * @property {'header' | 'add' | 'none'} [tableFoot]
  * @property {(string | StoreLayout.Action[])[]} [columns]
  * @property {number} [colStart]
@@ -197,15 +198,33 @@
  * @property {number} [rowEnd]
  */
 /**
+ * @typedef {object} StoreLayout.Button
+ * @property {'button'} type
+ * @property {number} [colStart]
+ * @property {number} [colSpan]
+ * @property {number} [colEnd]
+ * @property {number} [rowStart]
+ * @property {number} [rowSpan]
+ * @property {number} [rowEnd]
+ * @property {string} [label]
+ * @property {string} [description]
+ * @property {string} [text]
+ * @property {string | ((event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [click]
+ */
+/**
+ * @typedef {StoreLayout.Field | StoreLayout.Button} StoreLayout.Item
+ */
+/**
  * @typedef {object} StoreLayout
- * @property {string | ParentNode | null} [template]
- * @property {StoreLayout.Field[]?} [fields]
+ * @property {string | ParentNode | null} [html]
+ * @property {StoreLayout.Item[]?} [fields]
  */
 
 /**
  * @typedef {object} StoreLayout.Options
  * @property {(store: Store, el: Element | Relatedness) => () => void} [relate]
  * @property {boolean} [editable] 
+ * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
  */
 /**
  * @typedef {(store: Store<any, any>, component: any, options?: StoreLayout.Options | null) => [HTMLElement, () => void]?} StoreLayout.Renderer
