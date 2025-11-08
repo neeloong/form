@@ -184,18 +184,20 @@
 /**
  * @typedef {object} StoreLayout.Field
  * @property {'field'} [type]
- * @property {string} field
- * @property {string | ParentNode | null} [html]
- * @property {string | ParentNode | null} [inlineHtml]
- * @property {StoreLayout.Item[]?} [fields]
- * @property {'header' | 'add' | 'none'} [tableFoot]
- * @property {(string | StoreLayout.Action[])[]} [columns]
  * @property {number} [colStart]
  * @property {number} [colSpan]
  * @property {number} [colEnd]
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
+ * @property {'block' | 'inline' | 'collapse' | 'base' | ''} [cell]
+ * 
+ * @property {string} field
+ * @property {string | ParentNode | null} [html]
+ * @property {string | ParentNode | null} [inlineHtml]
+ * @property {StoreLayout.Item[]?} [fields]
+ * @property {'header' | 'add' | 'none'} [tableFoot]
+ * @property {(string | StoreLayout.Action[])[]} [columns]
  */
 /**
  * @typedef {object} StoreLayout.Button
@@ -206,6 +208,8 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
+ * @property {'block' | 'inline' | 'collapse' | 'base' | ''} [cell]
+ * 
  * @property {boolean} [required]
  * @property {string} [label]
  * @property {string} [description]
@@ -221,6 +225,8 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
+ * @property {'block' | 'inline' | 'collapse' | 'content' | ''} [cell]
+ * 
  * @property {boolean} [required]
  * @property {string} [label]
  * @property {string} [description]

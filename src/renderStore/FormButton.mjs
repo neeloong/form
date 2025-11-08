@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
-import createGridCell from './createGridCell.mjs';
+import createCell from './createCell.mjs';
 
 /**
  *
@@ -9,10 +9,8 @@ import createGridCell from './createGridCell.mjs';
  * @param {StoreLayout.Options?} options
  * @returns {[ParentNode, () => void]}
  */
-
-
 export default function FormButton(store, layout, options) {
-	const [root, destroy, content] = createGridCell(layout, layout || {});
+	const [root, destroy, content] = createCell(layout, store);
 	const button = document.createElement('button');
 	button.innerText = layout.text || '';
 	button.className = 'NeeloongForm-item-button';

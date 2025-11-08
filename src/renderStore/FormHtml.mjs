@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
-import createGridCell from './createGridCell.mjs';
+import createCell from './createCell.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
 import renderHtml from './renderHtml.mjs';
 
@@ -13,7 +13,7 @@ import renderHtml from './renderHtml.mjs';
  * @returns {[ParentNode, () => void]}
  */
 export default function FormHtml(store, fieldRenderer, layout, options) {
-	const [root, destroy, content, destroyList] = createGridCell(layout, layout || {});
+	const [root, destroy, content, destroyList] = createCell(layout, store);
 	const html = layout.html;
 	if (!html) { return [root, destroy]; }
 	const htmlContent = getHtmlContent(html);
