@@ -4,7 +4,7 @@ import effect from '../effect.mjs';
 /**
  *
  * @param {StoreLayout.Item?} layout
- * @param {{label?: string | null; description?: string | null;}} [values]
+ * @param {{label?: string | null; description?: string | null; required?: boolean | null}} [values]
  * @returns {[HTMLDivElement, () => void, HTMLDivElement, (() => void)[]]}
  */
 export default function createGridCell(layout, values) {
@@ -30,6 +30,13 @@ export default function createGridCell(layout, values) {
 	const label = root.appendChild(document.createElement('div'));
 	label.className = 'NeeloongForm-item-label';
 	destroyList.push(effect(() => label.innerText = values?.label || ''));
+	destroyList.push(effect(() => {
+		if (values?.required) {
+			root.classList.add('NeeloongForm-item-required');
+		} else {
+			root.classList.remove('NeeloongForm-item-required');
+		}
+	}));
 
 
 	const content = root.appendChild(document.createElement('div'));
