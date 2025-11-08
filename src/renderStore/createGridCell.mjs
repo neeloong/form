@@ -5,7 +5,7 @@ import effect from '../effect.mjs';
  *
  * @param {StoreLayout.Item?} layout
  * @param {{label?: string | null; description?: string | null;}} [values]
- * @returns {[HTMLDivElement, (() => void)[], HTMLDivElement]}
+ * @returns {[HTMLDivElement, () => void, HTMLDivElement, (() => void)[]]}
  */
 export default function createGridCell(layout, values) {
 	/** @type {(() => void)[]} */
@@ -38,7 +38,11 @@ export default function createGridCell(layout, values) {
 	const description = root.appendChild(document.createElement('div'));
 	description.className = 'NeeloongForm-item-description';
 	destroyList.push(effect(() => description.innerText = values?.description || ''));
-	return [root, destroyList, content];
+	return [root, () => {
+		for (const destroy of destroyList) {
+			destroy();
+		}
+	}, content, destroyList];
 
 
 }

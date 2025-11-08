@@ -212,7 +212,20 @@
  * @property {string | ((event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [click]
  */
 /**
- * @typedef {StoreLayout.Field | StoreLayout.Button} StoreLayout.Item
+ * @typedef {object} StoreLayout.Html
+ * @property {'html'} type
+ * @property {number} [colStart]
+ * @property {number} [colSpan]
+ * @property {number} [colEnd]
+ * @property {number} [rowStart]
+ * @property {number} [rowSpan]
+ * @property {number} [rowEnd]
+ * @property {string} [label]
+ * @property {string} [description]
+ * @property {string | ParentNode | null} [html]
+ */
+/**
+ * @typedef {StoreLayout.Field | StoreLayout.Button | StoreLayout.Html} StoreLayout.Item
  */
 /**
  * @typedef {object} StoreLayout

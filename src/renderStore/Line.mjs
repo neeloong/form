@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
-import FormItem from './FormItem.mjs';
+import FormField from './FormField.mjs';
 import Form from './Form.mjs';
 import watch from '../watch.mjs';
 
@@ -93,7 +93,7 @@ export default function Line(store, fieldRenderer, layout, {
 			const td = head.appendChild(document.createElement('td'));
 			const child = store.child(name);
 			if (!child) { continue; }
-			const [el, destroy] = FormItem(child, fieldRenderer, null, options, true);
+			const [el, destroy] = FormField(child, fieldRenderer, null, options, true);
 			destroyList.push(destroy);
 			td.appendChild(el);
 			continue;

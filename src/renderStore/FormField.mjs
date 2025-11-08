@@ -15,30 +15,12 @@ import createGridCell from './createGridCell.mjs';
  * 
  * @param {Store<any, any>} store 
  * @param {StoreLayout.Renderer} fieldRenderer 
- * @param {StoreLayout.Item?} layout
+ * @param {StoreLayout.Field?} layout
  * @param {StoreLayout.Options?} options
  * @param {boolean} [inline]
  * @returns {[ParentNode, () => void]}
  */
-export default function FormItem(store, fieldRenderer, layout, options, inline = false) {
-
-	if (layout?.type === 'button') {
-		const [root, destroyList, content] = createGridCell(layout, layout || {});
-		const button = document.createElement('button');
-		button.innerText = layout.text || '';
-		button.className = 'NeeloongForm-item-button';
-		content.appendChild(button);
-		const click = layout.click;
-		if (typeof click === 'function') {
-			button.addEventListener('click', e => click(e, store, options));
-		}
-		return [root, () => {
-			for (const destroy of destroyList) {
-				destroy();
-			}
-		}];
-	}
-
+export default function FormField(store, fieldRenderer, layout, options, inline = false) {
 	const html = inline ? layout?.inlineHtml : layout?.html;
 	if (html) {
 		const content = getHtmlContent(html);
@@ -83,7 +65,7 @@ export default function FormItem(store, fieldRenderer, layout, options, inline =
 	}
 
 
-	const [root, destroyList, content] = createGridCell(layout, store);
+	const [root, destroy, content, destroyList] = createGridCell(layout, store);
 	destroyList.push(effect(() => root.hidden = store.hidden));
 	if (typeof component === 'function') {
 		const r = fieldRenderer(store, component, options);
@@ -93,9 +75,5 @@ export default function FormItem(store, fieldRenderer, layout, options, inline =
 			destroyList.push(destroy);
 		}
 	}
-	return [root, () => {
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	}];
+	return [root, destroy];
 }

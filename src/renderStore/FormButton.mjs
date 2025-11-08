@@ -12,7 +12,7 @@ import createGridCell from './createGridCell.mjs';
 
 
 export default function FormButton(store, layout, options) {
-	const [root, destroyList, content] = createGridCell(layout, layout || {});
+	const [root, destroy, content] = createGridCell(layout, layout || {});
 	const button = document.createElement('button');
 	button.innerText = layout.text || '';
 	button.className = 'NeeloongForm-item-button';
@@ -26,9 +26,5 @@ export default function FormButton(store, layout, options) {
 			button.addEventListener('click', e => call(click, e, store, options));
 		}
 	}
-	return [root, () => {
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	}];
+	return [root, destroy];
 }
