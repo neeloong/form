@@ -1,4 +1,5 @@
 import effect from '../effect.mjs';
+import bindErrored from './bindErrored.mjs';
 import bindRequired from './bindRequired.mjs';
 /** @import { CellValues } from './createCell.mjs' */
 
@@ -27,6 +28,7 @@ export default function createStdCell(values) {
 	const error = root.appendChild(document.createElement('div'));
 	error.className = 'NeeloongForm-item-error';
 	destroyList.push(effect(() => error.innerText = values?.error || ''));
+	destroyList.push(bindErrored(root, values));
 
 	return [root, () => {
 		for (const destroy of destroyList) {

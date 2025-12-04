@@ -1,4 +1,5 @@
 import effect from '../effect.mjs';
+import bindErrored from './bindErrored.mjs';
 import bindRequired from './bindRequired.mjs';
 /** @import { CellValues } from './createCell.mjs' */
 
@@ -13,6 +14,7 @@ export default function createNullCell(values) {
 	const root = document.createElement('div');
 	root.className = 'NeeloongForm-item';
 	destroyList.push(bindRequired(root, values));
+	destroyList.push(bindErrored(root, values));
 
 
 	return [root, () => {
