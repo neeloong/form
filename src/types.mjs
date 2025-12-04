@@ -213,7 +213,8 @@
  * @property {boolean} [required]
  * @property {string} [label]
  * @property {string} [description]
- * @property {string} [text]
+ * @property {(store: Store<any, any>, options?: StoreLayout.Options | null) => boolean} [disabled]
+ * @property {string | ((store: Store<any, any>, options?: StoreLayout.Options | null) => string)} [text]
  * @property {string | ((event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [click]
  */
 /**

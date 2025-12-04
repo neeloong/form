@@ -10,9 +10,18 @@ import createCell from './createCell.mjs';
  * @returns {[ParentNode, () => void]}
  */
 export default function FormButton(store, layout, options) {
-	const [root, destroy, content] = createCell(layout, store);
+	const [root, destroy, content, destroyList] = createCell(layout, store);
 	const button = document.createElement('button');
-	button.innerText = layout.text || '';
+	destroyList.push(() => {
+		const t = layout.text;
+		const text = typeof t === 'function' ? t(store, options) : t;
+		button.innerText = text ?? '';
+	});
+	destroyList.push(() => {
+		const d = layout.disabled;
+		const disabled = typeof d === 'function' ? d(store, options) : d;
+		button.disabled = Boolean(disabled);
+	});
 	button.className = 'NeeloongForm-item-button';
 	content.appendChild(button);
 	const click = layout.click;
