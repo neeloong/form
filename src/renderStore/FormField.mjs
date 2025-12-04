@@ -12,6 +12,7 @@ import createCollapseCell from './createCollapseCell.mjs';
 import bindGrid from './bindGrid.mjs';
 import createNullCell from './createNullCell.mjs';
 import createCell from './createCell.mjs';
+import createStdCell from './createStdCell.mjs';
 
 
 /**
@@ -68,7 +69,9 @@ export default function FormField(store, fieldRenderer, layout, options, inline 
 	}
 
 
-	const [root, destroy, content, destroyList] = createNullCell(store);
+	const [root, destroy, content, destroyList] = layout?.cell === 'base'
+		? createNullCell(store)
+		: createStdCell(store);
 	bindGrid(root, layout);
 	destroyList.push(effect(() => root.hidden = store.hidden));
 	if (typeof component === 'function') {

@@ -1,6 +1,6 @@
 /** @import { StoreLayout } from '../types.mjs' */
 import bindGrid from './bindGrid.mjs';
-import createBaseCell from './createBaseCell.mjs';
+import createStdCell from './createStdCell.mjs';
 import createCollapseCell from './createCollapseCell.mjs';
 import createNullCell from './createNullCell.mjs';
 
@@ -14,10 +14,10 @@ import createNullCell from './createNullCell.mjs';
 export default function createCell(layout, values, defCell) {
 	switch (layout.cell || defCell) {
 		default: 
-		case 'block': return createBaseCell(values);
+		case 'block': return createStdCell(values);
 		case 'collapse': return createCollapseCell(values);
 		case 'inline': {
-			const result = createBaseCell(values);
+			const result = createStdCell(values);
 			bindGrid(result[0], layout);
 			return result;
 		}

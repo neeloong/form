@@ -6,7 +6,7 @@ import bindRequired from './bindRequired.mjs';
  * @param {{label?: string | null; description?: string | null; required?: boolean | null}} [values]
  * @returns {[HTMLDivElement, () => void, HTMLDivElement, (() => void)[]]}
  */
-export default function createBaseCell(values) {
+export default function createStdCell(values) {
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const root = document.createElement('div');
