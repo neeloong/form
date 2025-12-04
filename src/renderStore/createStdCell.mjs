@@ -1,9 +1,10 @@
 import effect from '../effect.mjs';
 import bindRequired from './bindRequired.mjs';
+/** @import { CellValues } from './createCell.mjs' */
 
 /**
  *
- * @param {{label?: string | null; description?: string | null; required?: boolean | null}} [values]
+ * @param {CellValues} [values]
  * @returns {[HTMLDivElement, () => void, HTMLDivElement, (() => void)[]]}
  */
 export default function createStdCell(values) {
@@ -23,6 +24,9 @@ export default function createStdCell(values) {
 	const description = root.appendChild(document.createElement('div'));
 	description.className = 'NeeloongForm-item-description';
 	destroyList.push(effect(() => description.innerText = values?.description || ''));
+	const error = root.appendChild(document.createElement('div'));
+	error.className = 'NeeloongForm-item-error';
+	destroyList.push(effect(() => error.innerText = values?.error || ''));
 
 	return [root, () => {
 		for (const destroy of destroyList) {

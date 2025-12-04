@@ -1,9 +1,10 @@
 import effect from '../effect.mjs';
 import bindRequired from './bindRequired.mjs';
+/** @import { CellValues } from './createCell.mjs' */
 
 /**
  *
- * @param {{label?: string | null; description?: string | null; required?: boolean | null}} [values]
+ * @param {CellValues} [values]
  * @returns {[HTMLElement, () => void, HTMLElement, (() => void)[]]}
  */
 export default function createCollapseCell(values) {

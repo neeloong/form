@@ -5,9 +5,16 @@ import createCollapseCell from './createCollapseCell.mjs';
 import createNullCell from './createNullCell.mjs';
 
 /**
+ * @typedef {object} CellValues
+ * @property {string?} [label]
+ * @property {string?} [description]
+ * @property {string?} [error]
+ * @property {boolean?} [required]
+ */
+/**
  *
  * @param {StoreLayout.Item} layout
- * @param {{label?: string | null; description?: string | null; required?: boolean | null}} [values]
+ * @param {CellValues} [values]
  * @param {string?} [defCell]
  * @returns {[HTMLElement, () => void, HTMLElement, (() => void)[]]}
  */
