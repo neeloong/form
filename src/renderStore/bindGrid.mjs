@@ -3,7 +3,7 @@
 /**
  *
  * @param {HTMLElement} root
- * @param {StoreLayout.Item?} layout
+ * @param {StoreLayout.Grid?} [layout]
  */
 export default function bindGrid(root, layout) {
 	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout || {};

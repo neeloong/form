@@ -8,12 +8,23 @@ import Form from './Form.mjs';
 import effect from '../effect.mjs';
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
-import createCollapseCell from './createCollapseCell.mjs';
-import bindGrid from './bindGrid.mjs';
-import createNullCell from './createNullCell.mjs';
 import createCell from './createCell.mjs';
-import createStdCell from './createStdCell.mjs';
 
+
+/**
+ * 
+ * @param {string | ParentNode} html 
+ * @param {Store<any, any>} store 
+ * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout.Options?} options
+ * @param {StoreLayout.Field?} layout
+ * @returns 
+ */
+function Html(html, store, fieldRenderer, options, layout) {
+	const htmlContent = getHtmlContent(html);
+	const destroy = renderHtml(store, fieldRenderer, htmlContent, options, layout);
+	return [htmlContent, destroy];
+}
 
 /**
  * 
@@ -39,48 +50,22 @@ export default function FormField(store, fieldRenderer, layout, options, inline 
 	}
 	const isObject = type && typeof type === 'object';
 	const html = layout?.html;
-	if (html) {
-		const [root, destroy, content, destroyList] = createCell(layout, store, isObject ? 'collapse' : 'base');
-		const htmlContent = getHtmlContent(html);
-		destroyList.push(renderHtml(store, fieldRenderer, htmlContent, options, layout));
-		content.appendChild(htmlContent);
-		return [root, destroy];
-	}
-	if (isObject) {
-		const [root, destroy, content, destroyList] = createCollapseCell(store);
-		destroyList.push(effect(() => root.hidden = store.hidden));
-		if (typeof component === 'function') {
-			const r = fieldRenderer(store, component, options);
-			if (r) {
-				const [el, destroy] = r;
-				content.appendChild(el);
-				destroyList.push(destroy);
-			}
-		} else if (store instanceof ArrayStore) {
-			const [table, destroy] = SubFieldFormItem(store, fieldRenderer, layout, options);
-			content.appendChild(table);
-			destroyList.push(destroy);
-		} else {
-			const [form, destroy] = Form(store, fieldRenderer, layout, options);
-			content.appendChild(form);
-			destroyList.push(destroy);
-		}
-		return [root, destroy];
-	}
-
-
-	const [root, destroy, content, destroyList] = layout?.cell === 'base'
-		? createNullCell(store)
-		: createStdCell(store);
-	bindGrid(root, layout);
+	/** @type {StoreLayout.Grid['cell']} */
+	const cellType = isObject
+		? store instanceof ArrayStore ? 'collapse' : 'fieldset'
+		: html ? 'base' : 'inline';
+	const [root, destroy, content, destroyList] = createCell(layout, store, cellType, isObject);
 	destroyList.push(effect(() => root.hidden = store.hidden));
-	if (typeof component === 'function') {
-		const r = fieldRenderer(store, component, options);
-		if (r) {
-			const [el, destroy] = r;
-			content.appendChild(el);
-			destroyList.push(destroy);
-		}
+
+	const r =
+		html && Html(html, store, fieldRenderer, options, layout)
+		|| typeof component === 'function' && fieldRenderer(store, component, options)
+		|| store instanceof ArrayStore && SubFieldFormItem(store, fieldRenderer, layout, options)
+		|| isObject && Form(store, fieldRenderer, layout, options);
+	if (r) {
+		const [el, destroy] = r;
+		content.appendChild(el);
+		destroyList.push(destroy);
 	}
 	return [root, destroy];
 }

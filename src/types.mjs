@@ -182,6 +182,16 @@
  * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial'} StoreLayout.Action
  */
 /**
+ * @typedef {object} StoreLayout.Grid
+ * @property {number} [colStart]
+ * @property {number} [colSpan]
+ * @property {number} [colEnd]
+ * @property {number} [rowStart]
+ * @property {number} [rowSpan]
+ * @property {number} [rowEnd]
+ * @property {'block' | 'inline' | 'collapse' | 'fieldset' | 'base' | ''} [cell]
+ */
+/**
  * @typedef {object} StoreLayout.Field
  * @property {'field'} [type]
  * @property {number} [colStart]
@@ -190,7 +200,7 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
- * @property {'block' | 'inline' | 'collapse' | 'base' | ''} [cell]
+ * @property {StoreLayout.Grid['cell']} [cell]
  * 
  * @property {string} field
  * @property {string | ParentNode | null} [html]
@@ -208,7 +218,7 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
- * @property {'block' | 'inline' | 'collapse' | 'base' | ''} [cell]
+ * @property {StoreLayout.Grid['cell']} [cell]
  * 
  * @property {boolean} [required]
  * @property {string} [label]
@@ -226,7 +236,7 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
- * @property {'block' | 'inline' | 'collapse' | 'content' | ''} [cell]
+ * @property {StoreLayout.Grid['cell']} [cell]
  * 
  * @property {boolean} [required]
  * @property {string} [label]
