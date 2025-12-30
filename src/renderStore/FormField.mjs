@@ -3,12 +3,13 @@
 /** @import { StoreLayout } from '../types.mjs' */
 import { ArrayStore } from '../Store/index.mjs';
 
-import SubFieldFormItem from './Table.mjs';
+import Table from './Table.mjs';
 import Form from './Form.mjs';
 import effect from '../effect.mjs';
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
 import createCell from './createCell.mjs';
+import Tree from './Tree.mjs';
 
 
 /**
@@ -24,6 +25,18 @@ function Html(html, store, fieldRenderer, options, layout) {
 	const htmlContent = getHtmlContent(html);
 	const destroy = renderHtml(store, fieldRenderer, htmlContent, options, layout);
 	return [htmlContent, destroy];
+}
+
+/**
+ * 
+ * @param {StoreLayout.Field['arrayStyle']?} arrayStyle 
+ */
+function getArrayCell(arrayStyle) {
+	switch(arrayStyle) {
+		case 'tree': return Tree;
+		default: return Table;
+	}
+
 }
 
 /**
@@ -60,7 +73,7 @@ export default function FormField(store, fieldRenderer, layout, options, inline 
 	const r =
 		html && Html(html, store, fieldRenderer, options, layout)
 		|| typeof component === 'function' && fieldRenderer(store, component, options)
-		|| store instanceof ArrayStore && SubFieldFormItem(store, fieldRenderer, layout, options)
+		|| store instanceof ArrayStore && getArrayCell(layout?.arrayStyle)(store, fieldRenderer, layout, options)
 		|| isObject && Form(store, fieldRenderer, layout, options);
 	if (r) {
 		const [el, destroy] = r;

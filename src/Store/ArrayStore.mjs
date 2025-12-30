@@ -13,11 +13,11 @@ import createBooleanStates from './createBooleanStates.mjs';
  */
 export default class ArrayStore extends Store {
 	/** @type {(index: number, isNew?: boolean) => Store} */
-	#create = () => {throw new Error}
+	#create = () => { throw new Error; };
 	/** @type {Signal.State<Store[]>} */
-	#children
+	#children;
 	get children() { return [...this.#children.get()]; }
-	*[Symbol.iterator]() { return yield*[...this.#children.get().entries()]; }
+	*[Symbol.iterator]() { return yield* [...this.#children.get().entries()]; }
 	/**
 	 * 
 	 * @param {string | number} key 
@@ -41,7 +41,7 @@ export default class ArrayStore extends Store {
 	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdate] 
 	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdateState] 
 	 */
-	constructor(schema, { parent, onUpdate, onUpdateState, index, new: isNew, addable} = {}) {
+	constructor(schema, { parent, onUpdate, onUpdateState, index, new: isNew, addable } = {}) {
 		const childrenState = new Signal.State(/** @type {Store[]} */([]));
 		// @ts-ignore
 		const updateChildren = (list) => {
@@ -49,20 +49,20 @@ export default class ArrayStore extends Store {
 			const children = [...childrenState.get()];
 			const oldLength = children.length;
 			for (let i = children.length; i < length; i++) {
-					children.push(this.#create(i));
+				children.push(this.#create(i));
 			}
 			children.length = length;
 			if (oldLength !== length) {
 				childrenState.set(children);
 			}
 
-		}
+		};
 		super(schema, {
 			index, new: isNew, parent,
 			size: new Signal.Computed(() => childrenState.get().length),
 			state: [],
-			setValue(v) { return Array.isArray(v) ? v : v == null ? null : [v] },
-			setState(v) { return Array.isArray(v) ? v : v == null ? null : [v] },
+			setValue(v) { return Array.isArray(v) ? v : v == null ? null : [v]; },
+			setState(v) { return Array.isArray(v) ? v : v == null ? null : [v]; },
 			convert(v, state) {
 				const val = Array.isArray(v) ? v : v == null ? null : [v];
 				updateChildren(val);
@@ -71,7 +71,7 @@ export default class ArrayStore extends Store {
 					(Array.isArray(state) ? state : v == null ? [] : [state]),
 				];
 			},
-			onUpdate:(value, index, state) => {
+			onUpdate: (value, index, state) => {
 				updateChildren(value);
 				onUpdate?.(value, index, state);
 			},
@@ -80,13 +80,13 @@ export default class ArrayStore extends Store {
 		});
 
 		[this.#selfAddable, this.#addable] = createBooleanStates(this, addable, schema.addable ?? true);
-		
+
 		this.#children = childrenState;
 		const childCommonOptions = {
 			parent: this,
 			/** @param {*} value @param {*} index @param {Store} store */
 			onUpdate: (value, index, store) => {
-				if (childrenState.get()[index] !== store) { return;}
+				if (childrenState.get()[index] !== store) { return; }
 				const val = [...this.value || []];
 				if (val.length < index) {
 					val.length = index;
@@ -96,7 +96,7 @@ export default class ArrayStore extends Store {
 			},
 			/** @param {*} state @param {*} index @param {Store} store */
 			onUpdateState: (state, index, store) => {
-				if (childrenState.get()[index] !== store) { return;}
+				if (childrenState.get()[index] !== store) { return; }
 				const sta = [...this.state || []];
 				if (sta.length < index) {
 					sta.length = index;
@@ -104,19 +104,19 @@ export default class ArrayStore extends Store {
 				sta[index] = state;
 				this.state = sta;
 			},
-		}
-		this.#create = (index, isNew) =>  {
-			const child = create(schema, {...childCommonOptions, index, new: isNew });
+		};
+		this.#create = (index, isNew) => {
+			const child = create(schema, { ...childCommonOptions, index, new: isNew });
 			child.index = index;
-			return child
-		}
+			return child;
+		};
 	}
 
 
 	/** @readonly @type {Signal.State<boolean?>} */
-	#selfAddable
+	#selfAddable;
 	/** @readonly @type {Signal.Computed<boolean>} */
-	#addable
+	#addable;
 	get selfAddable() { return this.#selfAddable.get(); }
 	set selfAddable(v) { this.#selfAddable.set(typeof v === 'boolean' ? v : null); }
 	/** 是否禁用字段 */
@@ -196,37 +196,49 @@ export default class ArrayStore extends Store {
 	 * 
 	 * @param {number} from 
 	 * @param {number} to 
+	 * @param {number} quantity 
 	 * @returns 
 	 */
-	move(from, to) {
+	move(from, to, quantity = 1) {
+		const q = Math.floor(quantity);
+		if (q < 1) { return 0; }
+		if (from <= to && from + q > to) { return 0; }
+
 		const data = this.value;
-		if (!Array.isArray(data)) { return false; }
+		if (!Array.isArray(data)) { return 0; }
+
 		const children = [...this.#children.get()];
-		const [item] = children.splice(from, 1);
-		if (!item) { return false; }
-		children.splice(to, 0, item);
-		let lft = Math.min(from, to);
-		let rgt = Math.max(from, to);
+		const list = children.splice(from, q);
+		const len = list.length;
+		if (!len) { return 0; }
+		const toIndex = q > 1 && to > from ? to - q + 1 : to;
+		children.splice(toIndex, 0, ...list);
+
+		let lft = Math.min(from, toIndex);
+		let rgt = Math.max(from + q - 1, to);
 		for (let i = lft; i <= rgt; i++) {
 			children[i].index = i;
 		}
+
 		const val = [...data];
-		const [value] = val.splice(from, 1);
-		val.splice(to, 0, value);
+		const values = val.splice(from, len);
+		for (let i = values.length; i < len; i++) { values.push(null); }
+		while (toIndex > val.length) { val.push(null); }
+		val.splice(toIndex, 0, ...values);
+
 		const state = this.state;
 		if (Array.isArray(state)) {
 			const sta = [...state];
-			const [value = {}] = sta.splice(from, 1);
-			if (to <= sta.length) {
-				sta.splice(to, 0, value);
-			} else {
-				sta[to] = value;
-			}
+			const states = sta.splice(from, len);
+			for (let i = states.length; i < len; i++) { states.push({}); }
+			while (toIndex > sta.length) { sta.push({}); }
+			sta.splice(toIndex, 0, ...states);
+
 			this.state = sta;
 		}
 		this.#children.set(children);
 		this.value = val;
-		return true;
+		return len;
 
 	}
 	/**

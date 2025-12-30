@@ -2,7 +2,7 @@
 /** @import { StoreLayout } from '../types.mjs' */
 import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
-import Line from './Line.mjs';
+import Line from './TableLine.mjs';
 
 /**
  * 
@@ -63,6 +63,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 	if (Array.isArray(headerColumns)) {
 		const map = new Map(fieldList.map(v => [v.field, v]));
 		columns = headerColumns.map(v => {
+			if (typeof v === 'number') { return [] }
 			if (typeof v === 'string') { return map.get(v) || [] }
 			if (!Array.isArray(v)) { return []; }
 			/** @type {Set<StoreLayout.Action>} */

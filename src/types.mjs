@@ -179,7 +179,7 @@
  */
 
 /**
- * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial'} StoreLayout.Action
+ * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial' | 'open' | 'collapse'} StoreLayout.Action
  */
 /**
  * @typedef {object} StoreLayout.Grid
@@ -207,7 +207,11 @@
  * @property {string | ParentNode | null} [inlineHtml]
  * @property {StoreLayout.Item[]?} [fields]
  * @property {'header' | 'add' | 'none'} [tableFoot]
- * @property {(string | StoreLayout.Action[])[]} [columns]
+ * @property {(string | number | StoreLayout.Action[])[]} [columns]
+ * @property {'tree' | 'table'} [arrayStyle]
+ * @property {'collapse' | 'trigger' | 'open' | 'move'} [mainMethod]
+ * @property {string} [levelKey]
+ * 
  */
 /**
  * @typedef {object} StoreLayout.Button
