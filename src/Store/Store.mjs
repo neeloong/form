@@ -666,7 +666,7 @@ export default class Store {
 				});
 		}
 		const selfPath = Array.isArray(path) ? path : [];
-		const list = [this.validate().then(errors => {
+		const list = [this.validate(true).then(errors => {
 			if (!errors?.length) {return [];}
 			return [{path: [...selfPath], store: /** @type {Store} */(this), errors}]
 		})];
