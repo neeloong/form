@@ -503,7 +503,7 @@ export default class Store {
 
 
 	/** 内容是否已改变 */
-	get changed() { return this.#value.get() === this.#initValue.get(); }
+	get changed() { return Object.is(this.#value.get(), this.#initValue.get()); }
 
 	/** 字段当前值 */
 	get value() { return this.#value.get(); }
@@ -527,7 +527,7 @@ export default class Store {
 		});
 	}
 	/** 重置数据 */
-	reset(value = this.#initValue.get()) {
+	reset(value = this.#set ? this.#initValue.get() : this.#createDefault()) {
 		this.#reset(value);
 	}
 	/**
@@ -547,12 +547,13 @@ export default class Store {
 			}
 			this.#value.set(value);
 			this.#initValue.set(value);
+			this.#onUpdate?.(value, this.#index.get(), this);
 			return value;
 		}
 		/** @type {*} */
 		const newValues = Array.isArray(value) ? [...value] : { ...value };
 		for (const [key, field] of this) {
-			newValues[key] = field.#reset(newValues[key]);
+			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined);
 		}
 		this.#value.set(newValues);
 		this.#initValue.set(newValues);
@@ -571,7 +572,6 @@ export default class Store {
 		let val = this.#convert?.(value) ?? value;
 		if (val === undefined) { val = value; }
 		if (Object.is(this.#value.get(), val)) { return val; }
-		this.#value.set(val);
 		return this.#runUpdate(val);
 	}
 	/**
@@ -589,7 +589,7 @@ export default class Store {
 			let updated = false;
 			for (const [key, field] of this) {
 				// @ts-ignore
-				const data = val[key];
+				const data = Object.hasOwn(val, key) ? val[key] : undefined;
 				const newData = field.#toUpdate(data);
 				if (Object.is(data, newData)) { continue; }
 				// @ts-ignore
@@ -606,6 +606,7 @@ export default class Store {
 			this.#set = true;
 			this.#initValue.set(initValue);
 		}
+		this.#value.set(val);
 		return val;
 	}
 	/**
