@@ -14,7 +14,8 @@ export default function *toItem(val, key = '', sign = '$') {
 		yield [`${key}${sign}${k}`, {get: () => val[k]}];
 	}
 	yield [`${key}${sign}value`, {get: () => val.value, set: v => val.value = v}]
-	yield [`${key}${sign}state`, {get: () => val.state, set: v => val.state = v}]
+	/** @deprecated */
+	yield [`${key}${sign}state`, {get: () => null, set: v => {}}]
 	yield [`${key}${sign}reset`, {exec: () => val.reset()}]
 	// @ts-ignore
 	yield [`${key}${sign}validate`, {exec: v => val.validate(v ? [] : null)}]

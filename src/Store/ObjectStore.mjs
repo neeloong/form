@@ -25,22 +25,17 @@ export default class ObjectStore extends Store {
 	 * @param {number | string | null} [options.index] 
 	 * @param {boolean} [options.new] 
 	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdate] 
-	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdateState] 
 	 */
-	constructor(schema, { parent, index, new: isNew, onUpdate, onUpdateState } = {}) {
+	constructor(schema, { parent, index, new: isNew, onUpdate } = {}) {
 		const childrenTypes = Object.entries(schema.type);
 		/** @type {Record<string, Store>} */
 		const children = Object.create(null);
 		super(schema, {
-			parent, index, new: isNew, onUpdate, onUpdateState,
+			parent, index, new: isNew, onUpdate,
 			size: childrenTypes.length,
 			setValue(v) { return typeof v === 'object' ? v : null; },
-			setState(v) { return typeof v === 'object' ? v : null; },
-			convert(v, state) {
-				return [
-					typeof v === 'object' ? v : {},
-					typeof state === 'object' ? state : {},
-				];
+			convert(v) {
+				return typeof v === 'object' ? v : {};
 			},
 			default: schema.default ?? ((store, value) => {
 				const list = Object.entries(children);
@@ -58,11 +53,6 @@ export default class ObjectStore extends Store {
 				// @ts-ignore
 				this.value = { ...this.value, [index]: value };
 			},
-			/** @param {*} state @param {*} index @param {Store} store */
-			onUpdateState: (state, index, store) => {
-				if (store !== this.#children[index]) { return; }
-				this.state = { ...this.state, [index]: state };
-			}
 		};
 
 		for (const [index, field] of childrenTypes) {

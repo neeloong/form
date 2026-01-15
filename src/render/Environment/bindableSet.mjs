@@ -5,7 +5,6 @@ const bindable = {
 	kind: true,
 
 	value: true,
-	state: true,
 
 	store: true,
 	parent: true,

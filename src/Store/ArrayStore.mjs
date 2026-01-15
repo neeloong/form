@@ -39,9 +39,8 @@ export default class ArrayStore extends Store {
 	 * @param {boolean} [options.new] 
 	 * @param {boolean} [options.addable] 
 	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdate] 
-	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdateState] 
 	 */
-	constructor(schema, { parent, onUpdate, onUpdateState, index, new: isNew, addable } = {}) {
+	constructor(schema, { parent, onUpdate, index, new: isNew, addable } = {}) {
 		const childrenState = new Signal.State(/** @type {Store[]} */([]));
 		// @ts-ignore
 		const updateChildren = (list) => {
@@ -60,22 +59,16 @@ export default class ArrayStore extends Store {
 		super(schema, {
 			index, new: isNew, parent,
 			size: new Signal.Computed(() => childrenState.get().length),
-			state: [],
 			setValue(v) { return Array.isArray(v) ? v : v == null ? null : [v]; },
-			setState(v) { return Array.isArray(v) ? v : v == null ? null : [v]; },
-			convert(v, state) {
+			convert(v) {
 				const val = Array.isArray(v) ? v : v == null ? null : [v];
 				updateChildren(val);
-				return [
-					val,
-					(Array.isArray(state) ? state : v == null ? [] : [state]),
-				];
+				return val;
 			},
-			onUpdate: (value, index, state) => {
+			onUpdate: (value, index, store) => {
 				updateChildren(value);
-				onUpdate?.(value, index, state);
+				onUpdate?.(value, index, store);
 			},
-			onUpdateState,
 			default: schema.default ?? [],
 		});
 
@@ -93,16 +86,6 @@ export default class ArrayStore extends Store {
 				}
 				val[index] = value;
 				this.value = val;
-			},
-			/** @param {*} state @param {*} index @param {Store} store */
-			onUpdateState: (state, index, store) => {
-				if (childrenState.get()[index] !== store) { return; }
-				const sta = [...this.state || []];
-				if (sta.length < index) {
-					sta.length = index;
-				}
-				sta[index] = state;
-				this.state = sta;
 			},
 		};
 		this.#create = (index, isNew) => {
@@ -146,12 +129,6 @@ export default class ArrayStore extends Store {
 		}
 		const val = [...data];
 		val.splice(insertIndex, 0, item.createDefault(value));
-		const state = this.state;
-		if (Array.isArray(state)) {
-			const sta = [...state];
-			sta.splice(insertIndex, 0, {});
-			this.state = sta;
-		}
 		this.#children.set(children);
 		this.value = val;
 		return true;
@@ -181,12 +158,6 @@ export default class ArrayStore extends Store {
 		}
 		const val = [...data];
 		const [value] = val.splice(removeIndex, 1);
-		const state = this.state;
-		if (Array.isArray(state)) {
-			const sta = [...this.state];
-			sta.splice(removeIndex, 1);
-			this.state = sta;
-		}
 		this.#children.set(children);
 		this.value = val;
 		return value;
@@ -226,16 +197,6 @@ export default class ArrayStore extends Store {
 		while (toIndex > val.length) { val.push(null); }
 		val.splice(toIndex, 0, ...values);
 
-		const state = this.state;
-		if (Array.isArray(state)) {
-			const sta = [...state];
-			const states = sta.splice(from, len);
-			for (let i = states.length; i < len; i++) { states.push({}); }
-			while (toIndex > sta.length) { sta.push({}); }
-			sta.splice(toIndex, 0, ...states);
-
-			this.state = sta;
-		}
 		this.#children.set(children);
 		this.value = val;
 		return len;
@@ -263,15 +224,6 @@ export default class ArrayStore extends Store {
 		const bValue = val[b];
 		val[b] = aValue;
 		val[a] = bValue;
-		const state = this.state;
-		if (Array.isArray(state)) {
-			const sta = [...state];
-			const aValue = sta[a];
-			const bValue = sta[b];
-			sta[b] = aValue;
-			sta[a] = bValue;
-			this.state = sta;
-		}
 		this.#children.set(children);
 		this.value = val;
 		return true;

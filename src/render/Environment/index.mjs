@@ -115,6 +115,8 @@ export default class Environment {
 		const res = Object.fromEntries([...bindableSet].map(v => [
 			`$${v}`, cb => watch(() => store[v], cb, true)
 		]));
+		/** @deprecated */
+		res.$$state = cb => watch(() => null, cb, true);
 		return res;
 	}
 	/**
@@ -131,13 +133,15 @@ export default class Environment {
 		}
 		/** @type {Record<string, {get(): any; set?(v: any): void}> | void} */
 		const res = Object.fromEntries([...bindableSet].map(v => [
-			`$${v}`, v === 'value' || v === 'state' ? {
+			`$${v}`, v === 'value' ? {
 				get: () => store[v], 
 				set: (s)=>{store[v] = s}
 			} : {
 				get: () => store[v], 
 			}
 		]));
+		/** @deprecated */
+		res.$$state = { get: () => null, set: () => {} }
 		return res;
 	}
 	/**
@@ -152,7 +156,8 @@ export default class Environment {
 		if (!store) { return; }
 		switch(type) {
 			case 'value': return v => {store.value = v; };
-			case 'state': return v => {store.state = v; };
+			/** @deprecated */
+			case 'state': return v => { };
 		}
 	}
 	/**
@@ -170,7 +175,8 @@ export default class Environment {
 		}
 		return {
 			'$value': v => {store.value = v; },
-			'$state': v => {store.state = v; },
+			/** @deprecated */
+			'$state': v => { },
 			'$input': v => {store.emit('input', v); },
 			'$change': v => {store.emit('change', v); },
 			'$click': v => {store.emit('click', v); },

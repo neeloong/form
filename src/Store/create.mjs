@@ -17,7 +17,6 @@ let TypeStores = Object.create(null);
  * @param {string | number | null} [options.index] 
  * @param {boolean} [options.new] 
  * @param {(value: any, index: any, store: Store) => void} [options.onUpdate] 
- * @param {(value: any, index: any, store: Store) => void} [options.onUpdateState] 
  */
 export default function create(schema, options) {
 	const type = schema.type;
