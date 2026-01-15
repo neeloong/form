@@ -527,15 +527,17 @@ export default class Store {
 		});
 	}
 	/** 重置数据 */
-	reset(value = this.#set ? this.#initValue.get() : this.#createDefault()) {
-		this.#reset(value);
+	reset(value = this.#set ? this.#initValue.get() : this.#createDefault(), isNew = this.#selfNew.get()) {
+		this.#reset(value, Boolean(isNew));
 	}
 	/**
 	 * 
 	 * @param {*} v 
+	 * @param {boolean} isNew 
 	 * @returns 
 	 */
-	#reset(v) {
+	#reset(v, isNew) {
+		this.#selfNew.set(isNew);
 		const newValue = this.#setValue?.(v);
 		const value = newValue === undefined ? v : newValue;
 		this.#cancelChange();
@@ -543,7 +545,7 @@ export default class Store {
 		this.#set = true;
 		if (!value || typeof value !== 'object') {
 			for (const [, field] of this) {
-				field.#reset(null);
+				field.#reset(null, false);
 			}
 			this.#value.set(value);
 			this.#initValue.set(value);
@@ -553,7 +555,7 @@ export default class Store {
 		/** @type {*} */
 		const newValues = Array.isArray(value) ? [...value] : { ...value };
 		for (const [key, field] of this) {
-			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined);
+			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
 		}
 		this.#value.set(newValues);
 		this.#initValue.set(newValues);
