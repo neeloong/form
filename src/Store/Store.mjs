@@ -503,7 +503,7 @@ export default class Store {
 
 
 	/** 内容是否已改变 */
-	get changed() { return Object.is(this.#value.get(), this.#initValue.get()); }
+	get changed() { return !Object.is(this.#value.get(), this.#initValue.get()); }
 
 	/** 字段当前值 */
 	get value() { return this.#value.get(); }
