@@ -10,8 +10,8 @@ import Store from './Store.mjs';
 export default class ObjectStore extends Store {
 	get kind() { return 'object'; }
 	/** @type {Record<string, Store>} */
-	#children
-	*[Symbol.iterator]() {yield* Object.entries(this.#children);}
+	#children;
+	*[Symbol.iterator]() { yield* Object.entries(this.#children); }
 	/**
 	 * 
 	 * @param {string | number} key 
@@ -27,7 +27,7 @@ export default class ObjectStore extends Store {
 	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdate] 
 	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdateState] 
 	 */
-	constructor(schema,{ parent, index, new: isNew, onUpdate, onUpdateState } = {}) {
+	constructor(schema, { parent, index, new: isNew, onUpdate, onUpdateState } = {}) {
 		const childrenTypes = Object.entries(schema.type);
 		/** @type {Record<string, Store>} */
 		const children = Object.create(null);
@@ -40,11 +40,15 @@ export default class ObjectStore extends Store {
 				return [
 					typeof v === 'object' ? v : {},
 					typeof state === 'object' ? state : {},
-				]
+				];
 			},
-			default: schema.default ?? (() => Object.fromEntries(
-				Object.entries(children).map(([k,v]) => [k, v.createDefault()])
-			)),
+			default: schema.default ?? ((store, value) => {
+				const list = Object.entries(children);
+				let obj = value;
+				if (!obj || typeof obj !== 'object') { obj = schema.default; }
+				if (!obj || typeof obj !== 'object') { obj = {}; }
+				return Object.fromEntries(list.map(([k, v]) => [k, v.createDefault(Object.hasOwn(obj, k) ? obj[k] : null)]));
+			}),
 		});
 		const childCommonOptions = {
 			parent: this,
@@ -52,20 +56,20 @@ export default class ObjectStore extends Store {
 			onUpdate: (value, index, store) => {
 				if (store !== this.#children[index]) { return; }
 				// @ts-ignore
-				this.value = {...this.value, [index]: value};
+				this.value = { ...this.value, [index]: value };
 			},
 			/** @param {*} state @param {*} index @param {Store} store */
 			onUpdateState: (state, index, store) => {
 				if (store !== this.#children[index]) { return; }
-				this.state = {...this.state, [index]: state};
+				this.state = { ...this.state, [index]: state };
 			}
-		}
+		};
 
 		for (const [index, field] of childrenTypes) {
-			children[index] = create(field, {...childCommonOptions, index});
+			children[index] = create(field, { ...childCommonOptions, index });
 		}
 		this.#children = children;
 	}
 }
 // @ts-ignore
-setObjectStore(ObjectStore)
+setObjectStore(ObjectStore);

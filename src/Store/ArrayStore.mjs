@@ -145,7 +145,7 @@ export default class ArrayStore extends Store {
 			children[i].index = i;
 		}
 		const val = [...data];
-		val.splice(insertIndex, 0, value ?? item.createDefault());
+		val.splice(insertIndex, 0, item.createDefault(value));
 		const state = this.state;
 		if (Array.isArray(state)) {
 			const sta = [...state];

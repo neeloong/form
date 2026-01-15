@@ -82,7 +82,7 @@ export default class Store {
 	 * @param {Schema.Field<M>} schema 字段的 Schema 定义
 	 * @param {object} [options] 可选配置
 	 * @param {Store?} [options.parent] 
-	 * @param {((store: Store) => any) | any} [options.default]
+	 * @param {((store: Store, value?: any) => any) | object | number | string | boolean | null | undefined} [options.default]
 	 * @param {*} [options.state] 
 	 * @param {number | string | null} [options.index] 
 	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.size] 
@@ -234,7 +234,8 @@ export default class Store {
 		}
 	}
 	#createDefault
-	createDefault() { return this.#createDefault(); }
+	/** @param {any} [value] @returns {any} */
+	createDefault(value) { return this.#createDefault(value); }
 	/** @type {((value: any) => any)?} */
 	#setValue = null
 	/** @type {((value: any) => any)?} */

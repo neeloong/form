@@ -4,11 +4,12 @@
  * 
  * @template {Store} T 
  * @param {T} store 
- * @param {((store: T) => any) | any} def 
+ * @param {((store: T, value?: any) => any) | any} def 
+ * @returns {(value?: any) => unknown}
  */
 export default function makeDefault(store, def) {
 	if (typeof def !== 'function') {
 		return () => structuredClone(def);
 	}
-	return () => structuredClone(def(store));
+	return (value) => structuredClone(def(store, value));
 }
