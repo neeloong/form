@@ -7,7 +7,7 @@ import Line from './TableLine.mjs';
 /**
  * 
  * @param {HTMLElement} parent 
- * @param {({ field: string; width: any; label: any; } | StoreLayout.Action[])[]} columns 
+ * @param {StoreLayout.Column[]} columns 
  * @param {() => any} add 
  * @param {{get(): boolean}} addable 
  * @param {boolean?} [editable] 
@@ -16,28 +16,18 @@ function renderHead(parent, columns, add, addable, editable) {
 	const tr = parent.appendChild(document.createElement('tr'));
 	/** @type {(() => void)[]} */
 	const destroyList = [];
-	for (const col of columns) {
-		if (!Array.isArray(col)) {
-			const { width, label } = col;
-				const td = tr.appendChild(document.createElement('th'));
-				if (width) {
-					td.setAttribute('width', width);
-				}
-				td.innerText = label;
+	for (const { action, actions, width, label } of columns) {
+		const th = tr.appendChild(document.createElement('th'));
+		if (width) { th.setAttribute('width', `${width}`); }
+		if (![action, actions].flat().includes('add')) {
+			th.innerText = label || '';
 			continue;
 		}
-		const th = tr.appendChild(document.createElement('th'));
 		if (!editable) { continue; }
-		for (const it of col) {
-			switch (it) {
-				case 'add':
-					const button = th.appendChild(document.createElement('button'));
-					button.addEventListener('click', add);
-					button.classList.add('NeeloongForm-table-add');
-					destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
-					continue;
-			}
-		}
+		const button = th.appendChild(document.createElement('button'));
+		button.addEventListener('click', add);
+		button.classList.add('NeeloongForm-table-add');
+		destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
 	}
 	return () => {
 		for (const destroy of destroyList) {
@@ -57,41 +47,61 @@ export default function Table(store, fieldRenderer, layout, options) {
 	const headerColumns = layout?.columns;
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
-		.map(([field, {width, label}]) => ({field, width, label}));
-	/** @type {({ field: string; width: any; label: any; } | StoreLayout.Action[])[]} */
+		.map(([field, { width, label }]) => ({ field, width, label }));
+	/** @type {StoreLayout.Column[]} */
 	let columns = [];
 	if (Array.isArray(headerColumns)) {
 		const map = new Map(fieldList.map(v => [v.field, v]));
-		columns = headerColumns.map(v => {
-			if (typeof v === 'number') { return [] }
-			if (typeof v === 'string') { return map.get(v) || [] }
-			if (!Array.isArray(v)) { return []; }
-			/** @type {Set<StoreLayout.Action>} */
+
+		/** @type {(StoreLayout.Column | null)[]} */
+		const allColumns = headerColumns.map(v => {
+			if (!v) { return null; }
+			if (typeof v === 'number') { return { placeholder: v }; }
+			if (typeof v === 'string') { return map.get(v) || null; }
+			if (typeof v !== 'object') { return null; }
+			if (Array.isArray(v)) {
+				/** @type {Set<StoreLayout.Action>} */
+				const options = new Set(['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse']);
+				const actions = v.filter(v => options.delete(v));
+				if (!actions) { return null; }
+				return { actions };
+			}
+			const { action, actions, field, placeholder, pattern, width, label } = v;
+			if (field) {
+				const define = map.get(field);
+				if (define) {
+					return { field, placeholder, width, label: label || define.label };
+				}
+			}
 			const options = new Set(['add', 'move', 'trigger', 'remove', 'serial']);
-			return v.filter(v => options.delete(v));
-		}).filter(v => !Array.isArray(v) || v.length)
+			const allActions = [action, actions].flat().filter(v => v && options.delete(v));
+			if (allActions.length) {
+				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label };
+			}
+			// if (pattern) {
+			// 	return { pattern, placeholder, width, label };
+			// }
+			return null;
+		});
+		columns = /** @type {StoreLayout.Column[]} */(allColumns.filter(Boolean));
+
 	}
 	if (!columns.length) {
-		columns = [['add', 'trigger', 'move', 'remove', 'serial']];
+		columns = [
+			{ actions: ['add', 'trigger', 'move', 'remove', 'serial'] },
+			...fieldList.slice(0, 3),
+		];
 	}
-	if (!columns.find(v => !Array.isArray(v))) {
-		columns.push(...fieldList.slice(0, 3));
-	}
-
-
 
 	const table = document.createElement('table');
 	table.className = 'NeeloongForm-table';
 	const thead = table.appendChild(document.createElement('thead'));
-
-
 
 	const addable = new Signal.Computed(() => store.addable);
 	const deletable = { get: () => Boolean(options?.editable) };
 	function add() {
 		const data = {};
 		store.add(data);
-
 	}
 	/**
 	 * 
@@ -161,7 +171,6 @@ export default function Table(store, fieldRenderer, layout, options) {
 		}
 
 	}
-	const columnNames = columns.map((v) => Array.isArray(v) ? v : v.field);
 	const childrenResult = watch(() => store.children, function render(children) {
 		let nextNode = thead.nextSibling;
 		const oldSeMap = seMap;
@@ -170,7 +179,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 			const old = oldSeMap.get(child);
 			if (!old) {
 				const [el, destroy] = Line(child, fieldRenderer, layout, {
-					columns: columnNames,
+					columns,
 					remove: remove.bind(null, child),
 					dragenter: dragenter.bind(null, child),
 					dragstart: dragstart.bind(null, child),

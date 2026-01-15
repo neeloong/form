@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
-import FormField from './FormField.mjs';
+import FormFieldInline from './FormFieldInline.mjs';
 import Form from './Form.mjs';
 import watch from '../watch.mjs';
 
@@ -10,7 +10,7 @@ import watch from '../watch.mjs';
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
  * @param {object} option 
- * @param {(string | StoreLayout.Action[])[]} option.columns 
+ * @param {StoreLayout.Column[]} option.columns
  * @param {() => void} option.remove 
  * @param {() => void} option.dragenter 
  * @param {() => void} option.dragstart 
@@ -42,7 +42,7 @@ export default function Line(store, fieldRenderer, layout, {
 	let trigger = () => { };
 	/** @type {HTMLButtonElement[]} */
 	const triggerList = [];
-	if (columns.find(v => Array.isArray(v) && v.includes('trigger'))) {
+	if (columns.find(v => v.actions?.includes('trigger'))) {
 		const body = root.appendChild(document.createElement('tr'));
 		const main = body.appendChild(document.createElement('td'));
 		main.colSpan = columns.length;
@@ -89,18 +89,20 @@ export default function Line(store, fieldRenderer, layout, {
 	}
 
 	for (const name of columns) {
-		if (!Array.isArray(name)) {
+		const { actions, field, pattern } = name;
+		if (!actions?.length) {
 			const td = head.appendChild(document.createElement('td'));
-			const child = store.child(name);
-			if (!child) { continue; }
-			const [el, destroy] = FormField(child, fieldRenderer, null, options, true);
-			destroyList.push(destroy);
-			td.appendChild(el);
+			const child = field && store.child(field);
+			if (child) {
+				const [el, destroy] = FormFieldInline(child, fieldRenderer, null, options);
+				destroyList.push(destroy);
+				td.appendChild(el);
+			}
 			continue;
 		}
 		const handle = head.appendChild(document.createElement('th'));
 		handle.classList.add('NeeloongForm-table-line-handle');
-		for (const k of name) {
+		for (const k of actions) {
 			switch (k) {
 				case 'trigger': {
 					const ext = handle.appendChild(document.createElement('button'));

@@ -45,22 +45,10 @@ function getArrayCell(arrayStyle) {
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
  * @param {StoreLayout.Options?} options
- * @param {boolean} [inline]
  * @returns {[ParentNode, () => void]}
  */
-export default function FormField(store, fieldRenderer, layout, options, inline = false) {
+export default function FormField(store, fieldRenderer, layout, options) {
 	const { type, component } = store;
-	if (inline) {
-		const html = layout?.inlineHtml;
-		if (html) {
-			const content = getHtmlContent(html);
-			const destroy = renderHtml(store, fieldRenderer, content, options, layout);
-			return [content, destroy];
-		}
-		return component
-			&& fieldRenderer(store, component, options)
-			|| [document.createElement('div'), () => { }];
-	}
 	const isObject = type && typeof type === 'object';
 	const html = layout?.html;
 	/** @type {StoreLayout.Grid['cell']} */

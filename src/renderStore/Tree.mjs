@@ -120,26 +120,52 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
 		.map(([field, { width, label }]) => ({ field, width, label }));
-	/** @type {({ field: string; width: any; label: any; } | number | StoreLayout.Action[])[]} */
+	/** @type {StoreLayout.Column[]} */
 	let columns = [];
 	if (Array.isArray(headerColumns)) {
 		const map = new Map(fieldList.map(v => [v.field, v]));
-		columns = headerColumns.map(v => {
-			if (typeof v === 'number') { return v; }
-			if (typeof v === 'string') { return map.get(v) || []; }
-			if (!Array.isArray(v)) { return []; }
-			/** @type {Set<StoreLayout.Action>} */
+		/** @type {(StoreLayout.Column | null)[]} */
+		const allColumns = headerColumns.map(v => {
+			if (!v) { return null; }
+			if (typeof v === 'number') { return { placeholder: v }; }
+			if (typeof v === 'string') { return map.get(v) || null; }
+			if (typeof v !== 'object') { return null; }
+			if (Array.isArray(v)) {
+				/** @type {Set<StoreLayout.Action>} */
+				const options = new Set(['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse']);
+				const actions = v.filter(v => options.delete(v));
+				if (!actions) { return null; }
+				return { actions };
+			}
+			const { action, actions, field, placeholder, pattern, width, label } = v;
+			if (field) {
+				const define = map.get(field);
+				if (define) {
+					return { field, placeholder, width, label: label || define.label };
+				}
+			}
 			const options = new Set(['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse']);
-			return v.filter(v => options.delete(v));
-		}).filter(v => !Array.isArray(v) || v.length);
+			const allActions = [action, actions].flat().filter(v => v && options.delete(v));
+			if (allActions.length) {
+				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label };
+			}
+			if (pattern) {
+				return { pattern, placeholder, width, label };
+			}
+			if (placeholder || width) {
+				return { placeholder, width, label };
+			}
+			return null;
+		});
+		columns = /** @type {StoreLayout.Column[]} */(allColumns.filter(Boolean));
 	}
 	if (!columns.length) {
-		columns = [['collapse', 'move'], fieldList[0], ['add', 'remove']];
+		columns = [
+			{ actions: ['collapse', 'move'] },
+			fieldList[0],
+			{ actions: ['add', 'remove'] },
+		];
 	}
-	if (!columns.find(v => !Array.isArray(v))) {
-		columns.push(...fieldList.slice(0, 3));
-	}
-
 
 
 	const root = document.createElement('div');
@@ -413,7 +439,6 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	}
 	/** @type {State[]} */
 	const states = [];
-	const columnNames = columns.map((v) => Array.isArray(v) || typeof v === 'number' ? v : v.field);
 	const childrenResult = watch(() => store.children, function render(children) {
 		let nextNode = start.nextSibling;
 		const oldSeMap = seMap;
@@ -430,7 +455,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			const old = oldSeMap.get(child);
 			if (!old) {
 				const [el, destroy, setState] = Line(child, detailsStore, fieldRenderer, layout, state, {
-					columns: columnNames,
+					columns,
 					remove: remove.bind(null, child),
 					dragenter,
 					dragstart: dragstart.bind(null, child),

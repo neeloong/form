@@ -191,6 +191,18 @@
  * @property {number} [rowEnd]
  * @property {'block' | 'inline' | 'collapse' | 'fieldset' | 'base' | ''} [cell]
  */
+
+/**
+ * @typedef {object} StoreLayout.Column
+ * @property {StoreLayout.Action[]} [actions] 操作
+ * @property {StoreLayout.Action} [action] 操作
+ * @property {string} [field] 字段
+ * @property {number} [placeholder] 占位符
+ * @property {string} [pattern] 模式
+ * @property {number} [width] 宽度
+ * @property {string} [label] 标签
+ * 
+ */
 /**
  * @typedef {object} StoreLayout.Field
  * @property {'field'} [type]
@@ -207,7 +219,7 @@
  * @property {string | ParentNode | null} [inlineHtml]
  * @property {StoreLayout.Item[]?} [fields]
  * @property {'header' | 'add' | 'none'} [tableFoot]
- * @property {(string | number | StoreLayout.Action[])[]} [columns]
+ * @property {(string | number | StoreLayout.Action[] | StoreLayout.Column)[]} [columns]
  * @property {'tree' | 'table'} [arrayStyle]
  * @property {'collapse' | 'trigger' | 'open' | 'move'} [mainMethod]
  * @property {string} [levelKey]

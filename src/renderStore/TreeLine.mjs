@@ -1,10 +1,10 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { State } from './Tree.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
-import FormField from './FormField.mjs';
 import watch from '../watch.mjs';
 import { Signal } from 'signal-polyfill';
 import effect from '../effect.mjs';
+import FormFieldInline from './FormFieldInline.mjs';
 
 /**
  * 
@@ -14,7 +14,7 @@ import effect from '../effect.mjs';
  * @param {StoreLayout.Field?} layout
  * @param {State} initState
  * @param {object} option 
- * @param {(string | number | StoreLayout.Action[])[]} option.columns 
+ * @param {StoreLayout.Column[]} option.columns 
  * @param {() => void} option.remove 
  * @param {(el: HTMLElement) => () => void} option.dragenter 
  * @param {() => void} option.dragstart 
@@ -109,40 +109,40 @@ export default function TreeLine(
 	dropChildren.addEventListener('dragover', (e) => e.preventDefault());
 	dropFront.addEventListener('drop', () => drop());
 	dropChildren.addEventListener('drop', () => drop(true));
-	destroyList.push(effect(() => { 
-		dropFront.hidden = dropChildren.hidden = !state.get().droppable
-	 }));
+	destroyList.push(effect(() => {
+		dropFront.hidden = dropChildren.hidden = !state.get().droppable;
+	}));
 
-	let dragleave = () => {}
+	let dragleave = () => { };
 	dropFront.addEventListener('dragenter', () => dragleave = dragenter(dropFront));
 	dropChildren.addEventListener('dragenter', () => dragleave = dragenter(dropChildren));
 	dropFront.addEventListener('dragleave', () => dragleave());
 	dropChildren.addEventListener('dragleave', () => dragleave());
 
-	 dragenter
-
-	for (const name of columns) {
-		if (typeof name === 'number') {
-			const td = line.appendChild(document.createElement('div'));
-			td.classList.add('NeeloongForm-tree-placeholder');
-			td.style.flex = `${name}`;
-			if (click) { td.addEventListener('click', click); }
-			if (moveStart) { td.addEventListener('pointerdown', moveStart); }
-			continue;
-		}
-		if (!Array.isArray(name)) {
+	for (const { actions, pattern, placeholder, width, field } of columns) {
+		if (!actions?.length) {
 			const td = line.appendChild(document.createElement('div'));
 			td.classList.add('NeeloongForm-tree-cell');
-			const child = store.child(name);
-			if (!child) { continue; }
-			const [el, destroy] = FormField(child, fieldRenderer, null, { ...options, editable: false }, true);
-			destroyList.push(destroy);
-			td.appendChild(el);
 			if (click) { td.addEventListener('click', click); }
 			if (moveStart) { td.addEventListener('pointerdown', moveStart); }
+			if (field) {
+				const child = store.child(field);
+				if (!child) { continue; }
+				const [el, destroy] = FormFieldInline(child, fieldRenderer, null, { ...options, editable: false });
+				destroyList.push(destroy);
+				td.appendChild(el);
+				continue;
+			}
+			if (typeof placeholder === 'number') {
+				td.style.flex = `${placeholder}`;
+			}
+			if (typeof width === 'number') {
+				td.style.width = `${width}px`;
+			}
 			continue;
+
 		}
-		for (const k of name) {
+		for (const k of actions) {
 			switch (k) {
 				case 'trigger': {
 					const btn = line.appendChild(document.createElement('button'));
