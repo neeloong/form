@@ -59,7 +59,11 @@ export default class ArrayStore extends Store {
 		super(schema, {
 			index, new: isNew, parent,
 			size: new Signal.Computed(() => childrenState.get().length),
-			setValue(v) { return Array.isArray(v) ? v : v == null ? null : [v]; },
+			setValue(v) {
+				const val = Array.isArray(v) ? v : v == null ? null : [v];
+				updateChildren(val);
+				return val;
+			},
 			convert(v) {
 				const val = Array.isArray(v) ? v : v == null ? null : [v];
 				updateChildren(val);
