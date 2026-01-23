@@ -48,7 +48,7 @@ function getArrayCell(arrayStyle) {
  * @returns {[ParentNode, () => void]}
  */
 export default function FormField(store, fieldRenderer, layout, options) {
-	const { type, component } = store;
+	const { type } = store;
 	const isObject = type && typeof type === 'object';
 	const html = layout?.html;
 	/** @type {StoreLayout.Grid['cell']} */
@@ -60,7 +60,7 @@ export default function FormField(store, fieldRenderer, layout, options) {
 
 	const r =
 		html && Html(html, store, fieldRenderer, options, layout)
-		|| typeof component === 'function' && fieldRenderer(store, component, options)
+		|| fieldRenderer(store, options)
 		|| store instanceof ArrayStore && getArrayCell(layout?.arrayStyle)(store, fieldRenderer, layout, options)
 		|| isObject && Form(store, fieldRenderer, layout, options);
 	if (r) {

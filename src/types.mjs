@@ -275,5 +275,5 @@
  * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
  */
 /**
- * @typedef {(store: Store<any, any>, component: any, options?: StoreLayout.Options | null) => [HTMLElement, () => void]?} StoreLayout.Renderer
+ * @typedef {(store: Store<any, any>, options?: StoreLayout.Options | null) => [HTMLElement, () => void]?} StoreLayout.Renderer
  */

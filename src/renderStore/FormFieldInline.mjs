@@ -14,14 +14,11 @@ import getHtmlContent from './getHtmlContent.mjs';
  * @returns {[ParentNode, () => void]}
  */
 export default function FormFieldInline(store, fieldRenderer, layout, options) {
-	const { component } = store;
 	const html = layout?.inlineHtml;
 	if (html) {
 		const content = getHtmlContent(html);
 		const destroy = renderHtml(store, fieldRenderer, content, options, layout);
 		return [content, destroy];
 	}
-	return component
-		&& fieldRenderer(store, component, options)
-		|| [document.createElement('div'), () => { }];
+	return fieldRenderer(store, options) || [document.createElement('div'), () => { }];
 }

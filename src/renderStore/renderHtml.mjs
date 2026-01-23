@@ -53,14 +53,11 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					return destroy;
 				}
 			}
-			const component = fieldStore.component;
-			if (component) {
-				const res = fieldRenderer(fieldStore, component, options);
-				if (res) {
-					const [el, destroy] = res;
-					node.replaceWith(el);
-					return destroy;
-				}
+			const res = fieldRenderer(fieldStore, options);
+			if (res) {
+				const [el, destroy] = res;
+				node.replaceWith(el);
+				return destroy;
 			}
 			const value = node.getAttribute('placeholder') || '';
 			node.replaceWith(document.createTextNode(value));
