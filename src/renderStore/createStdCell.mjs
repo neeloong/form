@@ -12,21 +12,21 @@ export default function createStdCell(values) {
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const root = document.createElement('div');
-	root.className = 'NeeloongForm-item';
+	root.classList.add('NeeloongForm-item');
 	destroyList.push(bindRequired(root, values));
 
 	const label = root.appendChild(document.createElement('div'));
-	label.className = 'NeeloongForm-item-label';
+	label.classList.add('NeeloongForm-item-label');
 	destroyList.push(effect(() => label.innerText = values?.label || ''));
 
 	const content = root.appendChild(document.createElement('div'));
-	content.className = 'NeeloongForm-item-content';
+	content.classList.add('NeeloongForm-item-content');
 
 	const description = root.appendChild(document.createElement('div'));
-	description.className = 'NeeloongForm-item-description';
+	description.classList.add('NeeloongForm-item-description');
 	destroyList.push(effect(() => description.innerText = values?.description || ''));
 	const error = root.appendChild(document.createElement('div'));
-	error.className = 'NeeloongForm-item-error';
+	error.classList.add('NeeloongForm-item-error');
 	destroyList.push(effect(() => error.innerText = values?.error || ''));
 	destroyList.push(bindErrored(root, values));
 

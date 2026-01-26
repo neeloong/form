@@ -169,13 +169,13 @@ export default function Tree(store, fieldRenderer, layout, options) {
 
 
 	const root = document.createElement('div');
-	root.className = 'NeeloongForm-tree';
+	root.classList.add('NeeloongForm-tree');
 	const main = root.appendChild(document.createElement('div'));
-	main.className = 'NeeloongForm-tree-main';
+	main.classList.add('NeeloongForm-tree-main');
 	const splitter = root.appendChild(document.createElement('div'));
-	splitter.className = 'NeeloongForm-tree-splitter';
+	splitter.classList.add('NeeloongForm-tree-splitter');
 	const details = root.appendChild(document.createElement('div'));
-	details.className = 'NeeloongForm-tree-details';
+	details.classList.add('NeeloongForm-tree-details');
 	splitter.hidden = true;
 	details.hidden = true;
 	/** @type {number?} */

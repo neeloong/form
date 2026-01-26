@@ -65,7 +65,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 		}
 		if (tagName === 'nl-form-button') {
 			const button = document.createElement('button');
-			button.className = 'NeeloongForm-item-button';
+			button.classList.add('NeeloongForm-item-button');
 			const click = node.getAttribute('click') || '';
 			const call = options?.call;
 			if (click && typeof call === 'function') {

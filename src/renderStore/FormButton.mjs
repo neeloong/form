@@ -22,7 +22,7 @@ export default function FormButton(store, layout, options) {
 		const disabled = typeof d === 'function' ? d(store, options) : d;
 		button.disabled = Boolean(disabled);
 	});
-	button.className = 'NeeloongForm-item-button';
+	button.classList.add('NeeloongForm-item-button');
 	content.appendChild(button);
 	const click = layout.click;
 	if (typeof click === 'function') {

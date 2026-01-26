@@ -94,7 +94,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 	}
 
 	const table = document.createElement('table');
-	table.className = 'NeeloongForm-table';
+	table.classList.add('NeeloongForm-table');
 	const thead = table.appendChild(document.createElement('thead'));
 
 	const addable = new Signal.Computed(() => store.addable);

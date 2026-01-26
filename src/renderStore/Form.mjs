@@ -37,7 +37,7 @@ function FormItem(store, fieldRenderer, item, options) {
  */
 export default function Form(store, fieldRenderer, layout, options, parent) {
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
-	root.className = 'NeeloongForm';
+	root.classList.add('NeeloongForm');
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const fieldLayouts = layout?.fields;

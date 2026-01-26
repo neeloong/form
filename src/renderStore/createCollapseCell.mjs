@@ -12,7 +12,7 @@ export default function createCollapseCell(values) {
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const root = document.createElement('details');
-	root.className = 'NeeloongForm-item';
+	root.classList.add('NeeloongForm-item');
 	destroyList.push(bindRequired(root, values));
 
 	root.open = true;

@@ -12,7 +12,7 @@ export default function createNullCell(values) {
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const root = document.createElement('div');
-	root.className = 'NeeloongForm-item';
+	root.classList.add('NeeloongForm-item');
 	destroyList.push(bindRequired(root, values));
 	destroyList.push(bindErrored(root, values));
 

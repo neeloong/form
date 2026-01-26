@@ -12,7 +12,7 @@ export default function createFieldsetCell(values) {
 	/** @type {(() => void)[]} */
 	const destroyList = [];
 	const root = document.createElement('fieldset');
-	root.className = 'NeeloongForm-item';
+	root.classList.add('NeeloongForm-item');
 	destroyList.push(bindRequired(root, values));
 
 	const legend = root.appendChild(document.createElement('legend'));
