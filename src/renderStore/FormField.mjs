@@ -19,22 +19,26 @@ import Tree from './Tree.mjs';
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Options?} options
  * @param {StoreLayout.Field?} layout
- * @returns 
+ * @returns {ParentNode}
  */
 function Html(html, store, fieldRenderer, options, layout) {
 	const htmlContent = getHtmlContent(html);
-	const destroy = renderHtml(store, fieldRenderer, htmlContent, options, layout);
-	return [htmlContent, destroy];
+	renderHtml(store, fieldRenderer, htmlContent, options, layout);
+	return htmlContent;
 }
-
 /**
  * 
  * @param {StoreLayout.Field['arrayStyle']?} arrayStyle 
+ * @param {ArrayStore} store
+ * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Options?} options
+ * @returns {HTMLElement?}
  */
-function getArrayCell(arrayStyle) {
-	switch(arrayStyle) {
-		case 'tree': return Tree;
-		default: return Table;
+function renderArrayCell(arrayStyle, store, fieldRenderer, layout, options) {
+	switch (arrayStyle) {
+		case 'tree': return Tree(store, fieldRenderer, layout, options);
+		default: return Table(store, fieldRenderer, layout, options);
 	}
 
 }
@@ -45,28 +49,27 @@ function getArrayCell(arrayStyle) {
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
  * @param {StoreLayout.Options?} options
- * @returns {[ParentNode, () => void]}
+ * @returns {ParentNode}
  */
 export default function FormField(store, fieldRenderer, layout, options) {
 	const { type } = store;
-	const isObject = type && typeof type === 'object';
+	const isObject = Boolean(type && typeof type === 'object');
 	const html = layout?.html;
 	/** @type {StoreLayout.Grid['cell']} */
 	const cellType = isObject
 		? store instanceof ArrayStore ? 'collapse' : 'fieldset'
 		: html ? 'base' : 'inline';
-	const [root, destroy, content, destroyList] = createCell(layout, store, cellType, isObject);
-	destroyList.push(effect(() => root.hidden = store.hidden));
+	const [root, content] = createCell(options?.signal, layout, store, cellType, isObject);
+	effect(() => root.hidden = store.hidden, options?.signal);
 
+	/** @type {false | ParentNode | null} */
 	const r =
 		html && Html(html, store, fieldRenderer, options, layout)
 		|| fieldRenderer(store, options)
-		|| store instanceof ArrayStore && getArrayCell(layout?.arrayStyle)(store, fieldRenderer, layout, options)
+		|| store instanceof ArrayStore && renderArrayCell(layout?.arrayStyle, store, fieldRenderer, layout, options)
 		|| isObject && Form(store, fieldRenderer, layout, options);
 	if (r) {
-		const [el, destroy] = r;
-		content.appendChild(el);
-		destroyList.push(destroy);
+		content.appendChild(r);
 	}
-	return [root, destroy];
+	return root;
 }

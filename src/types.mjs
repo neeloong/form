@@ -272,8 +272,9 @@
  * @typedef {object} StoreLayout.Options
  * @property {(store: Store, el: Element | Relatedness) => () => void} [relate]
  * @property {boolean} [editable] 
+ * @property {AbortSignal} [signal] 
  * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
  */
 /**
- * @typedef {(store: Store<any, any>, options?: StoreLayout.Options | null) => [HTMLElement, () => void]?} StoreLayout.Renderer
+ * @typedef {(store: Store<any, any>, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
  */

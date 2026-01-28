@@ -113,9 +113,10 @@ function createState(store, states, drag, levelKey, index) {
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
  * @param {StoreLayout.Options?} options
- * @returns {[HTMLElement, () => void]}
+ * @returns {HTMLElement?}
  */
 export default function Tree(store, fieldRenderer, layout, options) {
+	if (options?.signal?.aborted) { return null; }
 	const headerColumns = layout?.columns;
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
@@ -239,37 +240,45 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	});
 
 
-	/** @type {(() => void)[]} */
-	const destroyList = [];
-	let destroyDetails = () => { };
+	/** @type {AbortController?} */
+	let detailAbortController = null;
 	const detailsStore = new Signal.State(/** @type{Store<any, any>?}*/(null));
-	let destroyed = false;
 	/**
 	 * 
 	 * @param {Store<any, any>} store 
 	 * @returns 
 	 */
 	function createDetails(store) {
-		if (detailsStore.get() === store) { return destroyDetails; }
-		if (destroyed) { return () => { }; }
-		destroyDetails();
+		if (options?.signal?.aborted) { return () => { }; }
+		if (detailsStore.get() === store && detailAbortController) {
+			const ac = detailAbortController;
+			return () => { ac.abort(); };
+		}
+		detailAbortController?.abort();
 		detailsStore.set(store);
-		const [form, destroy] = Form(store, fieldRenderer, layout, options);
-		details.appendChild(form);
-		details.hidden = false;
-		splitter.hidden = false;
-		let done = false;
-		destroyDetails = () => {
-			if (done) { return; }
-			done = true;
+		const ac = new AbortController();
+		detailAbortController = ac;
+		const signal = options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal;
+		const form = Form(store, fieldRenderer, layout, {
+			...options,
+			signal: options?.signal ? AbortSignal.any([options?.signal, signal]) : signal,
+		});
+		signal.addEventListener('abort', () => {
 			detailsStore.set(null);
-			form.remove();
-			destroy();
 			stopMove();
-			splitter.hidden = true;
-			details.hidden = true;
-		};
-		return destroyDetails;
+		}, { once: true });
+		if (form) {
+			details.appendChild(form);
+			details.hidden = false;
+			splitter.hidden = false;
+			signal.addEventListener('abort', () => {
+				form.remove();
+				splitter.hidden = true;
+				details.hidden = true;
+			}, { once: true });
+
+		}
+		return () => { ac.abort(); };
 
 	}
 
@@ -405,7 +414,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		const button = main.appendChild(document.createElement('button'));
 		button.addEventListener('click', () => addNode(-1));
 		button.classList.add('NeeloongForm-tree-head-add');
-		destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
+		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, options.signal);
 	}
 	const start = main.appendChild(document.createComment(''));
 	if (options?.editable) {
@@ -425,21 +434,13 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		dropFront.addEventListener('drop', () => drop());
 
 
-		destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
+		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, options.signal);
 	}
-	/** @type {Map<Store, [HTMLElement, () => void, (s: State) => void]>} */
+	/** @type {Map<Store, [tbody: HTMLElement, AbortController, (s: State) => void]>} */
 	let seMap = new Map();
-	/** @param {Map<Store, [tbody: HTMLElement, destroy: () => void, (s: State) => void]>} map */
-	function destroyMap(map) {
-		for (const [el, destroy] of map.values()) {
-			destroy();
-			el.remove();
-		}
-
-	}
 	/** @type {State[]} */
 	const states = [];
-	const childrenResult = watch(() => store.children, function render(children) {
+	watch(() => store.children, children => {
 		let nextNode = start.nextSibling;
 		const oldSeMap = seMap;
 		seMap = new Map();
@@ -454,7 +455,9 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			const state = states[i];
 			const old = oldSeMap.get(child);
 			if (!old) {
-				const [el, destroy, setState] = Line(child, detailsStore, fieldRenderer, layout, state, {
+				const elState = new Signal.State(state);
+				const ac = new AbortController();
+				const el = Line(child, detailsStore, fieldRenderer, layout, elState, {
 					columns,
 					remove: remove.bind(null, child),
 					dragenter,
@@ -464,9 +467,12 @@ export default function Tree(store, fieldRenderer, layout, options) {
 					addNode: () => addNode(Number(child.index)),
 					createDetails,
 					drop: drop.bind(null, child),
-				}, options);
+				}, {
+					...options,
+					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
+				});
 				main.insertBefore(el, nextNode);
-				seMap.set(child, [el, destroy, setState]);
+				seMap.set(child, [el, ac, s => elState.set(s)]);
 				continue;
 			}
 			oldSeMap.delete(child);
@@ -479,16 +485,11 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			main.insertBefore(old[0], nextNode);
 		}
 		states.splice(childrenLength);
-		destroyMap(oldSeMap);
-	}, true);
+			for (const [el, ac] of oldSeMap.values()) {
+				el.remove();
+				ac.abort();
+			}
+	}, true, options?.signal);
 
-	return [root, () => {
-		start.remove();
-		destroyMap(seMap);
-		childrenResult();
-		destroyDetails?.();
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	}];
+	return root;
 }

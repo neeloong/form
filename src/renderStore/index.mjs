@@ -11,15 +11,19 @@ import renderHtml from './renderHtml.mjs';
  * @param {HTMLElement} root 
  * @param {StoreLayout?} [layout] 
  * @param {StoreLayout.Options & {clone?: boolean} | null} [options]
+ * @returns {void}
  */
 export default function renderStore(store, fieldRenderer, root, layout, options) {
+	if (options?.signal?.aborted) { return; }
 	const html = layout?.html;
-	if (html) {
-		const content = getHtmlContent(html);
-		const destroy = renderHtml(store, fieldRenderer, content, options || null, layout);
-		root.appendChild(content);
-		return destroy;
+	if (!html) {
+		Form(store, fieldRenderer, layout || null, options || null, root);
+		return;
 	}
-	const s = Form(store, fieldRenderer, layout || null, options || null, root);
-	return s[1];
+	const content = getHtmlContent(html);
+	renderHtml(store, fieldRenderer, content, options || null, layout);
+	root.appendChild(content);
+	options?.signal?.addEventListener('abort', () => {
+		root.removeChild(content);
+	}, { once: true });
 }

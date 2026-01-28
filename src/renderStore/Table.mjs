@@ -6,16 +6,16 @@ import Line from './TableLine.mjs';
 
 /**
  * 
+ * @param {AbortSignal | null | undefined} signal 
  * @param {HTMLElement} parent 
  * @param {StoreLayout.Column[]} columns 
  * @param {() => any} add 
  * @param {{get(): boolean}} addable 
  * @param {boolean?} [editable] 
+ * @returns {void}
  */
-function renderHead(parent, columns, add, addable, editable) {
+function renderHead(signal, parent, columns, add, addable, editable) {
 	const tr = parent.appendChild(document.createElement('tr'));
-	/** @type {(() => void)[]} */
-	const destroyList = [];
 	for (const { action, actions, width, label } of columns) {
 		const th = tr.appendChild(document.createElement('th'));
 		if (width) { th.setAttribute('width', `${width}`); }
@@ -27,13 +27,8 @@ function renderHead(parent, columns, add, addable, editable) {
 		const button = th.appendChild(document.createElement('button'));
 		button.addEventListener('click', add);
 		button.classList.add('NeeloongForm-table-add');
-		destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
+		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, signal);
 	}
-	return () => {
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	};
 }
 /**
  *
@@ -41,9 +36,10 @@ function renderHead(parent, columns, add, addable, editable) {
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
  * @param {StoreLayout.Options?} options
- * @returns {[HTMLTableElement, () => void]}
+ * @returns {HTMLTableElement?}
  */
 export default function Table(store, fieldRenderer, layout, options) {
+	if (options?.signal?.aborted) { return null; }
 	const headerColumns = layout?.columns;
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
@@ -135,15 +131,13 @@ export default function Table(store, fieldRenderer, layout, options) {
 		dragRow = -1;
 
 	}
-	/** @type {(() => void)[]} */
-	const destroyList = [];
-	destroyList.push(renderHead(thead, columns, add, addable, Boolean(options?.editable)));
+	renderHead(options?.signal, thead, columns, add, addable, Boolean(options?.editable));
 	switch (layout?.tableFoot) {
 		default:
 		case 'header': {
 			const tfoot = table.appendChild(document.createElement('tfoot'));
 			tfoot.addEventListener('dragenter', () => { dragenter(); });
-			destroyList.push(renderHead(tfoot, columns, add, addable, Boolean(options?.editable)));
+			renderHead(options?.signal, tfoot, columns, add, addable, Boolean(options?.editable));
 			break;
 		}
 		case 'add': {
@@ -155,39 +149,34 @@ export default function Table(store, fieldRenderer, layout, options) {
 			const button = th.appendChild(document.createElement('button'));
 			button.addEventListener('click', add);
 			button.classList.add('NeeloongForm-table-foot-add');
-			destroyList.push(watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true));
+			watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, options?.signal);
 			break;
 		}
 		case 'none':
 	}
-	const start = thead;
-	/** @type {Map<Store, [HTMLTableSectionElement, () => void]>} */
+	/** @type {Map<Store, [HTMLTableSectionElement, AbortController]>} */
 	let seMap = new Map();
-	/** @param {Map<Store, [tbody: HTMLTableSectionElement, destroy: () => void]>} map */
-	function destroyMap(map) {
-		for (const [el, destroy] of map.values()) {
-			destroy();
-			el.remove();
-		}
-
-	}
-	const childrenResult = watch(() => store.children, function render(children) {
+	watch(() => store.children, children => {
 		let nextNode = thead.nextSibling;
 		const oldSeMap = seMap;
 		seMap = new Map();
 		for (let child of children) {
 			const old = oldSeMap.get(child);
 			if (!old) {
-				const [el, destroy] = Line(child, fieldRenderer, layout, {
+				const ac = new AbortController();
+				const el = Line(child, fieldRenderer, layout, {
 					columns,
 					remove: remove.bind(null, child),
 					dragenter: dragenter.bind(null, child),
 					dragstart: dragstart.bind(null, child),
 					dragend,
 					deletable,
-				}, options);
+				}, {
+					...options,
+					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
+				});
 				table.insertBefore(el, nextNode);
-				seMap.set(child, [el, destroy]);
+				seMap.set(child, [el, ac]);
 				continue;
 			}
 			oldSeMap.delete(child);
@@ -198,16 +187,11 @@ export default function Table(store, fieldRenderer, layout, options) {
 			}
 			table.insertBefore(old[0], nextNode);
 		}
-		destroyMap(oldSeMap);
-	}, true);
-
-	return [table, () => {
-		start.remove();
-		thead.remove();
-		destroyMap(seMap);
-		childrenResult();
-		for (const destroy of destroyList) {
-			destroy();
+		for (const [el, ac] of oldSeMap.values()) {
+			el.remove();
+			ac.abort();
 		}
-	}];
+	}, true, options?.signal);
+
+	return table;
 }

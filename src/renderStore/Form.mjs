@@ -10,7 +10,7 @@ import FormHtml from './FormHtml.mjs';
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Item} item
  * @param {StoreLayout.Options?} options
- * @returns {[ParentNode, () => void]?}
+ * @returns {ParentNode?}
  */
 function FormItem(store, fieldRenderer, item, options) {
 	if (item.type === 'button') {
@@ -33,34 +33,25 @@ function FormItem(store, fieldRenderer, item, options) {
  * @param {StoreLayout?} layout
  * @param {StoreLayout.Options?} options
  * @param {HTMLElement} [parent]
- * @returns {[HTMLElement, () => void]}
+ * @returns {HTMLElement?}
  */
 export default function Form(store, fieldRenderer, layout, options, parent) {
+	if (options?.signal?.aborted) { return null; }
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
 	root.classList.add('NeeloongForm');
-	/** @type {(() => void)[]} */
-	const destroyList = [];
 	const fieldLayouts = layout?.fields;
 	if (fieldLayouts) {
 		for (const fieldTemplate of fieldLayouts) {
-			const result = FormItem(store, fieldRenderer, fieldTemplate, options);
-			if (!result) { continue; }
-			const [el, destroy] = result;
-			root.appendChild(el);
-			destroyList.push(destroy);
+			const el = FormItem(store, fieldRenderer, fieldTemplate, options);
+			if (el) { root.appendChild(el); }
 		}
 	} else {
 		const fields = [...store].map(([, v]) => v);
 		for (const field of fields) {
-			const [el, destroy] = FormField(field, fieldRenderer, null, options);
-			root.appendChild(el);
-			destroyList.push(destroy);
+			const el = FormField(field, fieldRenderer, null, options);
+			if (el) { root.appendChild(el); }
 		}
 	}
-	return [root, () => {
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	}];
+	return root;
 
 }

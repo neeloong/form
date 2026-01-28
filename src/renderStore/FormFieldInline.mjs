@@ -11,14 +11,15 @@ import getHtmlContent from './getHtmlContent.mjs';
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
  * @param {StoreLayout.Options?} options
- * @returns {[ParentNode, () => void]}
+ * @returns {ParentNode?}
  */
 export default function FormFieldInline(store, fieldRenderer, layout, options) {
+	if (options?.signal?.aborted) { return null; }
 	const html = layout?.inlineHtml;
 	if (html) {
 		const content = getHtmlContent(html);
-		const destroy = renderHtml(store, fieldRenderer, content, options, layout);
-		return [content, destroy];
+		renderHtml(store, fieldRenderer, content, options, layout);
+		return content;
 	}
-	return fieldRenderer(store, options) || [document.createElement('div'), () => { }];
+	return fieldRenderer(store, options);
 }

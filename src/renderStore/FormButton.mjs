@@ -1,5 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../types.mjs' */
+import effect from '../effect.mjs';
 import createCell from './createCell.mjs';
 
 /**
@@ -7,21 +8,21 @@ import createCell from './createCell.mjs';
  * @param {Store<any, any>} store
  * @param {StoreLayout.Button} layout
  * @param {StoreLayout.Options?} options
- * @returns {[ParentNode, () => void]}
+ * @returns {ParentNode}
  */
 export default function FormButton(store, layout, options) {
-	const [root, destroy, content, destroyList] = createCell(layout, store);
+	const [root, content] = createCell(options?.signal, layout, store);
 	const button = document.createElement('button');
-	destroyList.push(() => {
+	effect(() => {
 		const t = layout.text;
 		const text = typeof t === 'function' ? t(store, options) : t;
 		button.innerText = text ?? '';
-	});
-	destroyList.push(() => {
+	}, options?.signal);
+	effect(() => {
 		const d = layout.disabled;
 		const disabled = typeof d === 'function' ? d(store, options) : d;
 		button.disabled = Boolean(disabled);
-	});
+	}, options?.signal);
 	button.classList.add('NeeloongForm-item-button');
 	content.appendChild(button);
 	const click = layout.click;
@@ -33,5 +34,5 @@ export default function FormButton(store, layout, options) {
 			button.addEventListener('click', e => call(click, e, store, options));
 		}
 	}
-	return [root, destroy];
+	return root;
 }

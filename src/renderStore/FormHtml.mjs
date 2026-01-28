@@ -10,14 +10,14 @@ import renderHtml from './renderHtml.mjs';
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Html} layout
  * @param {StoreLayout.Options?} options
- * @returns {[ParentNode, () => void]}
+ * @returns {ParentNode?}
  */
 export default function FormHtml(store, fieldRenderer, layout, options) {
-	const [root, destroy, content, destroyList] = createCell(layout, store);
 	const html = layout.html;
-	if (!html) { return [root, destroy]; }
+	if (!html) { return null; }
+	const [root, content] = createCell(options?.signal, layout, store);
 	const htmlContent = getHtmlContent(html);
-	destroyList.push(renderHtml(store, fieldRenderer, htmlContent, options, layout));
+	renderHtml(store, fieldRenderer, htmlContent, options, layout);
 	content.appendChild(htmlContent);
-	return [root, destroy];
+	return root;
 }

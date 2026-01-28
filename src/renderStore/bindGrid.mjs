@@ -4,6 +4,7 @@
  *
  * @param {HTMLElement} root
  * @param {StoreLayout.Grid?} [layout]
+ * @returns {void}
  */
 export default function bindGrid(root, layout) {
 	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout || {};
@@ -22,8 +23,4 @@ export default function bindGrid(root, layout) {
 	} else if (rowSpan) {
 		root.style.gridRow = `span ${rowSpan}`;
 	}
-
-
-
-
 }

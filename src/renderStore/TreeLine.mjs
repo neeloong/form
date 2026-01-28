@@ -12,7 +12,7 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {Signal.State<Store<any, any>?>} currentStore 
  * @param {StoreLayout.Renderer} fieldRenderer 
  * @param {StoreLayout.Field?} layout
- * @param {State} initState
+ * @param {Signal.State<State>} state
  * @param {object} option 
  * @param {StoreLayout.Column[]} option.columns 
  * @param {() => void} option.remove 
@@ -24,15 +24,13 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {() => void} option.addNode 
  * @param {(store: Store<any, any>) => () => void} option.createDetails 
  * @param {StoreLayout.Options?} options
-
- * @returns {[HTMLElement, () => void, (s: State) => void]}
+ * @returns {HTMLElement}
  */
 export default function TreeLine(
-	store, currentStore, fieldRenderer, layout, initState, {
+	store, currentStore, fieldRenderer, layout, state, {
 		columns,
 		remove, dragenter, dragstart, dragend, deletable, addNode, drop, createDetails,
 	}, options) {
-	const state = new Signal.State(initState);
 	const root = document.createElement('div');
 	root.addEventListener('dragstart', (event) => {
 		if (event.target !== event.currentTarget) { return; }
@@ -40,23 +38,21 @@ export default function TreeLine(
 	});
 	root.addEventListener('dragend', dragend);
 
-	/** @type {(() => void)[]} */
-	const destroyList = [];
 	root.classList.add('NeeloongForm-tree-item');
 
-	destroyList.push(effect(() => {
+	effect(() => {
 		if (currentStore.get() === store) {
 			root.classList.add('NeeloongForm-tree-current');
 		} else {
 			root.classList.remove('NeeloongForm-tree-current');
 		}
-	}));
-	destroyList.push(effect(() => {
+	}, options?.signal);
+	effect(() => {
 		const level = state.get().level;
 		root.style.setProperty(`--NeeloongForm-tree-level`, `${level}`);
-	}));
+	}, options?.signal);
 
-	destroyList.push(effect(() => { root.hidden = state.get().hidden; }));
+	effect(() => { root.hidden = state.get().hidden; }, options?.signal);
 
 
 	/** @type {HTMLButtonElement[]} */
@@ -109,9 +105,9 @@ export default function TreeLine(
 	dropChildren.addEventListener('dragover', (e) => e.preventDefault());
 	dropFront.addEventListener('drop', () => drop());
 	dropChildren.addEventListener('drop', () => drop(true));
-	destroyList.push(effect(() => {
+	effect(() => {
 		dropFront.hidden = dropChildren.hidden = !state.get().droppable;
-	}));
+	}, options?.signal);
 
 	let dragleave = () => { };
 	dropFront.addEventListener('dragenter', () => dragleave = dragenter(dropFront));
@@ -128,9 +124,8 @@ export default function TreeLine(
 			if (field) {
 				const child = store.child(field);
 				if (!child) { continue; }
-				const [el, destroy] = FormFieldInline(child, fieldRenderer, null, { ...options, editable: false });
-				destroyList.push(destroy);
-				td.appendChild(el);
+				const el = FormFieldInline(child, fieldRenderer, null, { ...options, editable: false });
+				if (el) { td.appendChild(el); }
 				continue;
 			}
 			if (typeof placeholder === 'number') {
@@ -168,9 +163,9 @@ export default function TreeLine(
 					const move = line.appendChild(document.createElement('button'));
 					move.classList.add('NeeloongForm-tree-move');
 					move.addEventListener('pointerdown', pointerdown);
-					destroyList.push(watch(() => store.readonly || store.disabled, disabled => {
+					watch(() => store.readonly || store.disabled, disabled => {
 						move.disabled = disabled;
-					}, true));
+					}, true, options.signal);
 					continue;
 				}
 				case 'add': {
@@ -178,9 +173,9 @@ export default function TreeLine(
 					const move = line.appendChild(document.createElement('button'));
 					move.classList.add('NeeloongForm-tree-add');
 					move.addEventListener('click', addNode);
-					destroyList.push(watch(() => store.readonly || store.disabled, disabled => {
+					watch(() => store.readonly || store.disabled, disabled => {
 						move.disabled = disabled;
-					}, true));
+					}, true, options.signal);
 					continue;
 				}
 				case 'remove': {
@@ -188,9 +183,9 @@ export default function TreeLine(
 					const del = line.appendChild(document.createElement('button'));
 					del.classList.add('NeeloongForm-tree-remove');
 					del.addEventListener('click', remove);
-					destroyList.push(watch(() => !deletable.get() || store.readonly || store.disabled, disabled => {
+					watch(() => !deletable.get() || store.readonly || store.disabled, disabled => {
 						del.disabled = disabled;
-					}, true));
+					}, true, options.signal);
 					continue;
 				}
 				case 'serial': {
@@ -201,7 +196,7 @@ export default function TreeLine(
 			}
 		}
 	}
-	destroyList.push(effect(() => {
+	effect(() => {
 		const s = state.get();
 		if (!s.hasChildren) {
 			for (const btn of collapseList) {
@@ -222,11 +217,7 @@ export default function TreeLine(
 				btn.disabled = false;
 			}
 		}
-	}));
+	}, options?.signal);
 
-	return [root, () => {
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	}, s => state.set(s)];
+	return root;
 }

@@ -17,8 +17,7 @@ import watch from '../watch.mjs';
  * @param {() => void} option.dragend 
  * @param {{get(): boolean}} option.deletable 
  * @param {StoreLayout.Options?} options
-
- * @returns {[HTMLTableSectionElement, () => void]}
+ * @returns {HTMLTableSectionElement}
  */
 export default function Line(store, fieldRenderer, layout, {
 	columns,
@@ -35,38 +34,34 @@ export default function Line(store, fieldRenderer, layout, {
 	root.addEventListener('dragend', dragend);
 	const head = root.appendChild(document.createElement('tr'));
 
-	/** @type {(() => void)[]} */
-	const destroyList = [];
 
 
 	let trigger = () => { };
 	/** @type {HTMLButtonElement[]} */
 	const triggerList = [];
 	if (columns.find(v => v.actions?.includes('trigger'))) {
-		const body = root.appendChild(document.createElement('tr'));
-		const main = body.appendChild(document.createElement('td'));
-		main.colSpan = columns.length;
-
-		const [form, destroy] = Form(store, fieldRenderer, layout, options);
-		main.appendChild(form);
-		destroyList.push(destroy);
-		body.hidden = true;
-		trigger = function click() {
-			if (body.hidden) {
-				body.hidden = false;
-				for (const ext of triggerList) {
-					ext.classList.remove('NeeloongForm-table-line-open');
-					ext.classList.add('NeeloongForm-table-line-close');
+		const form = Form(store, fieldRenderer, layout, options);
+		if (form) {
+			const body = root.appendChild(document.createElement('tr'));
+			const main = body.appendChild(document.createElement('td'));
+			main.colSpan = columns.length;
+			body.hidden = true;
+			trigger = () => {
+				if (body.hidden) {
+					body.hidden = false;
+					for (const ext of triggerList) {
+						ext.classList.remove('NeeloongForm-table-line-open');
+						ext.classList.add('NeeloongForm-table-line-close');
+					}
+				} else {
+					body.hidden = true;
+					for (const ext of triggerList) {
+						ext.classList.remove('NeeloongForm-table-line-close');
+						ext.classList.add('NeeloongForm-table-line-open');
+					}
 				}
-			} else {
-				body.hidden = true;
-				for (const ext of triggerList) {
-					ext.classList.remove('NeeloongForm-table-line-close');
-					ext.classList.add('NeeloongForm-table-line-open');
-				}
-			}
-		};
-
+			};
+		}
 	}
 
 	/**
@@ -94,9 +89,8 @@ export default function Line(store, fieldRenderer, layout, {
 			const td = head.appendChild(document.createElement('td'));
 			const child = field && store.child(field);
 			if (child) {
-				const [el, destroy] = FormFieldInline(child, fieldRenderer, null, options);
-				destroyList.push(destroy);
-				td.appendChild(el);
+				const el = FormFieldInline(child, fieldRenderer, null, options);
+				if (el) { td.appendChild(el); }
 			}
 			continue;
 		}
@@ -116,9 +110,9 @@ export default function Line(store, fieldRenderer, layout, {
 					const move = handle.appendChild(document.createElement('button'));
 					move.classList.add('NeeloongForm-table-move');
 					move.addEventListener('pointerdown', pointerdown);
-					destroyList.push(watch(() => store.readonly || store.disabled, disabled => {
+					watch(() => store.readonly || store.disabled, disabled => {
 						move.disabled = disabled;
-					}, true));
+					}, true, options.signal);
 					continue;
 				}
 				case 'remove': {
@@ -126,9 +120,9 @@ export default function Line(store, fieldRenderer, layout, {
 					const del = handle.appendChild(document.createElement('button'));
 					del.classList.add('NeeloongForm-table-remove');
 					del.addEventListener('click', remove);
-					destroyList.push(watch(() => !deletable.get() || store.readonly || store.disabled, disabled => {
+					watch(() => !deletable.get() || store.readonly || store.disabled, disabled => {
 						del.disabled = disabled;
-					}, true));
+					}, true, options.signal);
 					continue;
 				}
 				case 'serial': {
@@ -140,9 +134,5 @@ export default function Line(store, fieldRenderer, layout, {
 		}
 	}
 
-	return [root, () => {
-		for (const destroy of destroyList) {
-			destroy();
-		}
-	}];
+	return root;
 }
