@@ -21,8 +21,8 @@ import watch from '../watch.mjs';
  * @returns {HTMLTableSectionElement}
  */
 export default function Line(store, fieldRenderer, layout, {
-	columns,
-	remove, dragenter, dragstart, dragend, deletable
+	columns, deletable,
+	remove, dragenter, dragstart, dragend,
 }, options) {
 	const root = document.createElement('tbody');
 	root.addEventListener('dragenter', () => {
@@ -121,7 +121,7 @@ export default function Line(store, fieldRenderer, layout, {
 					const del = handle.appendChild(document.createElement('button'));
 					del.classList.add('NeeloongForm-table-remove');
 					del.addEventListener('click', remove);
-					watch(() => !deletable.get() || store.readonly || store.disabled, disabled => {
+					watch(() => !deletable.get(), disabled => {
 						del.disabled = disabled;
 					}, true, options.signal);
 					continue;

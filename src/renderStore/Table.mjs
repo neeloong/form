@@ -94,8 +94,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 	table.classList.add('NeeloongForm-table');
 	const thead = table.appendChild(document.createElement('thead'));
 
-	const addable = new Signal.Computed(() => store.addable);
-	const deletable = { get: () => Boolean(options?.editable) };
+	const addable = new Signal.Computed(() => !store.readonly && !store.disabled && store.addable);
 	function add() {
 		const data = {};
 		store.add(data);
@@ -167,11 +166,11 @@ export default function Table(store, fieldRenderer, layout, options) {
 				const ac = new AbortController();
 				const el = Line(child, fieldRenderer, layout, {
 					columns,
+					deletable: new Signal.Computed(() => !store.readonly && !store.disabled && child.removable),
 					remove: remove.bind(null, child),
 					dragenter: dragenter.bind(null, child),
 					dragstart: dragstart.bind(null, child),
 					dragend,
-					deletable,
 				}, {
 					...options,
 					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,

@@ -56,7 +56,7 @@ export default class ArrayStore extends Store {
 			}
 
 		};
-		super(schema, {
+		super({ ...schema, immutable: false }, {
 			index, new: isNew, parent,
 			size: new Signal.Computed(() => childrenState.get().length),
 			setValue(v) {
@@ -93,7 +93,10 @@ export default class ArrayStore extends Store {
 			},
 		};
 		this.#create = (index, isNew) => {
-			const child = create(schema, { ...childCommonOptions, index, new: isNew });
+			const child = create(
+				{ ...schema, creatable: true },
+				{ ...childCommonOptions, index, new: isNew },
+			);
 			child.index = index;
 			return child;
 		};

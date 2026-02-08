@@ -285,8 +285,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 
 
 	const levelKey = layout?.levelKey || 'level';
-	const addable = new Signal.Computed(() => store.addable);
-	const deletable = { get: () => Boolean(options?.editable) };
+	const addable = new Signal.Computed(() => !store.readonly && !store.disabled && store.addable);
 	/**
 	 * 
 	 * @param {number} parent 
@@ -459,12 +458,12 @@ export default function Tree(store, fieldRenderer, layout, options) {
 				const elState = new Signal.State(state);
 				const ac = new AbortController();
 				const el = Line(child, detailsStore, fieldRenderer, layout, elState, {
-					columns,
+					columns, addable,
+					deletable: new Signal.Computed(() => !store.readonly && !store.disabled && child.removable),
 					remove: remove.bind(null, child),
 					dragenter,
 					dragstart: dragstart.bind(null, child),
 					dragend,
-					deletable,
 					addNode: () => addNode(Number(child.index)),
 					createDetails,
 					drop: drop.bind(null, child),
