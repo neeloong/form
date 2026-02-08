@@ -2,7 +2,7 @@ import { Signal } from 'signal-polyfill';
 import Store from './Store.mjs';
 import create, { setArrayStore } from './create.mjs';
 import createBooleanStates from './createBooleanStates.mjs';
-/** @import { Schema } from '../types.mjs' */
+/** @import { Schema } from '../Schema.types.mjs' */
 
 
 

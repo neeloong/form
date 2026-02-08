@@ -1,5 +1,4 @@
-/** @import { Component, Relatedness } from '../types.mjs' */
-/** @import Store from '../Store/index.mjs' */
+/** @import { Component } from '../types.mjs' */
 /** @import Environment from './Environment/index.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 

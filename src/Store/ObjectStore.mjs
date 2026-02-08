@@ -1,6 +1,6 @@
 import create, { setObjectStore } from './create.mjs';
 import Store from './Store.mjs';
-/** @import { Schema } from '../types.mjs' */
+/** @import { Schema } from '../Schema.types.mjs' */
 
 /**
  * @template {Record<string, any>} [T=Record<string, any>]

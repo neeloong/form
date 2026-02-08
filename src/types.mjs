@@ -1,9 +1,6 @@
-/** @import Store from './Store/index.mjs' */
 /** @import * as Layout from './Layout/index.mjs' */
+/** @import { StoreLayout } from './StoreLayout.types.mjs' */
 
-/**
- * @typedef {any} VerifyError
- */
 /**
  * @typedef {object} Component.Attr 组件属性定义
  * @property {string} type 属性类型
@@ -25,7 +22,7 @@
  * @property {[string, ($event: any) => void, AddEventListenerOptions][]} events 上下文事件
  * @property {Record<string, any>} attrs 上下文属性
  * @property {(name: any, fn: (value: any, old: any, name: string) => void) => () => void} watch 属性监听
- * @property {(el: Element | Relatedness) => () => void} relate 关联
+ * @property {(el: Element | StoreLayout.Relatedness) => () => void} relate 关联
  * @property {boolean} destroyed 是否已经销毁
  * @property {boolean} init 是否完成初始化
  * @property {<K extends keyof Component.Context.Events>(event: K, listener: (...p: Component.Context.Events[K]) => void) => () => void} listen 状态监听
@@ -57,108 +54,6 @@
  * @returns {Component?}
  */
 /**
- * @template [M=any]
- * @typedef {(Schema.Object<M> | Schema.Type) & Schema.Attr<M>} Schema.Field 字段定义
- */
-/**
- * @template [M=any]
- * @typedef {Record<string, Schema.Field<M>>} Schema
- */
-/**
- * @typedef {Schema.Value | string | number} Schema.Value.Define 可选值定义
- * @property {string} label 标签
- * @property {string | number} value 值
- */
-/**
- * @typedef {object} Schema.Value.Group.Define 可选值分组定义
- * @property {string} label 标签
- * @property {string | number} [value] 值
- * @property {(Schema.Value.Group | Schema.Value.Define)[]} children 子数据
- */
-/**
- * @typedef {object} Schema.Value 可选值
- * @property {string} label 标签
- * @property {string | number} value 值
- */
-/**
- * @typedef {object} Schema.Value.Group 可选值分组
- * @property {string} label 标签
- * @property {string | number} [value] 值
- * @property {(Schema.Value.Group | Schema.Value)[]} children 子数据
- */
-/**
- * @template [M=any]
- * @typedef {object} Schema.Object 对象类型定义
- * @property {Record<string, Schema.Field<M>>} type 字段定义
- * @property {boolean} [array] 是否为数组
- */
-/**
- * @typedef {object} Schema.Type 基本类型字段定义
- * @property {string} type 类型
- * @property {boolean} [array] 是否为数组
- */
-
-
-/**
- * @typedef {object} Schema.Events 函数定义
- * @property {InputEvent} input 输入
- * @property {InputEvent} change 变化
- * @property {Event} click 点击
- * @property {Event} focus 聚焦
- * @property {Event} blur 失焦
- */
-/**
- * @callback Validator 同步验证器
- * @param {Store} store 存储体
- * @returns {string | string[] | void | null} 错误信息
- */
-/**
- * @callback AsyncValidator 异步验证器
- * @param {Store} store 存储体
- * @param {AbortSignal} signal 终止信号
- * @returns {PromiseLike<string | string[] | void | null> | string | string[] | void | null} 错误信息
- */
-/**
- * @template [M=any]
- * @typedef {object} Schema.Attr
- * @property {M} [meta] 元信息
- * @property {((store: Store) => any) | any} [default]
- * @property {any} [component] 自定义组件
- * @property {boolean} [immutable] 是否可修改
- * @property {boolean} [creatable] 是否可创建
- * @property {boolean | ((store: Store) => boolean) | null} [hidden] 是否隐藏
- * @property {boolean | ((store: Store) => boolean) | null} [clearable] 是否可清除
- * @property {boolean | ((store: Store) => boolean) | null} [required] 是否必填
- * @property {boolean | ((store: Store) => boolean) | null} [disabled] 是否禁用
- * @property {boolean | ((store: Store) => boolean) | null} [readonly] 是否只读
- * @property {string | ((store: Store) => string?) | null} [label] 字段标签
- * @property {string | ((store: Store) => string?) | null} [description] 字段描述
- * @property {string | ((store: Store) => string?) | null} [placeholder] 占位符
- * @property {number | ((store: Store) => number?) | null} [min] 日期、时间、数字的最小值
- * @property {number | ((store: Store) => number?) | null} [max] 日期、时间、数字的最大值
- * @property {number | ((store: Store) => number?) | null} [step] 日期、时间、数字的步长
- * @property {number | ((store: Store) => number?) | null} [minLength] 最小长度
- * @property {number | ((store: Store) => number?) | null} [maxLength] 最大长度
- * @property {RegExp | ((store: Store) => RegExp?) | null} [pattern] 模式规则
- * @property {boolean | ((store: Store) => boolean) | null} [addable] 数组内是否可添加
- * @property {boolean | ((store: Store) => boolean) | null} [removable] 数组内是否可移除
- * @property {(Schema.Value.Group.Define | Schema.Value.Define)[] | ((store: Store) => (Schema.Value.Group.Define | Schema.Value.Define)[])} [values] 可选值
- * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events] 监听函数
- * @property {Validator | Validator[] | null} [validator] 同步验证器
- * @property {{[k in 'change' | 'blur']?: AsyncValidator | AsyncValidator[] | null}} [validators] 异步验证器
- * @property {StoreLayout.Field<any>} [layout]
- */
-
-/**
- * @typedef {object} Relatedness 
- * @property {() => void} [focus] 聚焦函数
- * @property {() => void} [scrollIntoView] 展示函数
- * @property {Element} [input] 输入元素
- * @property {Element} [root] 根元素
- */
-
-
-/**
  * @callback Enhancement 增强函数
  * @param {Enhancement.Context} context 上下文
  */
@@ -177,114 +72,4 @@
  * @property {Element} root 根元素
  * @property {Element?} [slot] 槽元素
  * @property {any} value 传入的默认值
- */
-
-/**
- * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial' | 'open' | 'collapse'} StoreLayout.Action
- */
-/**
- * @typedef {object} StoreLayout.Grid
- * @property {number} [colStart]
- * @property {number} [colSpan]
- * @property {number} [colEnd]
- * @property {number} [rowStart]
- * @property {number} [rowSpan]
- * @property {number} [rowEnd]
- * @property {'block' | 'inline' | 'collapse' | 'fieldset' | 'base' | ''} [cell]
- */
-
-/**
- * @template [T=unknown]
- * @typedef {object} StoreLayout.Column
- * @property {StoreLayout.Action[]} [actions] 操作
- * @property {StoreLayout.Action} [action] 操作
- * @property {string} [field] 字段
- * @property {number} [placeholder] 占位符
- * @property {string} [pattern] 模式
- * @property {number} [width] 宽度
- * @property {string} [label] 标签
- * @property {string | ParentNode | null} [html]
- * @property {StoreLayout.Item<T>[]?} [fields]
- * @property {T} [renderer]
- * 
- */
-/**
- * @template [T=unknown]
- * @typedef {object} StoreLayout.Field
- * @property {'field'} [type]
- * @property {number} [colStart]
- * @property {number} [colSpan]
- * @property {number} [colEnd]
- * @property {number} [rowStart]
- * @property {number} [rowSpan]
- * @property {number} [rowEnd]
- * @property {StoreLayout.Grid['cell']} [cell]
- * @property {T} [renderer]
- * 
- * @property {string} [field]
- * @property {string | ParentNode | null} [html]
- * @property {StoreLayout.Item<T>[]?} [fields]
- * @property {'header' | 'add' | 'none'} [tableFoot]
- * @property {(string | number | StoreLayout.Action[] | StoreLayout.Column<T>)[]} [columns]
- * @property {'tree' | 'table'} [arrayStyle]
- * @property {'collapse' | 'trigger' | 'open' | 'move'} [mainMethod]
- * @property {string} [levelKey]
- * 
- */
-/**
- * @typedef {object} StoreLayout.Button
- * @property {'button'} type
- * @property {number} [colStart]
- * @property {number} [colSpan]
- * @property {number} [colEnd]
- * @property {number} [rowStart]
- * @property {number} [rowSpan]
- * @property {number} [rowEnd]
- * @property {StoreLayout.Grid['cell']} [cell]
- * 
- * @property {boolean} [required]
- * @property {string} [label]
- * @property {string} [description]
- * @property {(store: Store<any, any>, options?: StoreLayout.Options | null) => boolean} [disabled]
- * @property {string | ((store: Store<any, any>, options?: StoreLayout.Options | null) => string)} [text]
- * @property {string | ((event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [click]
- */
-/**
- * @typedef {object} StoreLayout.Html
- * @property {'html'} type
- * @property {number} [colStart]
- * @property {number} [colSpan]
- * @property {number} [colEnd]
- * @property {number} [rowStart]
- * @property {number} [rowSpan]
- * @property {number} [rowEnd]
- * @property {StoreLayout.Grid['cell']} [cell]
- * 
- * @property {boolean} [required]
- * @property {string} [label]
- * @property {string} [description]
- * @property {string | ParentNode | null} [html]
- */
-/**
- * @template [T=unknown]
- * @typedef {StoreLayout.Field<T> | StoreLayout.Button | StoreLayout.Html} StoreLayout.Item
- */
-/**
- * @template [T=unknown]
- * @typedef {object} StoreLayout
- * @property {string | ParentNode | null} [html]
- * @property {StoreLayout.Item<T>[]?} [fields]
- * @property {T} [renderer]
- */
-
-/**
- * @typedef {object} StoreLayout.Options
- * @property {(store: Store, el: Element | Relatedness) => () => void} [relate]
- * @property {boolean} [editable] 
- * @property {AbortSignal} [signal] 
- * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
- */
-/**
- * @template [T=unknown]
- * @typedef {(store: Store<any, any>, renderer?: T, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
  */

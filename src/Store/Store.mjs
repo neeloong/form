@@ -7,7 +7,8 @@ import create, { setStore } from './create.mjs';
 import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
 /** @import { Ref } from './ref.mjs' */
-/** @import { AsyncValidator, Schema, StoreLayout, Validator } from '../types.mjs' */
+/** @import { Schema } from '../Schema.types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 
 /**
  * 管理单个表单字段的状态和行为
@@ -104,8 +105,8 @@ export default class Store {
 	 * @param {number} [options.maxLength] 
 	 * @param {RegExp} [options.pattern] 
 	 * @param {(Schema.Value.Group | Schema.Value | string | number)[]} [options.values] 可选值
-	 * @param {Validator | Validator[] | null} [options.validator]
-	 * @param {{[k in keyof Schema.Events]?: AsyncValidator | AsyncValidator[] | null}} [options.validators]
+	 * @param {Schema.Validator | Schema.Validator[] | null} [options.validator]
+	 * @param {{[k in keyof Schema.Events]?: Schema.AsyncValidator | Schema.AsyncValidator[] | null}} [options.validators]
 	 * 
 	 * @param {Ref?} [options.ref]
 	 * 

@@ -1,4 +1,4 @@
-/** @import { Schema } from '../types.mjs' */
+/** @import { Schema } from '../Schema.types.mjs' */
 /** @param {*} v  */
 export const string = v => typeof v === 'string' && v || null;
 /** @param {*} v  */

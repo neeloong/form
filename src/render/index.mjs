@@ -1,7 +1,8 @@
 /** @import Store from '../Store/index.mjs' */
 import Environment from './Environment/index.mjs';
 import { ArrayStore, ObjectStore } from '../Store/index.mjs';
-/** @import { Component, Enhancement, Relatedness } from '../types.mjs' */
+/** @import { Component, Enhancement } from '../types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 /** @import * as Layout from '../Layout/index.mjs' */
 import bindAttrs from './bindAttrs.mjs';
 import bindBaseAttrs from './bindBaseAttrs.mjs';
@@ -25,7 +26,7 @@ import divergent from './divergent.mjs';
  * @param {Record<string, [Layout.Template, Environment]>} templates
  * @param {string[]} componentPath
  * @param {Record<string, Enhancement>} enhancements
- * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | StoreLayout.Relatedness) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  */
 function renderNode(layout, parent, next, env, templates, componentPath, enhancements, relate, getComponent) {
@@ -108,7 +109,7 @@ function createTemplates(env, parentTemplates, newTemplates) {
  * @param {Record<string, [Layout.Template, Environment]>} parentTemplates
  * @param {string[]} componentPath
  * @param {Record<string, Enhancement>} enhancements
- * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | StoreLayout.Relatedness) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  * @returns {() => void}
  */
@@ -173,7 +174,7 @@ function renderChild(layout, parent, next, parentEnv, parentTemplates, component
  * @param {Record<string, [Layout.Template, Environment]>} templates
  * @param {string[]} componentPath
  * @param {Record<string, Enhancement>} enhancements
- * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | StoreLayout.Relatedness) => () => void)?} [relate]
  * @param {Component.Getter?} [getComponent]
  * @returns {() => void}
  */
@@ -196,7 +197,7 @@ function renderChildren(layouts, parent, next, env, templates, componentPath, en
  * @param {object} [options] 选项
  * @param {Record<string, Store | {get?(): any; set?(v: any): void; exec?(...p: any[]): any; calc?(...p: any[]): any }>} [options.global] 全局数据
  * @param {Component.Getter?} [options.component]  自定义组件
- * @param {(store: Store, el: Element | Relatedness) => () => void} [options.relate] 关联函数
+ * @param {(store: Store, el: Element | StoreLayout.Relatedness) => () => void} [options.relate] 关联函数
  * @param {Record<string, Enhancement>} [options.enhancements] 增强信息
  * @returns {() => void}
  */

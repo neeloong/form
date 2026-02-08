@@ -1,6 +1,6 @@
 
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';

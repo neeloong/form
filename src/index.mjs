@@ -1,4 +1,6 @@
-/** @export * from './types.mjs' */ 
+/** @export * from './types.mjs' */
+/** @export * from './StoreLayout.types.mjs' */
+/** @export * from './Schema.types.mjs' */
 export * from './Store/index.mjs';
 export * as Layout from './Layout/index.mjs';
 export { default as render } from './render/index.mjs';

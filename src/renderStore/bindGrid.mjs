@@ -1,4 +1,4 @@
-/** @import { StoreLayout } from '../types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 
 /**
  *

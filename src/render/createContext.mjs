@@ -1,4 +1,5 @@
-/** @import { Component, Relatedness } from '../types.mjs' */
+/** @import { Component } from '../types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 /** @import { ComponentHandler } from './types.mjs' */
 /** @import Store from '../Store/index.mjs' */
 /** @import Environment from './Environment/index.mjs' */
@@ -13,7 +14,7 @@ import { bindFilters, findFilters } from './filter.mjs';
  * @param {Component | string} component 
  * @param {Environment} env 
  * @param {Store?} store 
- * @param {((store: Store, el: Element | Relatedness) => () => void)?} [relate]
+ * @param {((store: Store, el: Element | StoreLayout.Relatedness) => () => void)?} [relate]
  * @returns 
  */
 export default function createContext(component, env, store, relate) {

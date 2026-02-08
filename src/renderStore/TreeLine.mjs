@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { State } from './Tree.mjs' */
-/** @import { StoreLayout } from '../types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 import watch from '../watch.mjs';
 import { Signal } from 'signal-polyfill';
 import effect from '../effect.mjs';

@@ -1,6 +1,6 @@
 import { Signal } from 'signal-polyfill';
 /** @import Store from './Store.mjs' */
-/** @import { AsyncValidator, Validator } from '../types.mjs' */
+/** @import { Schema } from '../Schema.types.mjs' */
 /**
  * 
  * @param {*} v 
@@ -15,7 +15,7 @@ function toResult(v) {
 /**
  * 
  * @param {Store} store 
- * @param  {...Validator | undefined | null | (Validator | undefined | null)[]} validators 
+ * @param  {...Schema.Validator | undefined | null | (Schema.Validator | undefined | null)[]} validators 
  * @returns 
  */
 export function createValidator(store, ...validators) {
@@ -38,7 +38,7 @@ export function createValidator(store, ...validators) {
 /**
  * 
  * @param {Store} store 
- * @param  {...AsyncValidator | undefined | null | (AsyncValidator | undefined | null)[]} validators 
+ * @param  {...Schema.AsyncValidator | undefined | null | (Schema.AsyncValidator | undefined | null)[]} validators 
  * @returns {[exec: () => Promise<string[]>, state: Signal.Computed<string[]>, stop: () => void]}
  */
 export function createAsyncValidator(store, ...validators) {
@@ -53,7 +53,7 @@ export function createAsyncValidator(store, ...validators) {
 	const st = new Signal.State(/** @type {string[]} */([]));
 	/**
 	 * 
-	 * @param {AsyncValidator} validator 
+	 * @param {Schema.AsyncValidator} validator 
 	 * @param {AbortSignal} signal 
 	 */
 	async function run(validator, signal) {
