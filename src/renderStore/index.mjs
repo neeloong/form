@@ -10,19 +10,20 @@ import renderHtml from './renderHtml.mjs';
  * @param {Store} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {HTMLElement} root 
- * @param {StoreLayout<T>?} [layout] 
+ * @param {StoreLayout<T>} layout 
  * @param {StoreLayout.Options & {clone?: boolean} | null} [options]
  * @returns {void}
  */
 export default function renderStore(store, fieldRenderer, root, layout, options) {
 	if (options?.signal?.aborted) { return; }
-	const html = layout?.html;
+	const storeLayout = layout || store.layout;
+	const html = storeLayout.html;
 	if (!html) {
-		Form(store, fieldRenderer, layout || null, options || null, root);
+		Form(store, fieldRenderer, storeLayout, options || null, root);
 		return;
 	}
 	const content = getHtmlContent(html);
-	renderHtml(store, fieldRenderer, content, options || null, layout);
+	renderHtml(store, fieldRenderer, content, options || null, storeLayout);
 	root.appendChild(content);
 	options?.signal?.addEventListener('abort', () => {
 		root.removeChild(content);

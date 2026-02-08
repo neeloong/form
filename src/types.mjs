@@ -146,6 +146,7 @@
  * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events] 监听函数
  * @property {Validator | Validator[] | null} [validator] 同步验证器
  * @property {{[k in 'change' | 'blur']?: AsyncValidator | AsyncValidator[] | null}} [validators] 异步验证器
+ * @property {StoreLayout.Field<any>} [layout]
  */
 
 /**
@@ -193,6 +194,7 @@
  */
 
 /**
+ * @template [T=unknown]
  * @typedef {object} StoreLayout.Column
  * @property {StoreLayout.Action[]} [actions] 操作
  * @property {StoreLayout.Action} [action] 操作
@@ -201,10 +203,13 @@
  * @property {string} [pattern] 模式
  * @property {number} [width] 宽度
  * @property {string} [label] 标签
+ * @property {string | ParentNode | null} [html]
+ * @property {StoreLayout.Item<T>[]?} [fields]
+ * @property {T} [renderer]
  * 
  */
 /**
- * @template T
+ * @template [T=unknown]
  * @typedef {object} StoreLayout.Field
  * @property {'field'} [type]
  * @property {number} [colStart]
@@ -216,12 +221,11 @@
  * @property {StoreLayout.Grid['cell']} [cell]
  * @property {T} [renderer]
  * 
- * @property {string} field
+ * @property {string} [field]
  * @property {string | ParentNode | null} [html]
- * @property {string | ParentNode | null} [inlineHtml]
  * @property {StoreLayout.Item<T>[]?} [fields]
  * @property {'header' | 'add' | 'none'} [tableFoot]
- * @property {(string | number | StoreLayout.Action[] | StoreLayout.Column)[]} [columns]
+ * @property {(string | number | StoreLayout.Action[] | StoreLayout.Column<T>)[]} [columns]
  * @property {'tree' | 'table'} [arrayStyle]
  * @property {'collapse' | 'trigger' | 'open' | 'move'} [mainMethod]
  * @property {string} [levelKey]
@@ -262,11 +266,11 @@
  * @property {string | ParentNode | null} [html]
  */
 /**
- * @template T
+ * @template [T=unknown]
  * @typedef {StoreLayout.Field<T> | StoreLayout.Button | StoreLayout.Html} StoreLayout.Item
  */
 /**
- * @template T
+ * @template [T=unknown]
  * @typedef {object} StoreLayout
  * @property {string | ParentNode | null} [html]
  * @property {StoreLayout.Item<T>[]?} [fields]
@@ -281,6 +285,6 @@
  * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
  */
 /**
- * @template T
+ * @template [T=unknown]
  * @typedef {(store: Store<any, any>, renderer?: T, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
  */

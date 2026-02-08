@@ -9,9 +9,9 @@ import watch from '../watch.mjs';
  * @template T
  * @param {Store<any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @param {object} option 
- * @param {StoreLayout.Column[]} option.columns
+ * @param {StoreLayout.Column<T>[]} option.columns
  * @param {() => void} option.remove 
  * @param {() => void} option.dragenter 
  * @param {() => void} option.dragstart 
@@ -84,13 +84,13 @@ export default function Line(store, fieldRenderer, layout, {
 
 	}
 
-	for (const name of columns) {
-		const { actions, field, pattern } = name;
+	for (const column of columns) {
+		const { actions, field, pattern } = column;
 		if (!actions?.length) {
 			const td = head.appendChild(document.createElement('td'));
 			const child = field && store.child(field);
 			if (child) {
-				const el = FormFieldInline(child, fieldRenderer, null, options);
+				const el = FormFieldInline(child, fieldRenderer, column, options);
 				if (el) { td.appendChild(el); }
 			}
 			continue;

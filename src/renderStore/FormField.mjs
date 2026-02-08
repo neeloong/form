@@ -19,7 +19,7 @@ import Tree from './Tree.mjs';
  * @param {Store<any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Options?} options
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @returns {ParentNode}
  */
 function Html(html, store, fieldRenderer, options, layout) {
@@ -33,7 +33,7 @@ function Html(html, store, fieldRenderer, options, layout) {
  * @param {StoreLayout.Field<T>['arrayStyle']?} arrayStyle 
  * @param {ArrayStore} store
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @param {StoreLayout.Options?} options
  * @returns {HTMLElement?}
  */
@@ -50,14 +50,14 @@ function renderArrayCell(arrayStyle, store, fieldRenderer, layout, options) {
  * @template T
  * @param {Store<any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @param {StoreLayout.Options?} options
  * @returns {ParentNode}
  */
 export default function FormField(store, fieldRenderer, layout, options) {
 	const { type } = store;
 	const isObject = Boolean(type && typeof type === 'object');
-	const html = layout?.html;
+	const html = layout.html;
 	/** @type {StoreLayout.Grid['cell']} */
 	const cellType = isObject
 		? store instanceof ArrayStore ? 'collapse' : 'fieldset'
@@ -68,8 +68,8 @@ export default function FormField(store, fieldRenderer, layout, options) {
 	/** @type {false | ParentNode | null} */
 	const r =
 		html && Html(html, store, fieldRenderer, options, layout)
-		|| fieldRenderer(store, layout?.renderer, options)
-		|| store instanceof ArrayStore && renderArrayCell(layout?.arrayStyle, store, fieldRenderer, layout, options)
+		|| fieldRenderer(store, layout.renderer, options)
+		|| store instanceof ArrayStore && renderArrayCell(layout.arrayStyle, store, fieldRenderer, layout, options)
 		|| isObject && Form(store, fieldRenderer, layout, options);
 	if (r) {
 		content.appendChild(r);

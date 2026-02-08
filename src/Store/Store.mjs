@@ -3,11 +3,11 @@ import createBooleanStates from './createBooleanStates.mjs';
 import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
 import createRef from './ref.mjs';
-import create, { ArrayStoreClass, setStore } from './create.mjs';
+import create, { setStore } from './create.mjs';
 import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
 /** @import { Ref } from './ref.mjs' */
-/** @import { AsyncValidator, Schema, Validator } from '../types.mjs' */
+/** @import { AsyncValidator, Schema, StoreLayout, Validator } from '../types.mjs' */
 
 /**
  * 管理单个表单字段的状态和行为
@@ -137,6 +137,7 @@ export default class Store {
 		this.#type = schema.type;
 		this.#meta = schema.meta;
 		this.#component = schema.component;
+		this.#layout = schema.layout || {};
 
 		const selfNewState = new Signal.State(Boolean(isNew));
 		this.#selfNew = selfNewState;
@@ -227,6 +228,9 @@ export default class Store {
 			this.listen(k, f);
 		}
 	}
+	/** @type {StoreLayout.Field<any>} */
+	#layout
+	get layout() { return this.#layout; }
 	#createDefault;
 	/** @param {any} [value] @returns {any} */
 	createDefault(value) { return this.#createDefault(value); }

@@ -112,21 +112,21 @@ function createState(store, states, drag, levelKey, index) {
  * @template T
  * @param {ArrayStore} store
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @param {StoreLayout.Options?} options
  * @returns {HTMLElement?}
  */
 export default function Tree(store, fieldRenderer, layout, options) {
 	if (options?.signal?.aborted) { return null; }
-	const headerColumns = layout?.columns;
+	const headerColumns = layout.columns;
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
 		.map(([field, { width, label }]) => ({ field, width, label }));
-	/** @type {StoreLayout.Column[]} */
+	/** @type {StoreLayout.Column<T>[]} */
 	let columns = [];
 	if (Array.isArray(headerColumns)) {
 		const map = new Map(fieldList.map(v => [v.field, v]));
-		/** @type {(StoreLayout.Column | null)[]} */
+		/** @type {(StoreLayout.Column<T> | null)[]} */
 		const allColumns = headerColumns.map(v => {
 			if (!v) { return null; }
 			if (typeof v === 'number') { return { placeholder: v }; }
@@ -159,7 +159,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			}
 			return null;
 		});
-		columns = /** @type {StoreLayout.Column[]} */(allColumns.filter(Boolean));
+		columns = /** @type {StoreLayout.Column<T>[]} */(allColumns.filter(Boolean));
 	}
 	if (!columns.length) {
 		columns = [
@@ -284,7 +284,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	}
 
 
-	const levelKey = layout?.levelKey || 'level';
+	const levelKey = layout.levelKey || 'level';
 	const addable = new Signal.Computed(() => !store.readonly && !store.disabled && store.addable);
 	/**
 	 * 

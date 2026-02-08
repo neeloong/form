@@ -12,11 +12,11 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {Store<any, any>} store 
  * @param {Signal.State<Store<any, any>?>} currentStore 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @param {Signal.State<State>} state
  * @param {object} option 
  * @param {{get(): boolean}} option.addable 
- * @param {StoreLayout.Column[]} option.columns 
+ * @param {StoreLayout.Column<T>[]} option.columns 
  * @param {() => void} option.remove 
  * @param {(el: HTMLElement) => () => void} option.dragenter 
  * @param {() => void} option.dragstart 
@@ -92,9 +92,9 @@ export default function TreeLine(
 		}
 		close = createDetails(store);
 	}
-	const moveStart = layout?.mainMethod === 'move' ? pointerdown : null;
-	const click = moveStart ? null : layout?.mainMethod === 'collapse' ? switchCollapsed
-		: layout?.mainMethod === 'trigger' ? trigger : open;
+	const moveStart = layout.mainMethod === 'move' ? pointerdown : null;
+	const click = moveStart ? null : layout.mainMethod === 'collapse' ? switchCollapsed
+		: layout.mainMethod === 'trigger' ? trigger : open;
 
 	const line = root.appendChild(document.createElement('div'));
 	line.classList.add('NeeloongForm-tree-line');
@@ -117,7 +117,8 @@ export default function TreeLine(
 	dropFront.addEventListener('dragleave', () => dragleave());
 	dropChildren.addEventListener('dragleave', () => dragleave());
 
-	for (const { actions, pattern, placeholder, width, field } of columns) {
+	for (const column of columns) {
+		const { actions, pattern, placeholder, width, field } = column;
 		if (!actions?.length) {
 			const td = line.appendChild(document.createElement('div'));
 			td.classList.add('NeeloongForm-tree-cell');
@@ -126,7 +127,7 @@ export default function TreeLine(
 			if (field) {
 				const child = store.child(field);
 				if (!child) { continue; }
-				const el = FormFieldInline(child, fieldRenderer, null, { ...options, editable: false });
+				const el = FormFieldInline(child, fieldRenderer, column, { ...options, editable: false });
 				if (el) { td.appendChild(el); }
 				continue;
 			}

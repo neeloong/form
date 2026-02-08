@@ -38,7 +38,7 @@ function createStdCell(signal, values) {
 /**
  *
  * @param {AbortSignal | null | undefined} signal
- * @param {StoreLayout.Grid?} [layout]
+ * @param {StoreLayout.Grid} layout
  * @param {CellValues} [values]
  * @param {StoreLayout.Grid['cell']?} [defCell]
  * @param {boolean?} [blockOnly]
@@ -84,7 +84,7 @@ export default function createCell(signal, layout, values, defCell, blockOnly) {
 		}
 		return null;
 	}
-	const [root, content] = create(layout?.cell) || create(defCell) || createStdCell(signal, values);
+	const [root, content] = create(layout.cell) || create(defCell) || createStdCell(signal, values);
 	root.classList.add('NeeloongForm-item');
 	effect(() => {
 		if (values?.error) {

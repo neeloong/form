@@ -6,9 +6,10 @@ import Line from './TableLine.mjs';
 
 /**
  * 
+ * @template T
  * @param {AbortSignal | null | undefined} signal 
  * @param {HTMLElement} parent 
- * @param {StoreLayout.Column[]} columns 
+ * @param {StoreLayout.Column<T>[]} columns 
  * @param {() => any} add 
  * @param {{get(): boolean}} addable 
  * @param {boolean?} [editable] 
@@ -35,22 +36,22 @@ function renderHead(signal, parent, columns, add, addable, editable) {
  * @template T
  * @param {ArrayStore} store
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout.Field<T>?} layout
+ * @param {StoreLayout.Field<T>} layout
  * @param {StoreLayout.Options?} options
  * @returns {HTMLTableElement?}
  */
 export default function Table(store, fieldRenderer, layout, options) {
 	if (options?.signal?.aborted) { return null; }
-	const headerColumns = layout?.columns;
+	const headerColumns = layout.columns;
 	const fieldList = Object.entries(store.type || {})
 		.filter(([k, v]) => typeof v?.type !== 'object')
 		.map(([field, { width, label }]) => ({ field, width, label }));
-	/** @type {StoreLayout.Column[]} */
+	/** @type {StoreLayout.Column<T>[]} */
 	let columns = [];
 	if (Array.isArray(headerColumns)) {
 		const map = new Map(fieldList.map(v => [v.field, v]));
 
-		/** @type {(StoreLayout.Column | null)[]} */
+		/** @type {(StoreLayout.Column<T> | null)[]} */
 		const allColumns = headerColumns.map(v => {
 			if (!v) { return null; }
 			if (typeof v === 'number') { return { placeholder: v }; }
@@ -80,7 +81,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 			// }
 			return null;
 		});
-		columns = /** @type {StoreLayout.Column[]} */(allColumns.filter(Boolean));
+		columns = /** @type {StoreLayout.Column<T>[]} */(allColumns.filter(Boolean));
 
 	}
 	if (!columns.length) {
@@ -132,7 +133,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 
 	}
 	renderHead(options?.signal, thead, columns, add, addable, Boolean(options?.editable));
-	switch (layout?.tableFoot) {
+	switch (layout.tableFoot) {
 		default:
 		case 'header': {
 			const tfoot = table.appendChild(document.createElement('tfoot'));

@@ -20,7 +20,9 @@ function FormItem(store, fieldRenderer, item, options) {
 	if (item.type === 'html') {
 		return FormHtml(store, fieldRenderer, item, options);
 	}
-	const fieldStore = store.child(item.field);
+	const field = item.field;
+	if (!field) { return null; }
+	const fieldStore = store.child(field);
 	if (fieldStore) {
 		return FormField(fieldStore, fieldRenderer, item, options);
 	}
@@ -32,7 +34,7 @@ function FormItem(store, fieldRenderer, item, options) {
  * @template T
  * @param {Store<any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout<T>?} layout
+ * @param {StoreLayout<T>} layout
  * @param {StoreLayout.Options?} options
  * @param {HTMLElement} [parent]
  * @returns {HTMLElement?}
@@ -41,8 +43,8 @@ export default function Form(store, fieldRenderer, layout, options, parent) {
 	if (options?.signal?.aborted) { return null; }
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
 	root.classList.add('NeeloongForm');
-	const fieldLayouts = layout?.fields;
-	if (fieldLayouts) {
+	const fieldLayouts = layout.fields || store.layout.fields;
+	if (fieldLayouts?.length) {
 		for (const fieldTemplate of fieldLayouts) {
 			const el = FormItem(store, fieldRenderer, fieldTemplate, options);
 			if (el) { root.appendChild(el); }
@@ -50,7 +52,7 @@ export default function Form(store, fieldRenderer, layout, options, parent) {
 	} else {
 		const fields = [...store].map(([, v]) => v);
 		for (const field of fields) {
-			const el = FormField(field, fieldRenderer, null, options);
+			const el = FormField(field, fieldRenderer, field.layout, options);
 			if (el) { root.appendChild(el); }
 		}
 	}

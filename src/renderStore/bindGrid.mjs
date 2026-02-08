@@ -3,11 +3,11 @@
 /**
  *
  * @param {HTMLElement} root
- * @param {StoreLayout.Grid?} [layout]
+ * @param {StoreLayout.Grid} layout
  * @returns {void}
  */
 export default function bindGrid(root, layout) {
-	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout || {};
+	const { colStart, colSpan, colEnd, rowStart, rowSpan, rowEnd } = layout;
 	root.classList.add(`NeeloongForm-item-grid`)
 	if (colStart && colEnd) {
 		root.style.gridColumn = `${colStart} / ${colEnd}`;

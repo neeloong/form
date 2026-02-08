@@ -29,7 +29,7 @@ function createFieldFilter(field) {
  * @param {Store} store 
  * @param {Node} node 
  * @param {StoreLayout.Options?} options
- * @param {StoreLayout<T>?} [layout] 
+ * @param {StoreLayout<T>} layout 
  * @param {Node} [anchor]
  * @param {(child?: Store<any, any> | undefined) => void} [dragenter]
  * @returns {void}
@@ -43,8 +43,10 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 			const field = node.getAttribute('name') || '';
 			const mode = node.getAttribute('mode') || '';
 			const fieldStore = field ? store.child(field) : store;
-			const fieldLayout = field ? layout?.fields?.find(createFieldFilter(field)) || null : null;
 			if (!fieldStore) { return; }
+			const fieldLayout = field
+				? layout?.fields?.find(createFieldFilter(field)) || fieldStore.layout
+				: { ...layout, html: '' };
 			switch (mode) {
 				case 'grid': {
 					const el = Form(store, fieldRenderer, fieldLayout, options);
@@ -52,7 +54,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					return;
 				}
 			}
-			const res = fieldRenderer(fieldStore, layout?.renderer, options);
+			const res = fieldRenderer(fieldStore, layout.renderer, options);
 			if (res) {
 				node.replaceWith(res);
 				return;
@@ -85,7 +87,9 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 				return;
 			}
 			node.removeAttribute('nl-form-field');
-			const fieldLayout = field ? layout?.fields?.find(createFieldFilter(field)) : layout;
+			const fieldLayout = field
+				? layout.fields?.find(createFieldFilter(field)) || fieldStore.layout
+				: { ...layout, html: '' };
 			if (!array) {
 				renderHtml(fieldStore, fieldRenderer, node, options, fieldLayout, anchor, dragenter);
 				return;
