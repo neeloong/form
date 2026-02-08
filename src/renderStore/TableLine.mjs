@@ -6,9 +6,10 @@ import watch from '../watch.mjs';
 
 /**
  * 
+ * @template T
  * @param {Store<any, any>} store 
- * @param {StoreLayout.Renderer} fieldRenderer 
- * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
+ * @param {StoreLayout.Field<T>?} layout
  * @param {object} option 
  * @param {StoreLayout.Column[]} option.columns
  * @param {() => void} option.remove 

@@ -7,14 +7,15 @@ import effect from '../effect.mjs';
 
 /**
  * 
+ * @template T
  * @param {string} field 
- * @returns {(v: StoreLayout.Item) => v is StoreLayout.Field}
+ * @returns {(v: StoreLayout.Item<T>) => v is StoreLayout.Field<T>}
  */
 function createFieldFilter(field) {
 	/**
 	 * 
-	 * @param {StoreLayout.Item} v 
-	 * @returns {v is StoreLayout.Field}
+	 * @param {StoreLayout.Item<T>} v 
+	 * @returns {v is StoreLayout.Field<T>}
 	 */
 	return v => {
 		if (v.type && v.type !== 'field') { return false; }
@@ -23,12 +24,12 @@ function createFieldFilter(field) {
 	};
 }
 /**
- * 
- * @param {StoreLayout.Renderer} fieldRenderer 
+ * @template T
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {Store} store 
  * @param {Node} node 
  * @param {StoreLayout.Options?} options
- * @param {StoreLayout?} [layout] 
+ * @param {StoreLayout<T>?} [layout] 
  * @param {Node} [anchor]
  * @param {(child?: Store<any, any> | undefined) => void} [dragenter]
  * @returns {void}
@@ -51,7 +52,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					return;
 				}
 			}
-			const res = fieldRenderer(fieldStore, options);
+			const res = fieldRenderer(fieldStore, layout?.renderer, options);
 			if (res) {
 				node.replaceWith(res);
 				return;

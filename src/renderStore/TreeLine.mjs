@@ -8,10 +8,11 @@ import FormFieldInline from './FormFieldInline.mjs';
 
 /**
  * 
+ * @template T
  * @param {Store<any, any>} store 
  * @param {Signal.State<Store<any, any>?>} currentStore 
- * @param {StoreLayout.Renderer} fieldRenderer 
- * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
+ * @param {StoreLayout.Field<T>?} layout
  * @param {Signal.State<State>} state
  * @param {object} option 
  * @param {StoreLayout.Column[]} option.columns 

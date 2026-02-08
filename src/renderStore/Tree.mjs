@@ -109,9 +109,10 @@ function createState(store, states, drag, levelKey, index) {
 }
 /**
  *
+ * @template T
  * @param {ArrayStore} store
- * @param {StoreLayout.Renderer} fieldRenderer 
- * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
+ * @param {StoreLayout.Field<T>?} layout
  * @param {StoreLayout.Options?} options
  * @returns {HTMLElement?}
  */

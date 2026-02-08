@@ -204,6 +204,7 @@
  * 
  */
 /**
+ * @template T
  * @typedef {object} StoreLayout.Field
  * @property {'field'} [type]
  * @property {number} [colStart]
@@ -213,11 +214,12 @@
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
  * @property {StoreLayout.Grid['cell']} [cell]
+ * @property {T} [renderer]
  * 
  * @property {string} field
  * @property {string | ParentNode | null} [html]
  * @property {string | ParentNode | null} [inlineHtml]
- * @property {StoreLayout.Item[]?} [fields]
+ * @property {StoreLayout.Item<T>[]?} [fields]
  * @property {'header' | 'add' | 'none'} [tableFoot]
  * @property {(string | number | StoreLayout.Action[] | StoreLayout.Column)[]} [columns]
  * @property {'tree' | 'table'} [arrayStyle]
@@ -260,12 +262,15 @@
  * @property {string | ParentNode | null} [html]
  */
 /**
- * @typedef {StoreLayout.Field | StoreLayout.Button | StoreLayout.Html} StoreLayout.Item
+ * @template T
+ * @typedef {StoreLayout.Field<T> | StoreLayout.Button | StoreLayout.Html} StoreLayout.Item
  */
 /**
+ * @template T
  * @typedef {object} StoreLayout
  * @property {string | ParentNode | null} [html]
- * @property {StoreLayout.Item[]?} [fields]
+ * @property {StoreLayout.Item<T>[]?} [fields]
+ * @property {T} [renderer]
  */
 
 /**
@@ -276,5 +281,6 @@
  * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
  */
 /**
- * @typedef {(store: Store<any, any>, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
+ * @template T
+ * @typedef {(store: Store<any, any>, renderer?: T, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
  */

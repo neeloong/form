@@ -7,9 +7,10 @@ import getHtmlContent from './getHtmlContent.mjs';
 
 /**
  * 
+ * @template T
  * @param {Store<any, any>} store 
- * @param {StoreLayout.Renderer} fieldRenderer 
- * @param {StoreLayout.Field?} layout
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
+ * @param {StoreLayout.Field<T>?} layout
  * @param {StoreLayout.Options?} options
  * @returns {ParentNode?}
  */
@@ -21,5 +22,5 @@ export default function FormFieldInline(store, fieldRenderer, layout, options) {
 		renderHtml(store, fieldRenderer, content, options, layout);
 		return content;
 	}
-	return fieldRenderer(store, options);
+	return fieldRenderer(store, layout?.renderer, options);
 }

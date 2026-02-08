@@ -6,10 +6,11 @@ import renderHtml from './renderHtml.mjs';
 
 /**
  * 
+ * @template T
  * @param {Store} store 
- * @param {StoreLayout.Renderer} fieldRenderer 
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {HTMLElement} root 
- * @param {StoreLayout?} [layout] 
+ * @param {StoreLayout<T>?} [layout] 
  * @param {StoreLayout.Options & {clone?: boolean} | null} [options]
  * @returns {void}
  */
