@@ -619,7 +619,7 @@ export default class Store {
 	/**
 	 * 异步校验
 	 * @overload
-	 * @param {true} [path]
+	 * @param {true} [self]
 	 * @returns {Promise<string[] | null>}
 	 */
 	/**
@@ -642,6 +642,7 @@ export default class Store {
 				});
 		}
 		const selfPath = Array.isArray(path) ? path : [];
+		if (this.#hidden.get()) { return Promise.resolve([]); }
 		const list = [this.validate(true).then(errors => {
 			if (!errors?.length) { return []; }
 			return [{ path: [...selfPath], store: /** @type {Store} */(this), errors }];
