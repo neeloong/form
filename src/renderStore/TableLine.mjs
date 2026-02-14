@@ -46,6 +46,7 @@ export default function Line(store, fieldRenderer, layout, {
 			const body = root.appendChild(document.createElement('tr'));
 			const main = body.appendChild(document.createElement('td'));
 			main.colSpan = columns.length;
+			main.appendChild(form);
 			body.hidden = true;
 			trigger = () => {
 				if (body.hidden) {
