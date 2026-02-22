@@ -3,6 +3,7 @@
 import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
 import Line from './TableLine.mjs';
+import { getColumns } from './getColumns.mjs';
 
 /**
  * 
@@ -31,6 +32,7 @@ function renderHead(signal, parent, columns, add, addable, editable) {
 		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, signal);
 	}
 }
+
 /**
  *
  * @template T
@@ -42,54 +44,15 @@ function renderHead(signal, parent, columns, add, addable, editable) {
  */
 export default function Table(store, fieldRenderer, layout, options) {
 	if (options?.signal?.aborted) { return null; }
-	const headerColumns = layout.columns;
-	const fieldList = Object.entries(store.type || {})
-		.filter(([k, v]) => typeof v?.type !== 'object')
-		.map(([field, { width, label }]) => ({ field, width, label }));
-	/** @type {StoreLayout.Column<T>[]} */
-	let columns = [];
-	if (Array.isArray(headerColumns)) {
-		const map = new Map(fieldList.map(v => [v.field, v]));
-
-		/** @type {(StoreLayout.Column<T> | null)[]} */
-		const allColumns = headerColumns.map(v => {
-			if (!v) { return null; }
-			if (typeof v === 'number') { return { placeholder: v }; }
-			if (typeof v === 'string') { return map.get(v) || null; }
-			if (typeof v !== 'object') { return null; }
-			if (Array.isArray(v)) {
-				/** @type {Set<StoreLayout.Action>} */
-				const options = new Set(['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse']);
-				const actions = v.filter(v => options.delete(v));
-				if (!actions) { return null; }
-				return { actions };
-			}
-			const { action, actions, field, placeholder, pattern, width, label } = v;
-			if (field) {
-				const define = map.get(field);
-				if (define) {
-					return { field, placeholder, width, label: label || define.label };
-				}
-			}
-			const options = new Set(['add', 'move', 'trigger', 'remove', 'serial']);
-			const allActions = [action, actions].flat().filter(v => v && options.delete(v));
-			if (allActions.length) {
-				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label };
-			}
-			// if (pattern) {
-			// 	return { pattern, placeholder, width, label };
-			// }
-			return null;
-		});
-		columns = /** @type {StoreLayout.Column<T>[]} */(allColumns.filter(Boolean));
-
-	}
-	if (!columns.length) {
-		columns = [
+	const columns = getColumns(
+		store,
+		layout,
+		['add', 'move', 'trigger', 'remove', 'serial'],
+		fields => [
 			{ actions: ['add', 'trigger', 'move', 'remove', 'serial'] },
-			...fieldList.slice(0, 3),
-		];
-	}
+			...fields.slice(0, 3),
+		],
+	);
 
 	const table = document.createElement('table');
 	table.classList.add('NeeloongForm-table');
