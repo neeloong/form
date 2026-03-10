@@ -36,7 +36,7 @@
  * @property {string | ParentNode | null} [html]
  * @property {StoreLayout.Item<T>[]?} [fields]
  * @property {T} [renderer]
- * 
+ * @property {boolean?} [editable]
  */
 /**
  * @template [T=unknown]
