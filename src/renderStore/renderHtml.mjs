@@ -44,27 +44,49 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 			const mode = node.getAttribute('mode') || '';
 			const fieldStore = field ? store.child(field) : store;
 			if (!fieldStore) { return; }
-			const fieldLayout = field
-				? layout?.fields?.find(createFieldFilter(field)) || fieldStore.layout
-				: { ...layout, html: '' };
+			/** @type {HTMLElement?} */
+			let el = null;
 			switch (mode) {
 				case 'grid': {
-					const el = Form(store, fieldRenderer, fieldLayout, options);
-					if (el) { node.replaceWith(el); }
-					return;
+					const fieldLayout = field
+						? layout?.fields?.find(createFieldFilter(field)) || fieldStore.layout
+						: { ...layout, html: '' };
+					el = Form(fieldStore, fieldRenderer, fieldLayout, options);
+					break;
+				}
+				default: {
+					el = fieldRenderer(fieldStore, layout.renderer, options);
+					break;
 				}
 			}
-			const res = fieldRenderer(fieldStore, layout.renderer, options);
-			if (res) {
-				node.replaceWith(res);
+			if (!el) {
+				const value = node.getAttribute('placeholder') || '';
+				node.replaceWith(document.createTextNode(value));
 				return;
 			}
-			const value = node.getAttribute('placeholder') || '';
-			node.replaceWith(document.createTextNode(value));
+			const className = node.getAttribute('class') || '';
+			if (className) {
+				el.setAttribute('class', [
+					el.getAttribute('class') || '',
+					className,
+				].filter(Boolean).join(' '));
+			}
+			const style = node.getAttribute('style') || '';
+			if (style) {
+				el.setAttribute('style', [
+					el.getAttribute('style') || '',
+					style,
+				].filter(Boolean).join(' '));
+			}
+			node.replaceWith(el);
 			return;
 		}
 		if (tagName === 'nl-form-button') {
 			const button = document.createElement('button');
+			const className = node.getAttribute('class') || '';
+			const style = node.getAttribute('style') || '';
+			if (className) { button.setAttribute('class', className); }
+			if (style) { button.setAttribute('style', style); }
 			button.classList.add('NeeloongForm-item-button');
 			const click = node.getAttribute('click') || '';
 			const call = options?.call;
