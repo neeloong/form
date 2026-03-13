@@ -428,9 +428,10 @@ export default class Store {
 	#selfMin;
 	/** @readonly @type {Signal.Computed<number?>} */
 	#min;
+	/** @deprecated */
 	get selfMin() { return this.#selfMin.get(); }
 	set selfMin(v) { this.#selfMin.set(toValues.number(v)); }
-	/** 数值字段的最小值限制 */
+	/** @deprecated 数值字段的最小值限制 */
 	get min() { return this.#min.get(); }
 	set min(v) { this.#selfMin.set(toValues.number(v)); }
 
@@ -439,9 +440,10 @@ export default class Store {
 	#selfMax;
 	/** @readonly @type {Signal.Computed<number?>} */
 	#max;
+	/** @deprecated */
 	get selfMax() { return this.#selfMax.get(); }
 	set selfMax(v) { this.#selfMax.set(toValues.number(v)); }
-	/** 数值字段的最大值限制 */
+	/** @deprecated 数值字段的最大值限制 */
 	get max() { return this.#max.get(); }
 	set max(v) { this.#selfMax.set(toValues.number(v)); }
 
@@ -450,9 +452,10 @@ export default class Store {
 	#selfStep;
 	/** @readonly @type {Signal.Computed<number?>} */
 	#step;
+	/** @deprecated */
 	get selfStep() { return this.#selfStep.get(); }
 	set selfStep(v) { this.#selfStep.set(toValues.number(v)); }
-	/** 数值字段的步长 */
+	/** @deprecated 数值字段的步长 */
 	get step() { return this.#step.get(); }
 	set step(v) { this.#selfStep.set(toValues.number(v)); }
 
@@ -460,9 +463,10 @@ export default class Store {
 	#selfMinLength;
 	/** @readonly @type {Signal.Computed<number?>} */
 	#minLength;
+	/** @deprecated */
 	get selfMinLength() { return this.#selfMinLength.get(); }
 	set selfMinLength(v) { this.#selfMinLength.set(toValues.number(v)); }
-	/** 最小长度 */
+	/** @deprecated 最小长度 */
 	get minLength() { return this.#minLength.get(); }
 	set minLength(v) { this.#selfMinLength.set(toValues.number(v)); }
 
@@ -470,9 +474,10 @@ export default class Store {
 	#selfMaxLength;
 	/** @readonly @type {Signal.Computed<number?>} */
 	#maxLength;
+	/** @deprecated */
 	get selfMaxLength() { return this.#selfMaxLength.get(); }
 	set selfMaxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
-	/** 最大长度 */
+	/** @deprecated 最大长度 */
 	get maxLength() { return this.#maxLength.get(); }
 	set maxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
 
@@ -480,9 +485,10 @@ export default class Store {
 	#selfPattern;
 	/** @readonly @type {Signal.Computed<RegExp?>} */
 	#pattern;
+	/** @deprecated */
 	get selfPattern() { return this.#selfPattern.get(); }
 	set selfPattern(v) { this.#selfPattern.set(toValues.regex(v)); }
-	/** 模式 */
+	/** @deprecated 模式 */
 	get pattern() { return this.#pattern.get(); }
 	set pattern(v) { this.#selfPattern.set(toValues.regex(v)); }
 
@@ -491,9 +497,10 @@ export default class Store {
 	#selfValues;
 	/** @readonly @type {Signal.Computed<(Schema.Value.Group | Schema.Value)[] | null>} */
 	#values;
+	/** @deprecated */
 	get selfValues() { return this.#selfValues.get(); }
 	set selfValues(v) { this.#selfValues.set(toValues.values(v)); }
-	/** 可选值列表 */
+	/** @deprecated 可选值列表 */
 	get values() { return this.#values.get(); }
 	set values(v) { this.#selfValues.set(toValues.values(v)); }
 
