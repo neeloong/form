@@ -75,9 +75,9 @@
  * @property {boolean} [required]
  * @property {string} [label]
  * @property {string} [description]
- * @property {(store: Store<any, any>, options?: StoreLayout.Options | null) => boolean} [disabled]
- * @property {string | ((store: Store<any, any>, options?: StoreLayout.Options | null) => string)} [text]
- * @property {string | ((event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [click]
+ * @property {(store: Store<any, any, any>, options?: StoreLayout.Options | null) => boolean} [disabled]
+ * @property {string | ((store: Store<any, any, any>, options?: StoreLayout.Options | null) => string)} [text]
+ * @property {string | ((event: Event, store: Store<any, any, any>, options?: StoreLayout.Options | null) => void)} [click]
  */
 /**
  * @typedef {object} StoreLayout.Html
@@ -112,9 +112,9 @@
  * @property {(store: Store, el: Element | StoreLayout.Relatedness) => () => void} [relate]
  * @property {boolean} [editable] 
  * @property {AbortSignal} [signal] 
- * @property {((name: string, event: Event, store: Store<any, any>, options?: StoreLayout.Options | null) => void)} [call]
+ * @property {((name: string, event: Event, store: Store<any, any, any>, options?: StoreLayout.Options | null) => void)} [call]
  */
 /**
  * @template [T=unknown]
- * @typedef {(store: Store<any, any>, renderer?: T, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
+ * @typedef {(store: Store<any, any, any>, renderer?: T, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
  */

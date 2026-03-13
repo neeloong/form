@@ -7,7 +7,7 @@ import FormHtml from './FormHtml.mjs';
 /**
  * 
  * @template T
- * @param {Store<any, any>} store 
+ * @param {Store<any, any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Item<T>} item
  * @param {StoreLayout.Options?} options
@@ -32,7 +32,7 @@ function FormItem(store, fieldRenderer, item, options) {
 /**
  * 
  * @template T
- * @param {Store<any, any>} store 
+ * @param {Store<any, any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout<T>} layout
  * @param {StoreLayout.Options?} options

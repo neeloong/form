@@ -14,6 +14,7 @@ import makeDefault from './makeDefault.mjs';
  * 管理单个表单字段的状态和行为
  * @template [T=any]
  * @template [M=any]
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
  */
 export default class Store {
 	/** @type {Map<string, Set<(value: any, store: any) => void | boolean | null>>} */
@@ -56,7 +57,8 @@ export default class Store {
 	/**
 	 * 从数据结构模式创建存储
 	 * @template [M=any]
-	 * @param {Schema<M>} schema 数据结构模式
+	 * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+	 * @param {Schema<M, S>} schema 数据结构模式
 	 * @param {object} [options] 选项
 	 * @param {boolean} [options.new] 是否为新建环境
 	 */
@@ -80,9 +82,10 @@ export default class Store {
 	#ref = null;
 	get ref() { return this.#ref || createRef(this); }
 	/**
-	 * @param {Schema.Field<M>} schema 字段的 Schema 定义
+	 * @param {Schema.Field<M, S>} schema 字段的 Schema 定义
 	 * @param {object} [options] 可选配置
 	 * @param {Store?} [options.parent] 
+	 * @param {Partial<S>?} [options.states] 
 	 * @param {((store: Store, value?: any) => any) | object | number | string | boolean | null | undefined} [options.default]
 	 * @param {number | string | null} [options.index] 
 	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.size] 
@@ -117,7 +120,7 @@ export default class Store {
 	 */
 	constructor(schema, {
 		null: isNull, ref, default: defaultValue,
-		setValue, convert, onUpdate,
+		setValue, convert, onUpdate, states,
 		validator, validators,
 		index, size, new: isNew, parent: parentNode,
 		hidden, clearable, required, disabled, readonly, removable,
@@ -195,6 +198,22 @@ export default class Store {
 
 		const validatorResult = createValidator(this, schema.validator, validator);
 
+
+		const schemaStates = schema.states;
+		this.#states = schemaStates ? Object.defineProperties(Object.create(null),
+			Object.fromEntries(
+				Object.entries(schemaStates).map(([k, { get, set, toState }]) => {
+					const state = new Signal.State(toState?.(states?.[k]));
+					const computed = new Signal.Computed(() => get(this, state));
+					return [k, {
+						configurable: true,
+						enumerable: true,
+						get() { return computed.get(); },
+						set(v) { return set?.(this, state, v); },
+					}];
+				})
+			)) : null;
+
 		const [changed, changedResult, cancelChange] = createAsyncValidator(this, schema.validators?.change, validators?.change);
 		const [blurred, blurredResult, cancelBlur] = createAsyncValidator(this, schema.validators?.blur, validators?.blur);
 		this.listen('change', () => { changed(); });
@@ -229,8 +248,11 @@ export default class Store {
 			this.listen(k, f);
 		}
 	}
+	/** @type {S?} */
+	#states;
+	get states() { return this.#states; }
 	/** @type {StoreLayout.Field<any>} */
-	#layout
+	#layout;
 	get layout() { return this.#layout; }
 	#createDefault;
 	/** @param {any} [value] @returns {any} */

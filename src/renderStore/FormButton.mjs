@@ -5,7 +5,7 @@ import createCell from './createCell.mjs';
 
 /**
  *
- * @param {Store<any, any>} store
+ * @param {Store<any, any, any>} store
  * @param {StoreLayout.Button} layout
  * @param {StoreLayout.Options?} options
  * @returns {ParentNode}

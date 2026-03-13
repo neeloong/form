@@ -204,10 +204,10 @@ export default function Tree(store, fieldRenderer, layout, options) {
 
 	/** @type {AbortController?} */
 	let detailAbortController = null;
-	const detailsStore = new Signal.State(/** @type{Store<any, any>?}*/(null));
+	const detailsStore = new Signal.State(/** @type{Store<any, any, any>?}*/(null));
 	/**
 	 * 
-	 * @param {Store<any, any>} store 
+	 * @param {Store<any, any, any>} store 
 	 * @returns 
 	 */
 	function createDetails(store) {

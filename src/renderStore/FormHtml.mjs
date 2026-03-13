@@ -7,7 +7,7 @@ import renderHtml from './renderHtml.mjs';
 /**
  *
  * @template T
- * @param {Store<any, any>} store
+ * @param {Store<any, any, any>} store
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Html} layout
  * @param {StoreLayout.Options?} options

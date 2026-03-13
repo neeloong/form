@@ -11,7 +11,8 @@ export let ArrayStoreClass = null;
 let TypeStores = Object.create(null);
 /**
  * @template [M=any]
- * @param {Schema.Field<M>} schema
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+ * @param {Schema.Field<M, S>} schema
  * @param {object} [options] 
  * @param {Store?} [options.parent]
  * @param {string | number | null} [options.index] 

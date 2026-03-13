@@ -31,7 +31,7 @@ function createFieldFilter(field) {
  * @param {StoreLayout.Options?} options
  * @param {StoreLayout<T>} layout 
  * @param {Node} [anchor]
- * @param {(child?: Store<any, any> | undefined) => void} [dragenter]
+ * @param {(child?: Store<any, any, any> | undefined) => void} [dragenter]
  * @returns {void}
  */
 export default function renderHtml(store, fieldRenderer, node, options, layout, anchor, dragenter) {

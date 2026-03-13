@@ -9,8 +9,8 @@ import FormFieldInline from './FormFieldInline.mjs';
 /**
  * 
  * @template T
- * @param {Store<any, any>} store 
- * @param {Signal.State<Store<any, any>?>} currentStore 
+ * @param {Store<any, any, any>} store 
+ * @param {Signal.State<Store<any, any, any>?>} currentStore 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Field<T>} layout
  * @param {Signal.State<State>} state
@@ -24,7 +24,7 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {() => void} option.dragend 
  * @param {{get(): boolean}} option.deletable 
  * @param {() => void} option.addNode 
- * @param {(store: Store<any, any>) => () => void} option.createDetails 
+ * @param {(store: Store<any, any, any>) => () => void} option.createDetails 
  * @param {StoreLayout.Options?} options
  * @returns {HTMLElement}
  */

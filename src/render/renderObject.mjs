@@ -17,7 +17,7 @@ export default function renderObject(parent, next, store, env, renderItem, sort)
 	const children = [];
 	const childStores = [...store];
 	const count = childStores.length;
-	/** @type {[string, Store<any, any>, number][]} */
+	/** @type {[string, Store<any, any, any>, number][]} */
 	const stores = sort
 	? childStores
 		.map(([k,v]) => [k,v,env.setStore(v, store).exec(sort)])

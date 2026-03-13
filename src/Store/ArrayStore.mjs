@@ -9,7 +9,8 @@ import createBooleanStates from './createBooleanStates.mjs';
 /**
  * @template [T=any]
  * @template [M=any]
- * @extends {Store<(T | null)[], M>}
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+ * @extends {Store<(T | null)[], M, S>}
  */
 export default class ArrayStore extends Store {
 	/** @type {(index: number, isNew?: boolean) => Store} */
@@ -32,7 +33,7 @@ export default class ArrayStore extends Store {
 	}
 	get kind() { return 'array'; }
 	/**
-	 * @param {Schema.Field<M>} schema
+	 * @param {Schema.Field<M, S>} schema
 	 * @param {object} [options] 
 	 * @param {Store?} [options.parent]
 	 * @param {string | number | null} [options.index] 

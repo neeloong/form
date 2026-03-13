@@ -16,7 +16,7 @@ import Tree from './Tree.mjs';
  * 
  * @template T
  * @param {string | ParentNode} html 
- * @param {Store<any, any>} store 
+ * @param {Store<any, any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Options?} options
  * @param {StoreLayout.Field<T>} layout
@@ -48,7 +48,7 @@ function renderArrayCell(arrayStyle, store, fieldRenderer, layout, options) {
 /**
  * 
  * @template T
- * @param {Store<any, any>} store 
+ * @param {Store<any, any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Field<T>} layout
  * @param {StoreLayout.Options?} options

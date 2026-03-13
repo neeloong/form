@@ -1,3 +1,4 @@
+/** @import { Signal } from 'signal-polyfill' */
 /** @import Store from './Store/index.mjs' */
 /** @import { StoreLayout } from './StoreLayout.types.mjs' */
 
@@ -15,11 +16,13 @@
  */
 /**
  * @template [M=any]
- * @typedef {(Schema.Object<M> | Schema.Type) & Schema.Attr<M>} Schema.Field 字段定义
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+ * @typedef {(Schema.Object<M, S> | Schema.Type) & Schema.Attr<M, S>} Schema.Field 字段定义
  */
 /**
  * @template [M=any]
- * @typedef {Record<string, Schema.Field<M>>} Schema
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+ * @typedef {Record<string, Schema.Field<M, S>>} Schema
  */
 /**
  * @typedef {Schema.Value | string | number} Schema.Value.Define 可选值定义
@@ -45,8 +48,9 @@
  */
 /**
  * @template [M=any]
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
  * @typedef {object} Schema.Object 对象类型定义
- * @property {Record<string, Schema.Field<M>>} type 字段定义
+ * @property {Record<string, Schema.Field<M, S>>} type 字段定义
  * @property {boolean} [array] 是否为数组
  */
 /**
@@ -64,10 +68,23 @@
  * @property {Event} focus 聚焦
  * @property {Event} blur 失焦
  */
+
+
+/**
+ * @template T
+ * @template [S=any]
+ * @typedef {object} Schema.Stater
+ * @property {function(Store, Signal.State<S>): T} get
+ * @property {function(Store, Signal.State<S>, any): void} set
+ * @property {function(any): S} toState
+ */
+
 /**
  * @template [M=any]
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
  * @typedef {object} Schema.Attr
  * @property {M} [meta] 元信息
+ * @property {{[k in keyof S]: Schema.Stater<S[k]>}} [states]
  * @property {((store: Store) => any) | any} [default]
  * @property {any} [component] 自定义组件
  * @property {boolean} [immutable] 是否可修改
@@ -93,4 +110,8 @@
  * @property {Schema.Validator | Schema.Validator[] | null} [validator] 同步验证器
  * @property {{[k in 'change' | 'blur']?: Schema.AsyncValidator | Schema.AsyncValidator[] | null}} [validators] 异步验证器
  * @property {StoreLayout.Field<any>} [layout]
+ */
+
+/**
+ * @typedef {String | Boolean | Number | Object | null} Schema.State
  */
