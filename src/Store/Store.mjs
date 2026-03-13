@@ -528,6 +528,40 @@ export default class Store {
 	#initValue = new Signal.State(/** @type {T?} */(null));
 	#value = new Signal.State(this.#initValue.get());
 
+	/**
+	 * @template [M=any]
+	 * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+	 * @param {Schema<M, S>} schema 数据结构模式
+	 */
+	bindObject(schema) {
+		const bindStores = this.#bindStores;
+		/** @type {Store[]} */
+		const list = [];
+		for (const [index, field] of Object.entries(schema)) {
+			const bindStore = create(field, {
+				index, parent: this,
+				/** @param {*} value @param {*} currentIndex @param {Store} store */
+				onUpdate: (value, currentIndex, store) => {
+					if (index !== currentIndex) { return; }
+					if (bindStores.has(store)) { return; }
+					const val = this.#value ?? null;
+					if (typeof val !== 'object' || Array.isArray(val)) { return }
+					// @ts-ignore
+					this.value = { ...val, [currentIndex]: value };
+				},
+			});
+			list.push(bindStore);
+			bindStores.set(bindStore, index);
+		}
+		this.#requestUpdate();
+		return () => {
+			for (const bindStore of list) {
+				bindStores.delete(bindStore);
+			}
+		};
+	}
+	/** @type {Map<Store, string>} */
+	#bindStores = new Map();
 
 	/** 内容是否已改变 */
 	get changed() { return !Object.is(this.#value.get(), this.#initValue.get()); }
@@ -574,6 +608,9 @@ export default class Store {
 			for (const [, field] of this) {
 				field.#reset(null, false);
 			}
+			for (const [field] of this.#bindStores) {
+				field.#reset(null, false);
+			}
 			this.#value.set(value);
 			this.#initValue.set(value);
 			this.#onUpdate?.(value, this.#index.get(), this);
@@ -582,6 +619,9 @@ export default class Store {
 		/** @type {*} */
 		const newValues = Array.isArray(value) ? [...value] : { ...value };
 		for (const [key, field] of this) {
+			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
+		}
+		for (const [field, key] of this.#bindStores) {
 			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
 		}
 		this.#value.set(newValues);
@@ -617,6 +657,15 @@ export default class Store {
 			let newValues = Array.isArray(val) ? [...val] : { ...val };
 			let updated = false;
 			for (const [key, field] of this) {
+				// @ts-ignore
+				const data = Object.hasOwn(val, key) ? val[key] : undefined;
+				const newData = field.#toUpdate(data);
+				if (Object.is(data, newData)) { continue; }
+				// @ts-ignore
+				newValues[key] = newData;
+				updated = true;
+			}
+			for (const [field, key] of this.#bindStores) {
 				// @ts-ignore
 				const data = Object.hasOwn(val, key) ? val[key] : undefined;
 				const newData = field.#toUpdate(data);
@@ -670,6 +719,9 @@ export default class Store {
 			return [{ path: [...selfPath], store: /** @type {Store} */(this), errors }];
 		})];
 		for (const [key, field] of this) {
+			list.push(field.validate([...selfPath, key]));
+		}
+		for (const [field, key] of this.#bindStores) {
 			list.push(field.validate([...selfPath, key]));
 		}
 		return Promise.all(list).then(v => v.flat());

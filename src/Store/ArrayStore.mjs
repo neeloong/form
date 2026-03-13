@@ -102,6 +102,8 @@ export default class ArrayStore extends Store {
 			return child;
 		};
 	}
+	/** @returns {never} */
+	bindObject() { throw new Error(`ArrayStore 不支持 bindObject()方法`); }
 
 
 	/** @readonly @type {Signal.State<boolean?>} */
