@@ -42,6 +42,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 		if (tagName === 'nl-form-field') {
 			const field = node.getAttribute('name') || '';
 			const mode = node.getAttribute('mode') || '';
+			const editable = options?.editable && !node.hasAttribute('non-editable');
 			const fieldStore = field ? store.child(field) : store;
 			if (!fieldStore) { return; }
 			/** @type {HTMLElement?} */
@@ -51,11 +52,11 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					const fieldLayout = field
 						? layout?.fields?.find(createFieldFilter(field)) || fieldStore.layout
 						: { ...layout, html: '' };
-					el = Form(fieldStore, fieldRenderer, fieldLayout, options);
+					el = Form(fieldStore, fieldRenderer, fieldLayout, {...options, editable});
 					break;
 				}
 				default: {
-					el = fieldRenderer(fieldStore, layout.renderer, options);
+					el = fieldRenderer(fieldStore, layout.renderer, {...options, editable});
 					break;
 				}
 			}
