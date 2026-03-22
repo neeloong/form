@@ -17,7 +17,7 @@ export default function FormHtml(store, fieldRenderer, layout, options) {
 	const html = layout.html;
 	if (!html) { return null; }
 	const [root, content] = createCell(options?.signal, layout, store);
-	const htmlContent = getHtmlContent(html);
+	const htmlContent = getHtmlContent(html, options?.sanitizeHtml);
 	renderHtml(store, fieldRenderer, htmlContent, options, layout);
 	content.appendChild(htmlContent);
 	return root;

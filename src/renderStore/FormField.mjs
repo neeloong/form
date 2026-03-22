@@ -23,7 +23,7 @@ import Tree from './Tree.mjs';
  * @returns {ParentNode}
  */
 function Html(html, store, fieldRenderer, options, layout) {
-	const htmlContent = getHtmlContent(html);
+	const htmlContent = getHtmlContent(html, options?.sanitizeHtml);
 	renderHtml(store, fieldRenderer, htmlContent, options, layout);
 	return htmlContent;
 }

@@ -18,7 +18,7 @@ export default function FormFieldInline(store, fieldRenderer, layout, options) {
 	if (options?.signal?.aborted) { return null; }
 	const html = layout.html;
 	if (html) {
-		const content = getHtmlContent(html);
+		const content = getHtmlContent(html, options?.sanitizeHtml);
 		renderHtml(store, fieldRenderer, content, options, layout);
 		return content;
 	}

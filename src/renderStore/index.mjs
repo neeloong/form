@@ -22,7 +22,7 @@ export default function renderStore(store, fieldRenderer, root, layout, options)
 		Form(store, fieldRenderer, storeLayout, options || null, root);
 		return;
 	}
-	const content = getHtmlContent(html);
+	const content = getHtmlContent(html, options?.sanitizeHtml);
 	renderHtml(store, fieldRenderer, content, options || null, storeLayout);
 	root.appendChild(content);
 	options?.signal?.addEventListener('abort', () => {
