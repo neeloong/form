@@ -6,6 +6,7 @@ import createRef from './ref.mjs';
 import create, { setStore } from './create.mjs';
 import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
+import BindObjectStore from './BindObjectStore.mjs';
 /** @import { Ref } from './ref.mjs' */
 /** @import { Schema } from '../Schema.types.mjs' */
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
@@ -17,6 +18,12 @@ import makeDefault from './makeDefault.mjs';
  * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
  */
 export default class Store {
+	/** @type {Store<T, M, S>?} */
+	#originStore = null;
+
+	/** @type {Schema.Field<M, S>}  字段的 Schema 定义 */
+	#schema;
+	get schema() { return this.#schema; }
 	/** @type {Map<string, Set<(value: any, store: any) => void | boolean | null>>} */
 	#events = new Map();
 	/**
@@ -24,8 +31,11 @@ export default class Store {
 	 * @template {keyof Schema.Events} K
 	 * @param {K} event 
 	 * @param  {Schema.Events[K]} value 
+	 * @returns {boolean}
 	 */
 	emit(event, value) {
+		const originStore = this.#originStore;
+		if (originStore) { return originStore.emit(event, value); }
 		const key = typeof event === 'number' ? String(event) : event;
 		const events = this.#events;
 		let canceled = false;
@@ -42,6 +52,8 @@ export default class Store {
 	 * @returns {() => void}
 	 */
 	listen(event, listener) {
+		const originStore = this.#originStore;
+		if (originStore) { return originStore.listen(event, p => listener.call(this, p, this)); }
 		const fn = listener.bind(this);
 		const events = this.#events;
 		const key = typeof event === 'number' ? String(event) : event;
@@ -82,7 +94,7 @@ export default class Store {
 	#ref = null;
 	get ref() { return this.#ref || createRef(this); }
 	/**
-	 * @param {Schema.Field<M, S>} schema 字段的 Schema 定义
+	 * @param {Schema.Field<M, S> | Store<T,M,S>} schema 字段的 Schema 定义
 	 * @param {object} [options] 可选配置
 	 * @param {Store?} [options.parent] 
 	 * @param {Partial<S>?} [options.states] 
@@ -126,7 +138,74 @@ export default class Store {
 		hidden, clearable, required, disabled, readonly, removable,
 		label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
 	} = {}) {
-		this.schema = schema;
+		if (schema instanceof Store) {
+			this.#originStore = schema;
+			this.#schema = schema.#schema;
+			this.#null = schema.#null;
+			this.#ref = schema.#ref;
+			this.#states = schema.#states;
+			this.#layout = schema.#layout;
+			this.#createDefault = schema.#createDefault;
+			this.#setValue = schema.#setValue;
+			this.#convert = schema.#convert;
+			this.#onUpdate = schema.#onUpdate;
+			this.#parent = schema.#parent;
+			this.#root = schema.#root;
+			this.#type = schema.#type;
+			this.#meta = schema.#meta;
+			this.#component = schema.#component;
+			this.#selfLoading = schema.#selfLoading;
+			this.#loading = schema.#loading;
+			this.#size = schema.#size;
+			this.#index = schema.#index;
+			this.#creatable = schema.#creatable;
+			this.#immutable = schema.#immutable;
+			this.#new = schema.#new;
+			this.#selfNew = schema.#selfNew;
+			this.#selfHidden = schema.#selfHidden;
+			this.#hidden = schema.#hidden;
+			this.#selfClearable = schema.#selfClearable;
+			this.#clearable = schema.#clearable;
+			this.#selfRequired = schema.#selfRequired;
+			this.#required = schema.#required;
+			this.#selfDisabled = schema.#selfDisabled;
+			this.#disabled = schema.#disabled;
+			this.#selfReadonly = schema.#selfReadonly;
+			this.#readonly = schema.#readonly;
+			this.#selfRemovable = schema.#selfRemovable;
+			this.#removable = schema.#removable;
+			this.#selfLabel = schema.#selfLabel;
+			this.#label = schema.#label;
+			this.#selfDescription = schema.#selfDescription;
+			this.#description = schema.#description;
+			this.#selfPlaceholder = schema.#selfPlaceholder;
+			this.#placeholder = schema.#placeholder;
+			this.#selfMin = schema.#selfMin;
+			this.#min = schema.#min;
+			this.#selfMax = schema.#selfMax;
+			this.#max = schema.#max;
+			this.#selfStep = schema.#selfStep;
+			this.#step = schema.#step;
+			this.#selfMinLength = schema.#selfMinLength;
+			this.#minLength = schema.#minLength;
+			this.#selfMaxLength = schema.#selfMaxLength;
+			this.#maxLength = schema.#maxLength;
+			this.#selfPattern = schema.#selfPattern;
+			this.#pattern = schema.#pattern;
+			this.#selfValues = schema.#selfValues;
+			this.#values = schema.#values;
+			this.#errors = schema.#errors;
+			this.#validatorResult = schema.#validatorResult;
+			this.#changed = schema.#changed;
+			this.#blurred = schema.#blurred;
+			this.#cancelChange = schema.#cancelChange;
+			this.#cancelBlur = schema.#cancelBlur;
+			this.#set = schema.#set;
+			this.#initValue = schema.#initValue;
+			this.#value = schema.#value;
+			return;
+		}
+		this.#schema = schema;
 		const parent = parentNode instanceof Store ? parentNode : null;
 		if (parent) {
 			this.#parent = parent;
@@ -254,6 +333,7 @@ export default class Store {
 	/** @type {StoreLayout.Field<any>} */
 	#layout;
 	get layout() { return this.#layout; }
+	/** @type {(value?: any) => unknown} */
 	#createDefault;
 	/** @param {any} [value] @returns {any} */
 	createDefault(value) { return this.#createDefault(value); }
@@ -535,40 +615,28 @@ export default class Store {
 	#initValue = new Signal.State(/** @type {T?} */(null));
 	#value = new Signal.State(this.#initValue.get());
 
+	/** @type {Map<Store, string>} */
+	#bindFieldStores = new Map();
+	/** @type {Set<Store>} */
+	#subBindStores = new Set();
 	/**
 	 * @template [M=any]
 	 * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
 	 * @param {Schema<M, S>} schema 数据结构模式
+	 * @param {AbortSignal} [signal]
+	 * @returns {BindObjectStore}
 	 */
-	bindObject(schema) {
-		const bindStores = this.#bindStores;
-		/** @type {Store[]} */
-		const list = [];
-		for (const [index, field] of Object.entries(schema)) {
-			const bindStore = create(field, {
-				index, parent: this,
-				/** @param {*} value @param {*} currentIndex @param {Store} store */
-				onUpdate: (value, currentIndex, store) => {
-					if (index !== currentIndex) { return; }
-					if (bindStores.has(store)) { return; }
-					const val = this.#value ?? null;
-					if (typeof val !== 'object' || Array.isArray(val)) { return }
-					// @ts-ignore
-					this.value = { ...val, [currentIndex]: value };
-				},
-			});
-			list.push(bindStore);
-			bindStores.set(bindStore, index);
-		}
+	bindObject(schema, signal) {
+		const originStore = this.#originStore;
+		if (originStore) { return originStore.bindObject(schema, signal); }
+		const store = new BindObjectStore(schema, this, this.#bindFieldStores, signal);
+		if (signal?.aborted) { return store; }
+		const subBindStores = this.#subBindStores;
+		subBindStores.add(store);
+		signal?.addEventListener('abort', () => subBindStores.delete(store));
 		this.#requestUpdate();
-		return () => {
-			for (const bindStore of list) {
-				bindStores.delete(bindStore);
-			}
-		};
+		return store;
 	}
-	/** @type {Map<Store, string>} */
-	#bindStores = new Map();
 
 	/** 内容是否已改变 */
 	get changed() { return !Object.is(this.#value.get(), this.#initValue.get()); }
@@ -576,6 +644,8 @@ export default class Store {
 	/** 字段当前值 */
 	get value() { return this.#value.get(); }
 	set value(v) {
+		const originStore = this.#originStore;
+		if (originStore) { originStore.value = v; return; }
 		const newValue = this.#setValue?.(v);
 		const val = newValue === undefined ? v : newValue;
 		this.#value.set(val);
@@ -596,6 +666,8 @@ export default class Store {
 	}
 	/** 重置数据 */
 	reset(value = this.#set ? this.#initValue.get() : this.#createDefault(), isNew = this.#selfNew.get()) {
+		const originStore = this.#originStore;
+		if (originStore) { originStore.reset(value, isNew); return; }
 		this.#reset(value, Boolean(isNew));
 	}
 	/**
@@ -615,7 +687,7 @@ export default class Store {
 			for (const [, field] of this) {
 				field.#reset(null, false);
 			}
-			for (const [field] of this.#bindStores) {
+			for (const [field] of this.#bindFieldStores) {
 				field.#reset(null, false);
 			}
 			this.#value.set(value);
@@ -628,7 +700,7 @@ export default class Store {
 		for (const [key, field] of this) {
 			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
 		}
-		for (const [field, key] of this.#bindStores) {
+		for (const [field, key] of this.#bindFieldStores) {
 			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
 		}
 		this.#value.set(newValues);
@@ -672,7 +744,7 @@ export default class Store {
 				newValues[key] = newData;
 				updated = true;
 			}
-			for (const [field, key] of this.#bindStores) {
+			for (const [field, key] of this.#bindFieldStores) {
 				// @ts-ignore
 				const data = Object.hasOwn(val, key) ? val[key] : undefined;
 				const newData = field.#toUpdate(data);
@@ -713,6 +785,7 @@ export default class Store {
 	 */
 	validate(path) {
 		if (path === true) {
+			if (this.#originStore) { return Promise.resolve(null); }
 			return Promise.all([this.#validatorResult.get(), this.#changed(), this.#blurred()])
 				.then(v => {
 					const errors = v.flat();
@@ -720,7 +793,7 @@ export default class Store {
 				});
 		}
 		const selfPath = Array.isArray(path) ? path : [];
-		if (this.#hidden.get()) { return Promise.resolve([]); }
+		if (!this.#originStore && this.#hidden.get()) { return Promise.resolve([]); }
 		const list = [this.validate(true).then(errors => {
 			if (!errors?.length) { return []; }
 			return [{ path: [...selfPath], store: /** @type {Store} */(this), errors }];
@@ -728,8 +801,8 @@ export default class Store {
 		for (const [key, field] of this) {
 			list.push(field.validate([...selfPath, key]));
 		}
-		for (const [field, key] of this.#bindStores) {
-			list.push(field.validate([...selfPath, key]));
+		for (const sub of this.#subBindStores) {
+			list.push(sub.validate(selfPath));
 		}
 		return Promise.all(list).then(v => v.flat());
 	}
