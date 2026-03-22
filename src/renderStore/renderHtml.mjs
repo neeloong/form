@@ -42,6 +42,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 		if (tagName === 'nl-form-field') {
 			const field = node.getAttribute('name') || '';
 			const mode = node.getAttribute('mode') || '';
+			const renderer = node.getAttribute('renderer') || '';
 			const editable = options?.editable && !node.hasAttribute('non-editable');
 			const fieldStore = field ? store.child(field) : store;
 			if (!fieldStore) { return; }
@@ -56,7 +57,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					break;
 				}
 				default: {
-					el = fieldRenderer(fieldStore, layout.renderer, {...options, editable});
+					el = fieldRenderer(fieldStore, renderer || layout.renderer, {...options, editable});
 					break;
 				}
 			}
