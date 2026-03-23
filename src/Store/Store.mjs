@@ -6,7 +6,6 @@ import createRef from './ref.mjs';
 import create, { setStore } from './create.mjs';
 import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
-import BindObjectStore from './BindObjectStore.mjs';
 /** @import { Ref } from './ref.mjs' */
 /** @import { Schema } from '../Schema.types.mjs' */
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
@@ -95,116 +94,91 @@ export default class Store {
 	get ref() { return this.#ref || createRef(this); }
 	/**
 	 * @param {Schema.Field<M, S> | Store<T,M,S>} schema 字段的 Schema 定义
-	 * @param {object} [options] 可选配置
-	 * @param {Store?} [options.parent] 
-	 * @param {Partial<S>?} [options.states] 
-	 * @param {((store: Store, value?: any) => any) | object | number | string | boolean | null | undefined} [options.default]
-	 * @param {number | string | null} [options.index] 
-	 * @param {number | Signal.State<number> | Signal.Computed<number>} [options.size] 
-	 * @param {boolean} [options.null] 
-	 * @param {boolean} [options.new] 
-	 * @param {boolean} [options.hidden] 
-	 * @param {boolean} [options.clearable] 
-	 * @param {boolean} [options.required] 
-	 * @param {boolean} [options.disabled] 
-	 * @param {boolean} [options.readonly] 
-	 * @param {boolean} [options.removable] 
-	 * 
-	 * @param {string} [options.label] 字段标签
-	 * @param {string} [options.description] 字段描述
-	 * @param {string} [options.placeholder] 占位符
-	 * @param {number} [options.min] 日期、时间、数字的最小值
-	 * @param {number} [options.max] 日期、时间、数字的最大值
-	 * @param {number} [options.step] 日期、时间、数字的步长
-	 * @param {number} [options.minLength] 
-	 * @param {number} [options.maxLength] 
-	 * @param {RegExp} [options.pattern] 
-	 * @param {(Schema.Value.Group | Schema.Value | string | number)[]} [options.values] 可选值
-	 * @param {Schema.Validator | Schema.Validator[] | null} [options.validator]
-	 * @param {{[k in keyof Schema.Events]?: Schema.AsyncValidator | Schema.AsyncValidator[] | null}} [options.validators]
-	 * 
-	 * @param {Ref?} [options.ref]
-	 * 
-	 * @param {((value: any) => any)?} [options.setValue] 
-	 * @param {((value: any) => any)?} [options.convert] 
-	 * 
-	 * @param {((value: T?, index: any, store: Store) => void)?} [options.onUpdate] 
+	 * @param {StoreOptions | AbortSignal | null} [options] 可选配置
 	 */
-	constructor(schema, {
-		null: isNull, ref, default: defaultValue,
-		setValue, convert, onUpdate, states,
-		validator, validators,
-		index, size, new: isNew, parent: parentNode,
-		hidden, clearable, required, disabled, readonly, removable,
-		label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
-	} = {}) {
+	constructor(schema, options) {
 		if (schema instanceof Store) {
-			this.#originStore = schema;
-			this.#schema = schema.#schema;
-			this.#null = schema.#null;
-			this.#ref = schema.#ref;
-			this.#states = schema.#states;
-			this.#layout = schema.#layout;
-			this.#createDefault = schema.#createDefault;
-			this.#setValue = schema.#setValue;
-			this.#convert = schema.#convert;
-			this.#onUpdate = schema.#onUpdate;
-			this.#parent = schema.#parent;
-			this.#root = schema.#root;
-			this.#type = schema.#type;
-			this.#meta = schema.#meta;
-			this.#component = schema.#component;
-			this.#selfLoading = schema.#selfLoading;
-			this.#loading = schema.#loading;
-			this.#size = schema.#size;
-			this.#index = schema.#index;
-			this.#creatable = schema.#creatable;
-			this.#immutable = schema.#immutable;
-			this.#new = schema.#new;
-			this.#selfNew = schema.#selfNew;
-			this.#selfHidden = schema.#selfHidden;
-			this.#hidden = schema.#hidden;
-			this.#selfClearable = schema.#selfClearable;
-			this.#clearable = schema.#clearable;
-			this.#selfRequired = schema.#selfRequired;
-			this.#required = schema.#required;
-			this.#selfDisabled = schema.#selfDisabled;
-			this.#disabled = schema.#disabled;
-			this.#selfReadonly = schema.#selfReadonly;
-			this.#readonly = schema.#readonly;
-			this.#selfRemovable = schema.#selfRemovable;
-			this.#removable = schema.#removable;
-			this.#selfLabel = schema.#selfLabel;
-			this.#label = schema.#label;
-			this.#selfDescription = schema.#selfDescription;
-			this.#description = schema.#description;
-			this.#selfPlaceholder = schema.#selfPlaceholder;
-			this.#placeholder = schema.#placeholder;
-			this.#selfMin = schema.#selfMin;
-			this.#min = schema.#min;
-			this.#selfMax = schema.#selfMax;
-			this.#max = schema.#max;
-			this.#selfStep = schema.#selfStep;
-			this.#step = schema.#step;
-			this.#selfMinLength = schema.#selfMinLength;
-			this.#minLength = schema.#minLength;
-			this.#selfMaxLength = schema.#selfMaxLength;
-			this.#maxLength = schema.#maxLength;
-			this.#selfPattern = schema.#selfPattern;
-			this.#pattern = schema.#pattern;
-			this.#selfValues = schema.#selfValues;
-			this.#values = schema.#values;
-			this.#errors = schema.#errors;
-			this.#validatorResult = schema.#validatorResult;
-			this.#changed = schema.#changed;
-			this.#blurred = schema.#blurred;
-			this.#cancelChange = schema.#cancelChange;
-			this.#cancelBlur = schema.#cancelBlur;
-			this.#set = schema.#set;
-			this.#initValue = schema.#initValue;
-			this.#value = schema.#value;
+			const store = schema.#originStore || schema;
+			this.#originStore= store;
+			this.#schema= store.#schema;
+			this.#null= store.#null;
+			this.#ref= store.#ref;
+			this.#states= store.#states;
+			this.#layout= store.#layout;
+			this.#createDefault= store.#createDefault;
+			this.#setValue= store.#setValue;
+			this.#convert= store.#convert;
+			this.#onUpdate= store.#onUpdate;
+			this.#parent= store.#parent;
+			this.#root= store.#root;
+			this.#type= store.#type;
+			this.#meta= store.#meta;
+			this.#component= store.#component;
+			this.#selfLoading= store.#selfLoading;
+			this.#loading= store.#loading;
+			this.#size= store.#size;
+			this.#index= store.#index;
+			this.#creatable= store.#creatable;
+			this.#immutable= store.#immutable;
+			this.#new= store.#new;
+			this.#selfNew= store.#selfNew;
+			this.#selfHidden= store.#selfHidden;
+			this.#hidden= store.#hidden;
+			this.#selfClearable= store.#selfClearable;
+			this.#clearable= store.#clearable;
+			this.#selfRequired= store.#selfRequired;
+			this.#required= store.#required;
+			this.#selfDisabled= store.#selfDisabled;
+			this.#disabled= store.#disabled;
+			this.#selfReadonly= store.#selfReadonly;
+			this.#readonly= store.#readonly;
+			this.#selfRemovable= store.#selfRemovable;
+			this.#removable= store.#removable;
+			this.#selfLabel= store.#selfLabel;
+			this.#label= store.#label;
+			this.#selfDescription= store.#selfDescription;
+			this.#description= store.#description;
+			this.#selfPlaceholder= store.#selfPlaceholder;
+			this.#placeholder= store.#placeholder;
+			this.#selfMin= store.#selfMin;
+			this.#min= store.#min;
+			this.#selfMax= store.#selfMax;
+			this.#max= store.#max;
+			this.#selfStep= store.#selfStep;
+			this.#step= store.#step;
+			this.#selfMinLength= store.#selfMinLength;
+			this.#minLength= store.#minLength;
+			this.#selfMaxLength= store.#selfMaxLength;
+			this.#maxLength= store.#maxLength;
+			this.#selfPattern= store.#selfPattern;
+			this.#pattern= store.#pattern;
+			this.#selfValues= store.#selfValues;
+			this.#values= store.#values;
+			this.#errors= store.#errors;
+			this.#validatorResult= store.#validatorResult;
+			this.#changed= store.#changed;
+			this.#blurred= store.#blurred;
+			this.#cancelChange= store.#cancelChange;
+			this.#cancelBlur= store.#cancelBlur;
+			this.#set= store.#set;
+			this.#initValue= store.#initValue;
+			this.#value= store.#value;
+			const signal = options instanceof AbortSignal ? options : null;
+			if (signal?.aborted) { return; }
+			const subBindStores= store.#subBindStores;
+			subBindStores.add(this);
+			signal?.addEventListener('abort', () => subBindStores.delete(this));
+			store.#requestUpdate();
 			return;
 		}
+		const {
+			null: isNull, ref, default: defaultValue,
+			setValue, convert, onUpdate, states,
+			validator, validators,
+			index, size, new: isNew, parent: parentNode,
+			hidden, clearable, required, disabled, readonly, removable,
+			label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
+		} = !(options instanceof AbortSignal) && options || {};
 		this.#schema = schema;
 		const parent = parentNode instanceof Store ? parentNode : null;
 		if (parent) {
@@ -617,24 +591,6 @@ export default class Store {
 
 	/** @type {Set<Store>} */
 	#subBindStores = new Set();
-	/**
-	 * @template [M=any]
-	 * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
-	 * @param {Schema<M, S>} schema 数据结构模式
-	 * @param {AbortSignal} [signal]
-	 * @returns {BindObjectStore}
-	 */
-	bindObject(schema, signal) {
-		const originStore = this.#originStore;
-		if (originStore) { return originStore.bindObject(schema, signal); }
-		const store = new BindObjectStore(schema, this);
-		if (signal?.aborted) { return store; }
-		const subBindStores = this.#subBindStores;
-		subBindStores.add(store);
-		signal?.addEventListener('abort', () => subBindStores.delete(store));
-		this.#requestUpdate();
-		return store;
-	}
 
 	/** 内容是否已改变 */
 	get changed() { return !Object.is(this.#value.get(), this.#initValue.get()); }
@@ -731,7 +687,7 @@ export default class Store {
 			// @ts-ignore
 			let newValues = Array.isArray(val) ? [...val] : { ...val };
 			let updated = false;
-			for (const bind of [this,...this.#subBindStores]) {
+			for (const bind of [this, ...this.#subBindStores]) {
 				for (const [key, field] of bind) {
 					// @ts-ignore
 					const data = Object.hasOwn(val, key) ? val[key] : undefined;
@@ -796,3 +752,43 @@ export default class Store {
 		return Promise.all(list).then(v => v.flat());
 	}
 }
+
+/**
+ * @template [T=any]
+ * @template [M=any]
+ * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
+ * @typedef {object} StoreOptions
+ * @property {Store?} [parent] 
+ * @property {Partial<S>?} [states] 
+ * @property {((store: Store, value?: any) => any) | object | number | string | boolean | null | undefined} [default]
+ * @property {number | string | null} [index] 
+ * @property {number | Signal.State<number> | Signal.Computed<number>} [size] 
+ * @property {boolean} [null] 
+ * @property {boolean} [new] 
+ * @property {boolean} [hidden] 
+ * @property {boolean} [clearable] 
+ * @property {boolean} [required] 
+ * @property {boolean} [disabled] 
+ * @property {boolean} [readonly] 
+ * @property {boolean} [removable] 
+ * 
+ * @property {string} [label] 字段标签
+ * @property {string} [description] 字段描述
+ * @property {string} [placeholder] 占位符
+ * @property {number} [min] 日期、时间、数字的最小值
+ * @property {number} [max] 日期、时间、数字的最大值
+ * @property {number} [step] 日期、时间、数字的步长
+ * @property {number} [minLength] 
+ * @property {number} [maxLength] 
+ * @property {RegExp} [pattern] 
+ * @property {(Schema.Value.Group | Schema.Value | string | number)[]} [values] 可选值
+ * @property {Schema.Validator | Schema.Validator[] | null} [validator]
+ * @property {{[k in keyof Schema.Events]?: Schema.AsyncValidator | Schema.AsyncValidator[] | null}} [validators]
+ * 
+ * @property {Ref?} [ref]
+ * 
+ * @property {((value: any) => any)?} [setValue] 
+ * @property {((value: any) => any)?} [convert] 
+ * 
+ * @property {((value: T?, index: any, store: Store) => void)?} [onUpdate] 
+ */

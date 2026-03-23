@@ -1,4 +1,4 @@
-import create, { setObjectStore } from './create.mjs';
+import create from './create.mjs';
 import Store from './Store.mjs';
 /** @import { Schema } from '../Schema.types.mjs' */
 
@@ -23,9 +23,10 @@ export default class BindObjectStore extends Store {
 	/**
 	 * @param {Schema<any, Object.<string, Schema.State>>} schema 数据结构模式
 	 * @param {Store<T, M, S>} store
+	 * @param {AbortSignal} [signal]
 	 */
-	constructor(schema, store) {
-		super(store);
+	constructor(schema, store, signal) {
+		super(store, signal);
 		const children = this.#children;
 		for (const [index, field] of Object.entries(schema)) {
 			const bindStore = create(field, {
@@ -43,5 +44,3 @@ export default class BindObjectStore extends Store {
 		}
 	}
 }
-// @ts-ignore
-setObjectStore(ObjectStore);
