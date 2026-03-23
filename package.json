@@ -1,6 +1,6 @@
 {
   "name": "@neeloong/form",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "private": true,
   "description": "一个基于响应式数据绑定的表单渲染库",
   "keywords": [ "from", "layout", "schema", "template", "render" ],
