@@ -23,15 +23,9 @@ export default class BindObjectStore extends Store {
 	/**
 	 * @param {Schema<any, Object.<string, Schema.State>>} schema 数据结构模式
 	 * @param {Store<T, M, S>} store
-	 * @param {Map<Store<any, any, {[x: string]: Schema.State;}>, string>} bindStores
-	 * @param {AbortSignal} [signal]
 	 */
-	constructor(schema, store, bindStores, signal) {
+	constructor(schema, store) {
 		super(store);
-		if (signal?.aborted) { return; }
-
-		/** @type {Store[]} */
-		const list = [];
 		const children = this.#children;
 		for (const [index, field] of Object.entries(schema)) {
 			const bindStore = create(field, {
@@ -46,15 +40,7 @@ export default class BindObjectStore extends Store {
 				},
 			});
 			children[index] = bindStore;
-			list.push(bindStore);
-			bindStores.set(bindStore, index);
 		}
-		signal?.addEventListener('abort', () => {
-			for (const bindStore of list) {
-				bindStores.delete(bindStore);
-			}
-		});
-
 	}
 }
 // @ts-ignore

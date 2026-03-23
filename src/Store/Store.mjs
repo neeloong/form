@@ -615,8 +615,6 @@ export default class Store {
 	#initValue = new Signal.State(/** @type {T?} */(null));
 	#value = new Signal.State(this.#initValue.get());
 
-	/** @type {Map<Store, string>} */
-	#bindFieldStores = new Map();
 	/** @type {Set<Store>} */
 	#subBindStores = new Set();
 	/**
@@ -629,7 +627,7 @@ export default class Store {
 	bindObject(schema, signal) {
 		const originStore = this.#originStore;
 		if (originStore) { return originStore.bindObject(schema, signal); }
-		const store = new BindObjectStore(schema, this, this.#bindFieldStores, signal);
+		const store = new BindObjectStore(schema, this);
 		if (signal?.aborted) { return store; }
 		const subBindStores = this.#subBindStores;
 		subBindStores.add(store);
@@ -684,11 +682,10 @@ export default class Store {
 		this.#cancelBlur();
 		this.#set = true;
 		if (!value || typeof value !== 'object') {
-			for (const [, field] of this) {
-				field.#reset(null, false);
-			}
-			for (const [field] of this.#bindFieldStores) {
-				field.#reset(null, false);
+			for (const bind of [this, ...this.#subBindStores]) {
+				for (const [, field] of bind) {
+					field.#reset(null, false);
+				}
 			}
 			this.#value.set(value);
 			this.#initValue.set(value);
@@ -697,11 +694,10 @@ export default class Store {
 		}
 		/** @type {*} */
 		const newValues = Array.isArray(value) ? [...value] : { ...value };
-		for (const [key, field] of this) {
-			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
-		}
-		for (const [field, key] of this.#bindFieldStores) {
-			newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
+		for (const bind of [this, ...this.#subBindStores]) {
+			for (const [key, field] of bind) {
+				newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
+			}
 		}
 		this.#value.set(newValues);
 		this.#initValue.set(newValues);
@@ -735,23 +731,16 @@ export default class Store {
 			// @ts-ignore
 			let newValues = Array.isArray(val) ? [...val] : { ...val };
 			let updated = false;
-			for (const [key, field] of this) {
-				// @ts-ignore
-				const data = Object.hasOwn(val, key) ? val[key] : undefined;
-				const newData = field.#toUpdate(data);
-				if (Object.is(data, newData)) { continue; }
-				// @ts-ignore
-				newValues[key] = newData;
-				updated = true;
-			}
-			for (const [field, key] of this.#bindFieldStores) {
-				// @ts-ignore
-				const data = Object.hasOwn(val, key) ? val[key] : undefined;
-				const newData = field.#toUpdate(data);
-				if (Object.is(data, newData)) { continue; }
-				// @ts-ignore
-				newValues[key] = newData;
-				updated = true;
+			for (const bind of [this,...this.#subBindStores]) {
+				for (const [key, field] of bind) {
+					// @ts-ignore
+					const data = Object.hasOwn(val, key) ? val[key] : undefined;
+					const newData = field.#toUpdate(data);
+					if (Object.is(data, newData)) { continue; }
+					// @ts-ignore
+					newValues[key] = newData;
+					updated = true;
+				}
 			}
 			if (updated) {
 				val = newValues;
