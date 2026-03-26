@@ -4,15 +4,37 @@
 
 
 /**
- * @callback Schema.Validator 同步验证器
+ * @template T
+ * @typedef {PromiseLike<T> | T} MaybePromise 
+ */
+/**
+ * @typedef {string | string[] | void | null} Schema.ValidatorResult 
+ */
+/**
+ * @deprecated
+ * @callback Schema.SyncValidator 同步验证器
  * @param {Store} store 存储体
- * @returns {string | string[] | void | null} 错误信息
+ * @returns {Schema.ValidatorResult} 错误信息
  */
 /**
  * @callback Schema.AsyncValidator 异步验证器
  * @param {Store} store 存储体
  * @param {AbortSignal} signal 终止信号
- * @returns {PromiseLike<string | string[] | void | null> | string | string[] | void | null} 错误信息
+ * @returns {MaybePromise<Schema.ValidatorResult>} 错误信息
+ */
+
+/**
+ * @typedef {object} Schema.EventValidator 事件验证器
+ * @property {string} event
+ * @property {Schema.AsyncValidator} validator
+ */
+/**
+ * @typedef {object} Schema.InstantValidator 即刻验证器
+ * @property {null} [event]
+ * @property {Schema.SyncValidator} validator
+ */
+/**
+ * @typedef {Schema.InstantValidator | Schema.EventValidator | Schema.SyncValidator} Schema.Validator
  */
 /**
  * @template [M=any]
@@ -108,7 +130,6 @@
  * @property {(Schema.Value.Group.Define | Schema.Value.Define)[] | ((store: Store) => (Schema.Value.Group.Define | Schema.Value.Define)[])} [values] 可选值
  * @property {{[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null)?}} [events] 监听函数
  * @property {Schema.Validator | Schema.Validator[] | null} [validator] 同步验证器
- * @property {{[k in 'change' | 'blur']?: Schema.AsyncValidator | Schema.AsyncValidator[] | null}} [validators] 异步验证器
  * @property {StoreLayout.Field<any>} [layout]
  */
 

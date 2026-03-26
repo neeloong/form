@@ -4,7 +4,7 @@ import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
 import createRef from './ref.mjs';
 import create, { setStore } from './create.mjs';
-import { createAsyncValidator, createValidator, merge } from './createValidator.mjs';
+import createValidator from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
 /** @import { Ref } from './ref.mjs' */
 /** @import { Schema } from '../Schema.types.mjs' */
@@ -46,8 +46,23 @@ export default class Store {
 	/**
 	 * 监听事件
 	 * @template {keyof Schema.Events} K
+	 * @overload
 	 * @param {K} event 
 	 * @param  {(this: this, p: Schema.Events[K], store: this) => void | boolean | null} listener
+	 * @returns {() => void}
+	 */
+	/**
+	 * 监听事件
+	 * @template {keyof Schema.Events} K
+	 * @overload
+	 * @param {string} event 
+	 * @param  {(this: this, p: unknown, store: this) => void | boolean | null} listener
+	 * @returns {() => void}
+	 */
+	/**
+	 * 监听事件
+	 * @param {string} event 
+	 * @param  {(this: this, p: unknown, store: this) => void | boolean | null} listener
 	 * @returns {() => void}
 	 */
 	listen(event, listener) {
@@ -99,73 +114,70 @@ export default class Store {
 	constructor(schema, options) {
 		if (schema instanceof Store) {
 			const store = schema.#originStore || schema;
-			this.#originStore= store;
-			this.#schema= store.#schema;
-			this.#null= store.#null;
-			this.#ref= store.#ref;
-			this.#states= store.#states;
-			this.#layout= store.#layout;
-			this.#createDefault= store.#createDefault;
-			this.#setValue= store.#setValue;
-			this.#convert= store.#convert;
-			this.#onUpdate= store.#onUpdate;
-			this.#parent= store.#parent;
-			this.#root= store.#root;
-			this.#type= store.#type;
-			this.#meta= store.#meta;
-			this.#component= store.#component;
-			this.#selfLoading= store.#selfLoading;
-			this.#loading= store.#loading;
-			this.#size= store.#size;
-			this.#index= store.#index;
-			this.#creatable= store.#creatable;
-			this.#immutable= store.#immutable;
-			this.#new= store.#new;
-			this.#selfNew= store.#selfNew;
-			this.#selfHidden= store.#selfHidden;
-			this.#hidden= store.#hidden;
-			this.#selfClearable= store.#selfClearable;
-			this.#clearable= store.#clearable;
-			this.#selfRequired= store.#selfRequired;
-			this.#required= store.#required;
-			this.#selfDisabled= store.#selfDisabled;
-			this.#disabled= store.#disabled;
-			this.#selfReadonly= store.#selfReadonly;
-			this.#readonly= store.#readonly;
-			this.#selfRemovable= store.#selfRemovable;
-			this.#removable= store.#removable;
-			this.#selfLabel= store.#selfLabel;
-			this.#label= store.#label;
-			this.#selfDescription= store.#selfDescription;
-			this.#description= store.#description;
-			this.#selfPlaceholder= store.#selfPlaceholder;
-			this.#placeholder= store.#placeholder;
-			this.#selfMin= store.#selfMin;
-			this.#min= store.#min;
-			this.#selfMax= store.#selfMax;
-			this.#max= store.#max;
-			this.#selfStep= store.#selfStep;
-			this.#step= store.#step;
-			this.#selfMinLength= store.#selfMinLength;
-			this.#minLength= store.#minLength;
-			this.#selfMaxLength= store.#selfMaxLength;
-			this.#maxLength= store.#maxLength;
-			this.#selfPattern= store.#selfPattern;
-			this.#pattern= store.#pattern;
-			this.#selfValues= store.#selfValues;
-			this.#values= store.#values;
-			this.#errors= store.#errors;
-			this.#validatorResult= store.#validatorResult;
-			this.#changed= store.#changed;
-			this.#blurred= store.#blurred;
-			this.#cancelChange= store.#cancelChange;
-			this.#cancelBlur= store.#cancelBlur;
-			this.#set= store.#set;
-			this.#initValue= store.#initValue;
-			this.#value= store.#value;
+			this.#originStore = store;
+			this.#schema = store.#schema;
+			this.#null = store.#null;
+			this.#ref = store.#ref;
+			this.#states = store.#states;
+			this.#layout = store.#layout;
+			this.#createDefault = store.#createDefault;
+			this.#setValue = store.#setValue;
+			this.#convert = store.#convert;
+			this.#onUpdate = store.#onUpdate;
+			this.#parent = store.#parent;
+			this.#root = store.#root;
+			this.#type = store.#type;
+			this.#meta = store.#meta;
+			this.#component = store.#component;
+			this.#selfLoading = store.#selfLoading;
+			this.#loading = store.#loading;
+			this.#size = store.#size;
+			this.#index = store.#index;
+			this.#creatable = store.#creatable;
+			this.#immutable = store.#immutable;
+			this.#new = store.#new;
+			this.#selfNew = store.#selfNew;
+			this.#selfHidden = store.#selfHidden;
+			this.#hidden = store.#hidden;
+			this.#selfClearable = store.#selfClearable;
+			this.#clearable = store.#clearable;
+			this.#selfRequired = store.#selfRequired;
+			this.#required = store.#required;
+			this.#selfDisabled = store.#selfDisabled;
+			this.#disabled = store.#disabled;
+			this.#selfReadonly = store.#selfReadonly;
+			this.#readonly = store.#readonly;
+			this.#selfRemovable = store.#selfRemovable;
+			this.#removable = store.#removable;
+			this.#selfLabel = store.#selfLabel;
+			this.#label = store.#label;
+			this.#selfDescription = store.#selfDescription;
+			this.#description = store.#description;
+			this.#selfPlaceholder = store.#selfPlaceholder;
+			this.#placeholder = store.#placeholder;
+			this.#selfMin = store.#selfMin;
+			this.#min = store.#min;
+			this.#selfMax = store.#selfMax;
+			this.#max = store.#max;
+			this.#selfStep = store.#selfStep;
+			this.#step = store.#step;
+			this.#selfMinLength = store.#selfMinLength;
+			this.#minLength = store.#minLength;
+			this.#selfMaxLength = store.#selfMaxLength;
+			this.#maxLength = store.#maxLength;
+			this.#selfPattern = store.#selfPattern;
+			this.#pattern = store.#pattern;
+			this.#selfValues = store.#selfValues;
+			this.#values = store.#values;
+			this.#errors = store.#errors;
+			this.#execValidators = store.#execValidators;
+			this.#cancelEventValidator = store.#cancelEventValidator;
+			this.#set = store.#set;
+			this.#initValue = store.#initValue;
+			this.#value = store.#value;
 			const signal = options instanceof AbortSignal ? options : null;
 			if (signal?.aborted) { return; }
-			const subBindStores= store.#subBindStores;
+			const subBindStores = store.#subBindStores;
 			subBindStores.add(this);
 			signal?.addEventListener('abort', () => subBindStores.delete(this));
 			store.#requestUpdate();
@@ -173,8 +185,7 @@ export default class Store {
 		}
 		const {
 			null: isNull, ref, default: defaultValue,
-			setValue, convert, onUpdate, states,
-			validator, validators,
+			setValue, convert, onUpdate, states, validator,
 			index, size, new: isNew, parent: parentNode,
 			hidden, clearable, required, disabled, readonly, removable,
 			label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
@@ -249,9 +260,6 @@ export default class Store {
 
 		[this.#selfRemovable, this.#removable] = createBooleanStates(this, removable, schema.removable ?? true);
 
-		const validatorResult = createValidator(this, schema.validator, validator);
-
-
 		const schemaStates = schema.states;
 		this.#states = schemaStates ? Object.defineProperties(Object.create(null),
 			Object.fromEntries(
@@ -267,16 +275,13 @@ export default class Store {
 				})
 			)) : null;
 
-		const [changed, changedResult, cancelChange] = createAsyncValidator(this, schema.validators?.change, validators?.change);
-		const [blurred, blurredResult, cancelBlur] = createAsyncValidator(this, schema.validators?.blur, validators?.blur);
-		this.listen('change', () => { changed(); });
-		this.listen('blur', () => { blurred(); });
-		this.#errors = merge(validatorResult, changedResult, blurredResult);
-		this.#validatorResult = validatorResult;
-		this.#changed = changed;
-		this.#blurred = blurred;
-		this.#cancelChange = cancelChange;
-		this.#cancelBlur = cancelBlur;
+		const [execValidators, eventExecMap, errors, cancelEventValidator] = createValidator(this, schema.validator, validator);
+		for (const [name, exec] of Object.entries(eventExecMap)) {
+			this.listen(name, () => { exec(); });
+		}
+		this.#errors = errors;
+		this.#execValidators = execValidators;
+		this.#cancelEventValidator = cancelEventValidator;
 
 		if (size instanceof Signal.State || size instanceof Signal.Computed) {
 			this.#size = size;
@@ -561,16 +566,10 @@ export default class Store {
 
 	/** @type {Signal.Computed<string[]>} */
 	#errors;
-	/** @type {Signal.Computed<string[]>} */
-	#validatorResult;
 	/** @type {() => Promise<string[]>} */
-	#changed;
-	/** @type {() => Promise<string[]>} */
-	#blurred;
+	#execValidators;
 	/** @type {() => void} */
-	#cancelChange;
-	/** @type {() => void} */
-	#cancelBlur;
+	#cancelEventValidator;
 	/** 所有校验错误列表 */
 	get errors() { return this.#errors.get(); }
 	/** 字段校验错误信息 */
@@ -634,8 +633,7 @@ export default class Store {
 		this.#selfNew.set(isNew);
 		const newValue = this.#setValue?.(v);
 		const value = newValue === undefined ? v : newValue;
-		this.#cancelChange();
-		this.#cancelBlur();
+		this.#cancelEventValidator();
 		this.#set = true;
 		if (!value || typeof value !== 'object') {
 			for (const bind of [this, ...this.#subBindStores]) {
@@ -731,11 +729,7 @@ export default class Store {
 	validate(path) {
 		if (path === true) {
 			if (this.#originStore) { return Promise.resolve(null); }
-			return Promise.all([this.#validatorResult.get(), this.#changed(), this.#blurred()])
-				.then(v => {
-					const errors = v.flat();
-					return errors.length ? errors : null;
-				});
+			return this.#execValidators().then(errors => errors.length ? errors : null);
 		}
 		const selfPath = Array.isArray(path) ? path : [];
 		if (!this.#originStore && this.#hidden.get()) { return Promise.resolve([]); }
@@ -783,7 +777,6 @@ export default class Store {
  * @property {RegExp} [pattern] 
  * @property {(Schema.Value.Group | Schema.Value | string | number)[]} [values] 可选值
  * @property {Schema.Validator | Schema.Validator[] | null} [validator]
- * @property {{[k in keyof Schema.Events]?: Schema.AsyncValidator | Schema.AsyncValidator[] | null}} [validators]
  * 
  * @property {Ref?} [ref]
  * 
