@@ -25,7 +25,7 @@
 
 /**
  * @typedef {object} Schema.EventValidator 事件验证器
- * @property {string} event
+ * @property {string | string[]} event
  * @property {Schema.AsyncValidator} validator
  */
 /**

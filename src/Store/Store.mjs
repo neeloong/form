@@ -277,7 +277,7 @@ export default class Store {
 
 		const [execValidators, eventExecMap, errors, cancelEventValidator] = createValidator(this, schema.validator, validator);
 		for (const [name, exec] of Object.entries(eventExecMap)) {
-			this.listen(name, () => { exec(); });
+			this.listen(name, exec);
 		}
 		this.#errors = errors;
 		this.#execValidators = execValidators;

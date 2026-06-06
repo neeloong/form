@@ -35,64 +35,92 @@ function createSyncValidator(store, syncValidators) {
 /**
  * 
  * @param {Store} store 
+ * @param {Schema.AsyncValidator} validator 
+ * @returns {[exec: () => Promise<string[]>, cancel: () => void, state: Signal.State<string[]>]}
+ */
+function createAsyncValidator(store, validator) {
+	const state = new Signal.State(/** @type {string[]} */([]));
+	/** @type {AbortController?} */
+	let ac = null;
+	async function exec() {
+		ac?.abort();
+		ac = new AbortController();
+		const signal = ac.signal;
+		state.set([]);
+
+		let results = [];
+		try {
+			results.push(await validator(store, signal));
+		} catch (e) {
+			results.push(e);
+		}
+		const list = results.flat().map(toResult).filter(Boolean);
+		if (!signal.aborted && list.length) { state.set(list); }
+		return list;
+	}
+	function cancel() {
+		ac?.abort();
+		ac = null;
+		state.set([]);
+	}
+	return [exec, cancel, state];
+}
+/**
+ * 
+ * @param {Store} store 
  * @param {Map<string, Schema.AsyncValidator[]>} eventsValidators 
- * @returns {[Record<string, () => Promise<string[]>>, results: Signal.State<string[]>[], stop: () => void]}
+ * @returns {[Record<string, () => void>, results: Signal.State<string[]>[], stop: () => void, exec: () => Promise<string[]>]}
  */
 function createEventsValidator(store, eventsValidators) {
-	/** @type {Record<string, () => Promise<string[]>>} */
+	/** @type {Record<string, () => void>} */
 	const eventExecMap = {};
 	/** @type {(() => void)[]} */
 	const allCancels = [];
 	/** @type {Signal.State<string[]>[]} */
 	const results = [];
-	for (const [name, validators] of eventsValidators) {
-		const st = new Signal.State(/** @type {string[]} */([]));
-		/**
-		 * 
-		 * @param {Schema.AsyncValidator} validator 
-		 * @param {AbortSignal} signal 
-		 */
-		async function run(validator, signal) {
-			let results = [];
-			try {
-				results.push(await validator(store, signal));
-			} catch (e) {
-				results.push(e);
-			}
-			const list = results.flat().map(toResult).filter(Boolean);
-			if (!signal.aborted && list.length) { st.set([...st.get(), ...list]); }
-			return list;
-		}
-		/** @type {AbortController?} */
-		let ac = null;
-		function exec() {
-			ac?.abort();
-			ac = new AbortController();
-			const signal = ac.signal;
-			st.set([]);
+	/** @type {(() => Promise<string[]>)[]} */
+	const allExec = [];
+	/** @type {WeakMap<Schema.AsyncValidator, () => Promise<string[]>>} */
+	const validatorResults = new WeakMap();
+	
 
-			return Promise.all(validators.map(f => run(f, signal))).then(v => v.flat());
+	for (const [name, validators] of eventsValidators) {
+		/** @type {Set<() => Promise<string[]>>} */
+		const execSet = new Set();
+		for (const validator of validators) {
+			const validatorExec = validatorResults.get(validator);
+			if (validatorExec) {
+				execSet.add(validatorExec);
+				continue;
+			}
+			const [exec, cancel, state] = createAsyncValidator(store, validator);
+			allCancels.push(cancel);
+			results.push(state);
+			allExec.push(exec);
+
+			validatorResults.set(validator, exec);
+			execSet.add(exec);
 		}
-		eventExecMap[name] = exec;
-		allCancels.push(() => { ac?.abort(); st.set([]); });
-		results.push(st);
+		const list = [...execSet]
+		eventExecMap[name] = () => { list.map(f => f()); };
 	}
 
 	function stop() {
 		for (const c of allCancels) {
 			c();
 		}
-
 	}
 
-	return [eventExecMap, results, stop];
+	const execAll = () => Promise.all(allExec.map(exec => exec())).then(v => v.flat());
+
+	return [eventExecMap, results, stop, execAll];
 }
 
 /**
  * 
  * @param {Store} store 
  * @param  {...Schema.Validator | undefined | null | (Schema.Validator | undefined | null)[]} validators 
- * @returns {[exec: () => Promise<string[]>, Record<string, () => Promise<string[]>>, state: Signal.Computed<string[]>, stop: () => void]}
+ * @returns {[exec: () => Promise<string[]>, Record<string, () => void>, state: Signal.Computed<string[]>, stop: () => void]}
  */
 export default function createValidator(store, ...validators) {
 
@@ -108,15 +136,18 @@ export default function createValidator(store, ...validators) {
 		}
 		const { event, validator } = v;
 		if (typeof validator !== 'function') { continue; }
-		if (typeof event !== 'string') {
-			syncValidators.push(validator);
+		if (!(typeof event === 'string' || Array.isArray(event))) {
+			syncValidators.push(/** @type {Schema.SyncValidator} */(validator));
 			continue;
 		}
-		const list = eventsValidators.get(event);
-		if (list) {
-			list.push(validator);
-		} else {
-			eventsValidators.set(event, [validator]);
+		const events = Array.isArray(event) ? new Set(event) : typeof event === 'string' ? [event] : [];
+		for (const event of events) {
+			const list = eventsValidators.get(event);
+			if (list) {
+				list.push(validator);
+			} else {
+				eventsValidators.set(event, [validator]);
+			}
 		}
 	}
 
@@ -125,15 +156,15 @@ export default function createValidator(store, ...validators) {
 		? createSyncValidator(store, syncValidators)
 		: new Signal.Computed(() => /** @type {string[]} */([]));
 	if (!eventsValidators.size) {
-		return [() => Promise.resolve(validatorResult.get()), {}, validatorResult, () => {}];
+		return [() => Promise.resolve(validatorResult.get()), {}, validatorResult, () => { }];
 	}
 
-	const [eventExecMap, results, stop] = createEventsValidator(store, eventsValidators);
+	const [eventExecMap, results, stop, exec] = createEventsValidator(store, eventsValidators);
 
 	const errors = new Signal.Computed(() => [validatorResult, ...results].flatMap(v => v.get()));
 	const execAll = () => Promise.all([
 		validatorResult.get(),
-		...Object.values(eventExecMap).map(exec => exec()),
-	]).then(v => v.flat());
+		exec(),
+	]).then(v => [...new Set(v.flat())]);
 	return [execAll, eventExecMap, errors, stop];
 }
