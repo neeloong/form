@@ -18,6 +18,7 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {{get(): boolean}} option.addable 
  * @param {StoreLayout.Column<T>[]} option.columns 
  * @param {() => void} option.remove 
+ * @param {() => void} option.removeTree 
  * @param {(el: HTMLElement) => () => void} option.dragenter 
  * @param {() => void} option.dragstart 
  * @param {(inChildren?: boolean) => void} option.drop 
@@ -31,7 +32,7 @@ import FormFieldInline from './FormFieldInline.mjs';
 export default function TreeLine(
 	store, currentStore, fieldRenderer, layout, state, {
 		columns, addable, deletable,
-		remove, dragenter, dragstart, dragend, addNode, drop, createDetails,
+		remove, removeTree, dragenter, dragstart, dragend, addNode, drop, createDetails,
 	}, options) {
 	const root = document.createElement('div');
 	root.addEventListener('dragstart', (event) => {
@@ -187,6 +188,16 @@ export default function TreeLine(
 					const del = line.appendChild(document.createElement('button'));
 					del.classList.add('NeeloongForm-tree-remove');
 					del.addEventListener('click', remove);
+					watch(() => !deletable.get(), disabled => {
+						del.disabled = disabled;
+					}, true, options.signal);
+					continue;
+				}
+				case 'removeTree': {
+					if (!options.editable) { continue; }
+					const del = line.appendChild(document.createElement('button'));
+					del.classList.add('NeeloongForm-tree-remove-tree');
+					del.addEventListener('click', removeTree);
 					watch(() => !deletable.get(), disabled => {
 						del.disabled = disabled;
 					}, true, options.signal);

@@ -122,7 +122,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	const columns = getColumns(
 		store,
 		layout,
-		['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse'],
+		['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse', 'removeTree'],
 		fields => [
 			{ actions: ['collapse', 'move'] },
 			fields[0],
@@ -272,6 +272,19 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	 */
 	function remove(child) {
 		store.remove(Number(child.index));
+	}
+	/**
+	 * 
+	 * @param {Store} child 
+	 */
+	function removeTree(child) {
+		const index = Number(child.index);
+		let last = index + 1;
+		const level = states[index]?.level ?? 0;
+		for (; (states[last]?.level ?? -1) > level; last++) { }
+		for (let i = last - 1; i >= index; i--) {
+			store.remove(i);
+		}
 	}
 	let dragRow = -1;
 	let drag = new Signal.State(dragRow);
@@ -425,6 +438,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 					columns, addable,
 					deletable: new Signal.Computed(() => !store.readonly && !store.disabled && child.removable),
 					remove: remove.bind(null, child),
+					removeTree: removeTree.bind(null, child),
 					dragenter,
 					dragstart: dragstart.bind(null, child),
 					dragend,
@@ -449,10 +463,10 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			main.insertBefore(old[0], nextNode);
 		}
 		states.splice(childrenLength);
-			for (const [el, ac] of oldSeMap.values()) {
-				el.remove();
-				ac.abort();
-			}
+		for (const [el, ac] of oldSeMap.values()) {
+			el.remove();
+			ac.abort();
+		}
 	}, true, options?.signal);
 
 	return root;

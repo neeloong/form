@@ -10,7 +10,7 @@
  */
 
 /**
- * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial' | 'open' | 'collapse'} StoreLayout.Action
+ * @typedef {'add' | 'move' | 'trigger' | 'remove' | 'serial' | 'open' | 'collapse' | 'removeTree'} StoreLayout.Action
  */
 /**
  * @typedef {object} StoreLayout.Grid
