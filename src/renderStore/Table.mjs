@@ -4,19 +4,22 @@ import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
 import Line from './TableLine.mjs';
 import { getColumns } from './getColumns.mjs';
+import createButton from './createButton.mjs';
 
 /**
  * 
  * @template T
+ * @param {'headAdd' | 'footAdd'} type 
  * @param {AbortSignal | null | undefined} signal 
  * @param {HTMLElement} parent 
  * @param {StoreLayout.Column<T>[]} columns 
  * @param {() => any} add 
  * @param {{get(): boolean}} addable 
- * @param {boolean?} [editable] 
+ * @param {boolean} editable 
+ * @param {StoreLayout.Options['operation']?} [operation] 
  * @returns {void}
  */
-function renderHead(signal, parent, columns, add, addable, editable) {
+function renderHead(type, signal, parent, columns, add, addable, editable, operation) {
 	const tr = parent.appendChild(document.createElement('tr'));
 	for (const { action, actions, width, label } of columns) {
 		const th = tr.appendChild(document.createElement('th'));
@@ -26,10 +29,19 @@ function renderHead(signal, parent, columns, add, addable, editable) {
 			continue;
 		}
 		if (!editable) { continue; }
-		const button = th.appendChild(document.createElement('button'));
-		button.addEventListener('click', add);
-		button.classList.add('NeeloongForm-table-add');
-		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, signal);
+
+		/** @type {StoreLayout.Operation} */
+		const button = {
+			type, component: 'table',
+			signal: signal || new AbortController().signal,
+			get disabled() { return !addable.get(); },
+			get shown() { return false; },
+			get collapsed() { return false; },
+			get hasChildren() { return false; },
+		};
+		th.appendChild(
+			operation?.(button) || createButton(button)
+		).addEventListener('click', add);
 	}
 }
 
@@ -103,13 +115,13 @@ export default function Table(store, fieldRenderer, layout, options) {
 		dragRow = -1;
 
 	}
-	renderHead(options?.signal, thead, columns, add, addable, Boolean(options?.editable));
+	renderHead('headAdd', options?.signal, thead, columns, add, addable, Boolean(options?.editable), options?.operation);
 	switch (layout.tableFoot) {
 		default:
 		case 'header': {
 			const tfoot = table.appendChild(document.createElement('tfoot'));
 			tfoot.addEventListener('dragenter', () => { dragenter(); });
-			renderHead(options?.signal, tfoot, columns, add, addable, Boolean(options?.editable));
+			renderHead('footAdd', options?.signal, tfoot, columns, add, addable, Boolean(options?.editable), options?.operation);
 			break;
 		}
 		case 'add': {
@@ -118,10 +130,18 @@ export default function Table(store, fieldRenderer, layout, options) {
 			const tr = tfoot.appendChild(document.createElement('tr'));
 			const th = tr.appendChild(document.createElement('th'));
 			th.colSpan = columns.length;
-			const button = th.appendChild(document.createElement('button'));
-			button.addEventListener('click', add);
-			button.classList.add('NeeloongForm-table-foot-add');
-			watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, options?.signal);
+			/** @type {StoreLayout.Operation} */
+			const button = {
+				type: 'footAdd', component: 'table',
+				signal: options?.signal || new AbortController().signal,
+				get disabled() { return !addable.get(); },
+				get shown() { return false; },
+				get collapsed() { return false; },
+				get hasChildren() { return false; },
+			};
+			th.appendChild(
+				options?.operation?.(button) || createButton(button)
+			).addEventListener('click', add);
 			break;
 		}
 		case 'none':

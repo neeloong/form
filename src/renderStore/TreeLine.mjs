@@ -1,10 +1,10 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { State } from './Tree.mjs' */
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
-import watch from '../watch.mjs';
 import { Signal } from 'signal-polyfill';
 import effect from '../effect.mjs';
 import FormFieldInline from './FormFieldInline.mjs';
+import createButton from './createButton.mjs';
 
 /**
  * 
@@ -34,8 +34,8 @@ import FormFieldInline from './FormFieldInline.mjs';
 export default function TreeLine(
 	store, currentStore, fieldRenderer, layout, state, {
 		columns, addable, deletable,
-		remove, removeTree, 
-		copy, copyTree, 
+		remove, removeTree,
+		copy, copyTree,
 		dragenter, dragstart, dragend, addNode, drop, createDetails,
 	}, options) {
 	const root = document.createElement('div');
@@ -62,8 +62,8 @@ export default function TreeLine(
 	effect(() => { root.hidden = state.get().hidden; }, options.signal);
 
 
-	/** @type {HTMLButtonElement[]} */
-	const collapseList = [];
+	const hasChildren = new Signal.Computed(() => state.get().hasChildren);
+	const collapsed = new Signal.Computed(() => state.get().collapsed);
 
 	/**
 	 * 
@@ -146,85 +146,138 @@ export default function TreeLine(
 			continue;
 
 		}
-		for (const k of actions) {
-			switch (k) {
+		for (const type of actions) {
+			switch (type) {
 				case 'trigger': {
-					const btn = line.appendChild(document.createElement('button'));
-					btn.classList.add('NeeloongForm-tree-trigger');
-					btn.addEventListener('click', trigger);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						disabled: false,
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', trigger);
 					continue;
 				}
 				case 'open': {
-					const btn = line.appendChild(document.createElement('button'));
-					btn.classList.add('NeeloongForm-tree-open');
-					btn.addEventListener('click', open);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						disabled: false,
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', open);
 					continue;
 				}
 				case 'collapse': {
-					const btn = line.appendChild(document.createElement('button'));
-					btn.classList.add('NeeloongForm-tree-collapse');
-					btn.addEventListener('click', switchCollapsed);
-					collapseList.push(btn);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return !hasChildren.get(); },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', switchCollapsed);
 					continue;
 				}
 				case 'move': {
 					if (!options.editable) { continue; }
-					const move = line.appendChild(document.createElement('button'));
-					move.classList.add('NeeloongForm-tree-move');
-					move.addEventListener('pointerdown', pointerdown);
-					watch(() => store.readonly || store.disabled, disabled => {
-						move.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return store.readonly || store.disabled; },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('pointerdown', pointerdown);
 					continue;
 				}
 				case 'add': {
 					if (!options.editable) { continue; }
-					const move = line.appendChild(document.createElement('button'));
-					move.classList.add('NeeloongForm-tree-add');
-					move.addEventListener('click', addNode);
-					watch(() => !addable.get(), disabled => {
-						move.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return !addable.get(); },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', addNode);
 					continue;
 				}
 				case 'remove': {
 					if (!options.editable) { continue; }
-					const del = line.appendChild(document.createElement('button'));
-					del.classList.add('NeeloongForm-tree-remove');
-					del.addEventListener('click', remove);
-					watch(() => !deletable.get(), disabled => {
-						del.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return !deletable.get(); },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', remove);
 					continue;
 				}
 				case 'removeTree': {
 					if (!options.editable) { continue; }
-					const del = line.appendChild(document.createElement('button'));
-					del.classList.add('NeeloongForm-tree-remove-tree');
-					del.addEventListener('click', removeTree);
-					watch(() => !deletable.get(), disabled => {
-						del.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return !deletable.get(); },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', removeTree);
 					continue;
 				}
 				case 'copy': {
 					if (!options.editable) { continue; }
-					const move = line.appendChild(document.createElement('button'));
-					move.classList.add('NeeloongForm-tree-copy');
-					move.addEventListener('click', copy);
-					watch(() => !addable.get(), disabled => {
-						move.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return !addable.get(); },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', copy);
 					continue;
 				}
 				case 'copyTree': {
 					if (!options.editable) { continue; }
-					const move = line.appendChild(document.createElement('button'));
-					move.classList.add('NeeloongForm-tree-copy-tree');
-					move.addEventListener('click', copyTree);
-					watch(() => !addable.get(), disabled => {
-						move.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'tree', signal: options.signal,
+						get disabled() { return !addable.get(); },
+						get shown() { return false; },
+						get collapsed() { return collapsed.get(); },
+						get hasChildren() { return hasChildren.get(); },
+					};
+					line.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', copyTree);
 					continue;
 				}
 				case 'serial': {
@@ -235,28 +288,6 @@ export default function TreeLine(
 			}
 		}
 	}
-	effect(() => {
-		const s = state.get();
-		if (!s.hasChildren) {
-			for (const btn of collapseList) {
-				btn.classList.remove('NeeloongForm-tree-collapse-close');
-				btn.classList.remove('NeeloongForm-tree-collapse-open');
-				btn.disabled = true;
-			}
-		} else if (s.collapsed) {
-			for (const btn of collapseList) {
-				btn.classList.remove('NeeloongForm-tree-collapse-close');
-				btn.classList.add('NeeloongForm-tree-collapse-open');
-				btn.disabled = false;
-			}
-		} else {
-			for (const btn of collapseList) {
-				btn.classList.remove('NeeloongForm-tree-collapse-open');
-				btn.classList.add('NeeloongForm-tree-collapse-close');
-				btn.disabled = false;
-			}
-		}
-	}, options.signal);
 
 	return root;
 }

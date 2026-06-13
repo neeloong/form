@@ -5,6 +5,7 @@ import watch from '../watch.mjs';
 import Line from './TreeLine.mjs';
 import Form from './Form.mjs';
 import { getColumns } from './getColumns.mjs';
+import createButton from './createButton.mjs';
 
 const verticalWritingMode = new Set([
 	'vertical-lr', 'vertical-rl', 'sideways-lr', 'sideways-rl',
@@ -410,18 +411,39 @@ export default function Tree(store, fieldRenderer, layout, options) {
 
 	}
 	if (options?.editable) {
-		const button = main.appendChild(document.createElement('button'));
-		button.addEventListener('click', () => addNode(-1));
-		button.classList.add('NeeloongForm-tree-head-add');
-		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, options.signal);
+		/** @type {StoreLayout.Operation} */
+		const button = {
+			type: 'headAdd', component: 'tree',
+			signal: options?.signal || new AbortController().signal,
+			get disabled() { return !addable.get(); },
+			get shown() { return false; },
+			get collapsed() { return false; },
+			get hasChildren() { return false; },
+		};
+		main.appendChild(
+			options.operation?.(button) || createButton(button)
+		).addEventListener('click', () => addNode(-1));
+
 	}
 	const start = main.appendChild(document.createComment(''));
 	if (options?.editable) {
 		const foot = main.appendChild(document.createElement('div'));
 		foot.classList.add('NeeloongForm-tree-foot');
-		const button = foot.appendChild(document.createElement('button'));
-		button.addEventListener('click', () => addNode(-2));
-		button.classList.add('NeeloongForm-tree-foot-add');
+
+		/** @type {StoreLayout.Operation} */
+		const button = {
+			type: 'footAdd', component: 'tree',
+			signal: options?.signal || new AbortController().signal,
+			get disabled() { return !addable.get(); },
+			get shown() { return false; },
+			get collapsed() { return false; },
+			get hasChildren() { return false; },
+		};
+		foot.appendChild(
+			options.operation?.(button) || createButton(button)
+		).addEventListener('click', () => addNode(-2));
+
+
 		const dropFront = foot.appendChild(document.createElement('div'));
 		dropFront.classList.add('NeeloongForm-tree-drop');
 
@@ -431,9 +453,6 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		dropFront.addEventListener('dragenter', () => dragleave = dragenter(dropFront));
 		dropFront.addEventListener('dragleave', () => dragleave());
 		dropFront.addEventListener('drop', () => drop());
-
-
-		watch(() => !addable.get(), disabled => { button.disabled = disabled; }, true, options.signal);
 	}
 	/** @type {Map<Store, [tbody: HTMLElement, AbortController, (s: State) => void]>} */
 	let seMap = new Map();

@@ -109,6 +109,16 @@
  */
 
 /**
+ * @typedef {object} StoreLayout.Operation
+ * @property {AbortSignal} signal 
+ * @property {StoreLayout.Action | 'footAdd' | 'headAdd'} type
+ * @property {boolean} disabled 
+ * @property {boolean} collapsed 
+ * @property {boolean} shown 
+ * @property {boolean} hasChildren
+ * @property {'tree' | 'table'} component
+ */
+/**
  * @typedef {object} StoreLayout.Options
  * @property {(store: Store, el: Element | StoreLayout.Relatedness) => () => void} [relate]
  * @property {boolean} [editable] 
@@ -116,6 +126,7 @@
  * @property {function(string): string} [sanitizeHtml] 
  * @property {((name: string, event: Event, store: Store<any, any, any>, options?: StoreLayout.Options | null) => void)} [call]
  * @property {(el: Element, store: Store<any, any, any>, options?: StoreLayout.Options | null) => Node | null} [render]
+ * @property {(btn: StoreLayout.Operation) => HTMLElement | null} [operation]
  */
 /**
  * @template [T=unknown]

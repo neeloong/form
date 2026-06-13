@@ -2,7 +2,8 @@
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 import FormFieldInline from './FormFieldInline.mjs';
 import Form from './Form.mjs';
-import watch from '../watch.mjs';
+import createButton from './createButton.mjs';
+import { Signal } from 'signal-polyfill';
 
 /**
  * 
@@ -39,9 +40,8 @@ export default function Line(store, fieldRenderer, layout, {
 
 
 
+	const shown = new Signal.State(false);
 	let trigger = () => { };
-	/** @type {HTMLButtonElement[]} */
-	const triggerList = [];
 	if (columns.find(v => v.actions?.includes('trigger'))) {
 		const form = Form(store, fieldRenderer, layout, options);
 		if (form) {
@@ -51,19 +51,9 @@ export default function Line(store, fieldRenderer, layout, {
 			main.appendChild(form);
 			body.hidden = true;
 			trigger = () => {
-				if (body.hidden) {
-					body.hidden = false;
-					for (const ext of triggerList) {
-						ext.classList.remove('NeeloongForm-table-line-open');
-						ext.classList.add('NeeloongForm-table-line-close');
-					}
-				} else {
-					body.hidden = true;
-					for (const ext of triggerList) {
-						ext.classList.remove('NeeloongForm-table-line-close');
-						ext.classList.add('NeeloongForm-table-line-open');
-					}
-				}
+				const hidden = body.hidden;
+				body.hidden = !hidden;
+				shown.set(hidden);
 			};
 		}
 	}
@@ -101,43 +91,65 @@ export default function Line(store, fieldRenderer, layout, {
 		}
 		const handle = head.appendChild(document.createElement('th'));
 		handle.classList.add('NeeloongForm-table-line-handle');
-		for (const k of actions) {
-			switch (k) {
+		for (const type of actions) {
+			switch (type) {
 				case 'trigger': {
-					const ext = handle.appendChild(document.createElement('button'));
-					ext.classList.add('NeeloongForm-table-line-open');
-					triggerList.push(ext);
-					ext.addEventListener('click', trigger);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'table', signal: options.signal,
+						get disabled() { return false; },
+						get shown() { return false; },
+						get collapsed() { return false; },
+						get hasChildren() { return false; },
+					};
+					handle.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', trigger);
 					continue;
 				}
 				case 'move': {
 					if (!options?.editable) { continue; }
-					const move = handle.appendChild(document.createElement('button'));
-					move.classList.add('NeeloongForm-table-move');
-					move.addEventListener('pointerdown', pointerdown);
-					watch(() => store.readonly || store.disabled, disabled => {
-						move.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'table', signal: options.signal,
+						get disabled() { return store.readonly || store.disabled; },
+						get shown() { return false; },
+						get collapsed() { return false; },
+						get hasChildren() { return false; },
+					};
+					handle.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('pointerdown', pointerdown);
 					continue;
 				}
 				case 'remove': {
 					if (!options?.editable) { continue; }
-					const del = handle.appendChild(document.createElement('button'));
-					del.classList.add('NeeloongForm-table-remove');
-					del.addEventListener('click', remove);
-					watch(() => !deletable.get(), disabled => {
-						del.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'table', signal: options.signal,
+						get disabled() { return !deletable.get(); },
+						get shown() { return false; },
+						get collapsed() { return false; },
+						get hasChildren() { return false; },
+					};
+					handle.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', remove);
 					continue;
 				}
 				case 'copy': {
 					if (!options?.editable) { continue; }
-					const btn = handle.appendChild(document.createElement('button'));
-					btn.classList.add('NeeloongForm-table-copy');
-					btn.addEventListener('click', copy);
-					watch(() => !addable.get(), disabled => {
-						btn.disabled = disabled;
-					}, true, options.signal);
+					/** @type {StoreLayout.Operation} */
+					const button = {
+						type, component: 'table', signal: options.signal,
+						get disabled() { return !addable.get(); },
+						get shown() { return false; },
+						get collapsed() { return false; },
+						get hasChildren() { return false; },
+					};
+					handle.appendChild(
+						options.operation?.(button) || createButton(button)
+					).addEventListener('click', copy);
 					continue;
 				}
 				case 'serial': {
