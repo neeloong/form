@@ -47,7 +47,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 	const columns = getColumns(
 		store,
 		layout,
-		['add', 'move', 'trigger', 'remove', 'serial'],
+		['add', 'move', 'trigger', 'remove', 'serial', 'copy'],
 		fields => [
 			{ actions: ['add', 'trigger', 'move', 'remove', 'serial'] },
 			...fields.slice(0, 3),
@@ -69,6 +69,14 @@ export default function Table(store, fieldRenderer, layout, options) {
 	 */
 	function remove(child) {
 		store.remove(Number(child.index));
+	}
+	/**
+	 * 
+	 * @param {Store} child 
+	 */
+	function copy(child) {
+		const data = { ...child.value };
+		store.insert(Number(child.index) + 1, data);
 	}
 	let dragRow = -1;
 	/**
@@ -130,8 +138,10 @@ export default function Table(store, fieldRenderer, layout, options) {
 				const ac = new AbortController();
 				const el = Line(child, fieldRenderer, layout, {
 					columns,
+					addable,
 					deletable: new Signal.Computed(() => !store.readonly && !store.disabled && child.removable),
 					remove: remove.bind(null, child),
+					copy: copy.bind(null, child),
 					dragenter: dragenter.bind(null, child),
 					dragstart: dragstart.bind(null, child),
 					dragend,

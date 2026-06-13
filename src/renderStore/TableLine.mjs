@@ -13,16 +13,18 @@ import watch from '../watch.mjs';
  * @param {object} option 
  * @param {StoreLayout.Column<T>[]} option.columns
  * @param {() => void} option.remove 
+ * @param {() => void} option.copy 
  * @param {() => void} option.dragenter 
  * @param {() => void} option.dragstart 
  * @param {() => void} option.dragend 
  * @param {{get(): boolean}} option.deletable 
+ * @param {{get(): boolean}} option.addable 
  * @param {StoreLayout.Options & {signal: AbortSignal}} options
  * @returns {HTMLTableSectionElement}
  */
 export default function Line(store, fieldRenderer, layout, {
-	columns, deletable,
-	remove, dragenter, dragstart, dragend,
+	columns, deletable, addable,
+	remove, copy, dragenter, dragstart, dragend,
 }, options) {
 	const root = document.createElement('tbody');
 	root.addEventListener('dragenter', () => {
@@ -125,6 +127,16 @@ export default function Line(store, fieldRenderer, layout, {
 					del.addEventListener('click', remove);
 					watch(() => !deletable.get(), disabled => {
 						del.disabled = disabled;
+					}, true, options.signal);
+					continue;
+				}
+				case 'copy': {
+					if (!options?.editable) { continue; }
+					const btn = handle.appendChild(document.createElement('button'));
+					btn.classList.add('NeeloongForm-table-copy');
+					btn.addEventListener('click', copy);
+					watch(() => !addable.get(), disabled => {
+						btn.disabled = disabled;
 					}, true, options.signal);
 					continue;
 				}

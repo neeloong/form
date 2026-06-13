@@ -19,6 +19,8 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {StoreLayout.Column<T>[]} option.columns 
  * @param {() => void} option.remove 
  * @param {() => void} option.removeTree 
+ * @param {() => void} option.copy 
+ * @param {() => void} option.copyTree 
  * @param {(el: HTMLElement) => () => void} option.dragenter 
  * @param {() => void} option.dragstart 
  * @param {(inChildren?: boolean) => void} option.drop 
@@ -32,7 +34,9 @@ import FormFieldInline from './FormFieldInline.mjs';
 export default function TreeLine(
 	store, currentStore, fieldRenderer, layout, state, {
 		columns, addable, deletable,
-		remove, removeTree, dragenter, dragstart, dragend, addNode, drop, createDetails,
+		remove, removeTree, 
+		copy, copyTree, 
+		dragenter, dragstart, dragend, addNode, drop, createDetails,
 	}, options) {
 	const root = document.createElement('div');
 	root.addEventListener('dragstart', (event) => {
@@ -200,6 +204,26 @@ export default function TreeLine(
 					del.addEventListener('click', removeTree);
 					watch(() => !deletable.get(), disabled => {
 						del.disabled = disabled;
+					}, true, options.signal);
+					continue;
+				}
+				case 'copy': {
+					if (!options.editable) { continue; }
+					const move = line.appendChild(document.createElement('button'));
+					move.classList.add('NeeloongForm-tree-copy');
+					move.addEventListener('click', copy);
+					watch(() => !addable.get(), disabled => {
+						move.disabled = disabled;
+					}, true, options.signal);
+					continue;
+				}
+				case 'copyTree': {
+					if (!options.editable) { continue; }
+					const move = line.appendChild(document.createElement('button'));
+					move.classList.add('NeeloongForm-tree-copy-tree');
+					move.addEventListener('click', copyTree);
+					watch(() => !addable.get(), disabled => {
+						move.disabled = disabled;
 					}, true, options.signal);
 					continue;
 				}

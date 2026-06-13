@@ -122,7 +122,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	const columns = getColumns(
 		store,
 		layout,
-		['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse', 'removeTree'],
+		['add', 'move', 'trigger', 'remove', 'serial', 'open', 'collapse', 'removeTree', 'copy', 'copyTree'],
 		fields => [
 			{ actions: ['collapse', 'move'] },
 			fields[0],
@@ -277,6 +277,14 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	 * 
 	 * @param {Store} child 
 	 */
+	function copy(child) {
+		const data = { ...child.value };
+		store.insert(Number(child.index), data);
+	}
+	/**
+	 * 
+	 * @param {Store} child 
+	 */
 	function removeTree(child) {
 		const index = Number(child.index);
 		let last = index + 1;
@@ -284,6 +292,20 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		for (; (states[last]?.level ?? -1) > level; last++) { }
 		for (let i = last - 1; i >= index; i--) {
 			store.remove(i);
+		}
+	}
+	/**
+	 * 
+	 * @param {Store} child 
+	 */
+	function copyTree(child) {
+		const index = Number(child.index);
+		let last = index + 1;
+		const level = states[index]?.level ?? 0;
+		for (; (states[last]?.level ?? -1) > level; last++) { }
+		let n = last - index;
+		for (let i = 0; i < n; i++) {
+			store.insert(last + i, { ...store.child(index + i)?.value });
 		}
 	}
 	let dragRow = -1;
@@ -438,7 +460,9 @@ export default function Tree(store, fieldRenderer, layout, options) {
 					columns, addable,
 					deletable: new Signal.Computed(() => !store.readonly && !store.disabled && child.removable),
 					remove: remove.bind(null, child),
+					copy: copy.bind(null, child),
 					removeTree: removeTree.bind(null, child),
+					copyTree: copyTree.bind(null, child),
 					dragenter,
 					dragstart: dragstart.bind(null, child),
 					dragend,
