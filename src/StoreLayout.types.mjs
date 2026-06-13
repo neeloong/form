@@ -130,5 +130,5 @@
  */
 /**
  * @template [T=unknown]
- * @typedef {(store: Store<any, any, any>, renderer?: T | string, options?: StoreLayout.Options | null) => HTMLElement?} StoreLayout.Renderer
+ * @typedef {(store: Store<any, any, any>, renderer?: T | string, options?: StoreLayout.Options | null) => Element?} StoreLayout.Renderer
  */

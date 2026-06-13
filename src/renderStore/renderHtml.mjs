@@ -46,7 +46,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 			const editable = options?.editable && !node.hasAttribute('non-editable');
 			const fieldStore = field ? store.child(field) : store;
 			if (!fieldStore) { return; }
-			/** @type {HTMLElement?} */
+			/** @type {Element?} */
 			let el = null;
 			switch (mode) {
 				case 'grid': {
