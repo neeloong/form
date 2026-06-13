@@ -28,6 +28,7 @@
  * @typedef {object} StoreLayout.Column
  * @property {StoreLayout.Action[]} [actions] 操作
  * @property {StoreLayout.Action} [action] 操作
+ * @property {((store: Store, options: { signal: AbortSignal }) => Node) | null} [render]
  * @property {string} [field] 字段
  * @property {number} [placeholder] 占位符
  * @property {string} [pattern] 模式

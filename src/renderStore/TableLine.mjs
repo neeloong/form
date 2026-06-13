@@ -17,7 +17,7 @@ import watch from '../watch.mjs';
  * @param {() => void} option.dragstart 
  * @param {() => void} option.dragend 
  * @param {{get(): boolean}} option.deletable 
- * @param {StoreLayout.Options?} options
+ * @param {StoreLayout.Options & {signal: AbortSignal}} options
  * @returns {HTMLTableSectionElement}
  */
 export default function Line(store, fieldRenderer, layout, {
@@ -86,14 +86,15 @@ export default function Line(store, fieldRenderer, layout, {
 	}
 
 	for (const column of columns) {
-		const { actions, field, pattern, editable } = column;
+		const { actions, field, pattern, editable, render } = column;
 		if (!actions?.length) {
 			const td = head.appendChild(document.createElement('td'));
 			const child = field && store.child(field);
-			if (child) {
-				const el = FormFieldInline(child, fieldRenderer, column, {...options, editable: options?.editable && (editable !== false)});
-				if (el) { td.appendChild(el); }
-			}
+			if (field && !child) { continue; }
+			const el = render
+				? render(child || store, { signal: options.signal })
+				: child && FormFieldInline(child, fieldRenderer, column, { ...options, editable: options?.editable && (editable !== false) });
+			if (el) { td.appendChild(el); }
 			continue;
 		}
 		const handle = head.appendChild(document.createElement('th'));

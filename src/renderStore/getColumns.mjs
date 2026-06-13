@@ -30,12 +30,15 @@ export function getColumns(store, layout, actionOptions, createDefault) {
 				if (!actions) { return null; }
 				return { actions };
 			}
-			const { action, actions, field, placeholder, pattern, width, label, editable } = v;
+			const { action, actions, render: renderFn, field, placeholder, pattern, width, label, editable } = v;
+			const render = typeof renderFn === 'function' ? renderFn : null;
 			if (field) {
 				const define = map.get(field);
 				if (define) {
-					return { field, placeholder, width, label: label || define.label, editable };
+					return { field, placeholder, width, label: label || define.label, render, editable };
 				}
+			} else if (render) {
+				return { placeholder, width, label: label || '', render, editable };
 			}
 			const options = new Set(actionOptions);
 			const allActions = [action, actions].flat().filter(v => v && options.delete(v));

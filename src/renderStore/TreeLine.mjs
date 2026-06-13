@@ -25,7 +25,7 @@ import FormFieldInline from './FormFieldInline.mjs';
  * @param {{get(): boolean}} option.deletable 
  * @param {() => void} option.addNode 
  * @param {(store: Store<any, any, any>) => () => void} option.createDetails 
- * @param {StoreLayout.Options?} options
+ * @param {StoreLayout.Options & {signal: AbortSignal}} options
  * @returns {HTMLElement}
  */
 export default function TreeLine(
@@ -48,13 +48,13 @@ export default function TreeLine(
 		} else {
 			root.classList.remove('NeeloongForm-tree-current');
 		}
-	}, options?.signal);
+	}, options.signal);
 	effect(() => {
 		const level = state.get().level;
 		root.style.setProperty(`--NeeloongForm-tree-level`, `${level}`);
-	}, options?.signal);
+	}, options.signal);
 
-	effect(() => { root.hidden = state.get().hidden; }, options?.signal);
+	effect(() => { root.hidden = state.get().hidden; }, options.signal);
 
 
 	/** @type {HTMLButtonElement[]} */
@@ -118,18 +118,19 @@ export default function TreeLine(
 	dropChildren.addEventListener('dragleave', () => dragleave());
 
 	for (const column of columns) {
-		const { actions, pattern, placeholder, width, field } = column;
+		const { actions, pattern, placeholder, width, field, render } = column;
 		if (!actions?.length) {
 			const td = line.appendChild(document.createElement('div'));
 			td.classList.add('NeeloongForm-tree-cell');
 			if (click) { td.addEventListener('click', click); }
 			if (moveStart) { td.addEventListener('pointerdown', moveStart); }
-			if (field) {
-				const child = store.child(field);
-				if (!child) { continue; }
-				const el = FormFieldInline(child, fieldRenderer, column, { ...options, editable: false });
+			if (field || render) {
+				const child = field && store.child(field);
+				if (field && !child) { continue; }
+				const el = render
+					? render(child || store, { signal: options.signal })
+					: child && FormFieldInline(child, fieldRenderer, column, { ...options, editable: false });
 				if (el) { td.appendChild(el); }
-				continue;
 			}
 			if (typeof placeholder === 'number') {
 				td.style.flex = `${placeholder}`;
@@ -162,7 +163,7 @@ export default function TreeLine(
 					continue;
 				}
 				case 'move': {
-					if (!options?.editable) { continue; }
+					if (!options.editable) { continue; }
 					const move = line.appendChild(document.createElement('button'));
 					move.classList.add('NeeloongForm-tree-move');
 					move.addEventListener('pointerdown', pointerdown);
@@ -172,7 +173,7 @@ export default function TreeLine(
 					continue;
 				}
 				case 'add': {
-					if (!options?.editable) { continue; }
+					if (!options.editable) { continue; }
 					const move = line.appendChild(document.createElement('button'));
 					move.classList.add('NeeloongForm-tree-add');
 					move.addEventListener('click', addNode);
@@ -182,7 +183,7 @@ export default function TreeLine(
 					continue;
 				}
 				case 'remove': {
-					if (!options?.editable) { continue; }
+					if (!options.editable) { continue; }
 					const del = line.appendChild(document.createElement('button'));
 					del.classList.add('NeeloongForm-tree-remove');
 					del.addEventListener('click', remove);
@@ -220,7 +221,7 @@ export default function TreeLine(
 				btn.disabled = false;
 			}
 		}
-	}, options?.signal);
+	}, options.signal);
 
 	return root;
 }
