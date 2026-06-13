@@ -53,11 +53,11 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					const fieldLayout = field
 						? layout?.fields?.find(createFieldFilter(field)) || fieldStore.layout
 						: { ...layout, html: '' };
-					el = Form(fieldStore, fieldRenderer, fieldLayout, {...options, editable});
+					el = Form(fieldStore, fieldRenderer, fieldLayout, { ...options, editable });
 					break;
 				}
 				default: {
-					el = fieldRenderer(fieldStore, renderer || layout.renderer, {...options, editable});
+					el = fieldRenderer(fieldStore, renderer || layout.renderer, { ...options, editable });
 					break;
 				}
 			}
@@ -99,6 +99,16 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 				button.appendChild(n);
 			}
 			node.replaceWith(button);
+			return;
+		}
+		if (tagName === 'nl-form-component') {
+			const render = options?.render;
+			const newNode = typeof render === 'function' && render(node, store, options);
+			if (newNode) {
+				node.replaceWith(newNode);
+			} else {
+				node.remove();
+			}
 			return;
 		}
 		const name = node.getAttribute('nl-form-field');

@@ -115,6 +115,7 @@
  * @property {AbortSignal} [signal] 
  * @property {function(string): string} [sanitizeHtml] 
  * @property {((name: string, event: Event, store: Store<any, any, any>, options?: StoreLayout.Options | null) => void)} [call]
+ * @property {(el: Element, store: Store<any, any, any>, options?: StoreLayout.Options | null) => Node | null} [render]
  */
 /**
  * @template [T=unknown]
