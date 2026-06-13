@@ -259,7 +259,10 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			store.add(data);
 			return;
 		}
-		data[levelKey] = (states[parent]?.levelValue ?? -1) + 1;
+		data[levelKey] = Math.max(
+			(states[parent]?.levelValue ?? -1) + 1,
+			states[parent + 1]?.levelValue || 0,
+		);
 		store.insert(parent + 1, data);
 
 	}
