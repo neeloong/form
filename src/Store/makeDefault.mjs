@@ -9,7 +9,11 @@
  */
 export default function makeDefault(store, def) {
 	if (typeof def !== 'function') {
-		return () => structuredClone(def);
+		return value => structuredClone(
+			def && value && typeof def === 'object' && typeof value === 'object' ? {...def, ...value}
+			: def && typeof def === 'object' ? def
+			: value ?? def
+		);
 	}
-	return (value) => structuredClone(def(store, value));
+	return value => structuredClone(def(store, value));
 }
