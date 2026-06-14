@@ -53,7 +53,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					const fieldLayout = field
 						? layout?.fields?.find(createFieldFilter(field)) || fieldStore.layout
 						: { ...layout, html: '' };
-					el = Form(fieldStore, fieldRenderer, fieldLayout, { ...options, editable });
+					el = Form(fieldStore, fieldRenderer, fieldLayout, { ...options, editable: !fieldLayout.readonly && editable });
 					break;
 				}
 				default: {
@@ -125,7 +125,10 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 				? layout.fields?.find(createFieldFilter(field)) || fieldStore.layout
 				: { ...layout, html: '' };
 			if (!array) {
-				renderHtml(fieldStore, fieldRenderer, node, options, fieldLayout, anchor, dragenter);
+				renderHtml(fieldStore, fieldRenderer, node, {
+					...options,
+					editable: !fieldLayout.readonly && options?.editable,
+				}, fieldLayout, anchor, dragenter);
 				return;
 			}
 			if (!(fieldStore instanceof ArrayStore)) {
@@ -176,6 +179,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 						const el = parentElement.insertBefore(node.cloneNode(true), nextNode);
 						renderHtml(child, fieldRenderer, el, {
 							...options,
+							editable: !fieldLayout.readonly && options?.editable,
 							signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
 						}, fieldLayout, el, newDragenter);
 						el.addEventListener('dragenter', () => { newDragenter(child); });

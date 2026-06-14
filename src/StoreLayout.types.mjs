@@ -38,6 +38,7 @@
  * @property {StoreLayout.Item<T>[]?} [fields]
  * @property {T} [renderer]
  * @property {boolean?} [editable]
+ * @property {boolean?} [readonly]
  */
 /**
  * @template [T=unknown]
@@ -49,6 +50,7 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
+ * @property {boolean} [readonly]
  * @property {StoreLayout.Grid['cell']} [cell]
  * @property {T} [renderer]
  * 
@@ -71,6 +73,7 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
+ * @property {boolean} [readonly]
  * @property {StoreLayout.Grid['cell']} [cell]
  * 
  * @property {boolean} [required]
@@ -89,6 +92,7 @@
  * @property {number} [rowStart]
  * @property {number} [rowSpan]
  * @property {number} [rowEnd]
+ * @property {boolean} [readonly]
  * @property {StoreLayout.Grid['cell']} [cell]
  * 
  * @property {boolean} [required]

@@ -167,6 +167,7 @@ export default function Table(store, fieldRenderer, layout, options) {
 					dragend,
 				}, {
 					...options,
+					editable: !layout.readonly && options?.editable,
 					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
 				});
 				table.insertBefore(el, nextNode);

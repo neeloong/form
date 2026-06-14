@@ -78,14 +78,14 @@ export default function Line(store, fieldRenderer, layout, {
 	}
 
 	for (const column of columns) {
-		const { actions, field, pattern, editable, render } = column;
+		const { actions, field, pattern, readonly, render } = column;
 		if (!actions?.length) {
 			const td = head.appendChild(document.createElement('td'));
 			const child = field && store.child(field);
 			if (field && !child) { continue; }
 			const el = render
 				? render(child || store, { signal: options.signal })
-				: child && FormFieldInline(child, fieldRenderer, column, { ...options, editable: options?.editable && (editable !== false) });
+				: child && FormFieldInline(child, fieldRenderer, column, { ...options, editable: !readonly && options?.editable });
 			if (el) { td.appendChild(el); }
 			continue;
 		}

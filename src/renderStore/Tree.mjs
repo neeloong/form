@@ -224,6 +224,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		const signal = options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal;
 		const form = Form(store, fieldRenderer, layout, {
 			...options,
+			editable: !layout.readonly && options?.editable,
 			signal: options?.signal ? AbortSignal.any([options?.signal, signal]) : signal,
 		});
 		signal.addEventListener('abort', () => {
@@ -490,6 +491,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 					drop: drop.bind(null, child),
 				}, {
 					...options,
+				editable: !layout.readonly && options?.editable,
 					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
 				});
 				main.insertBefore(el, nextNode);

@@ -46,13 +46,13 @@ export default function Form(store, fieldRenderer, layout, options, parent) {
 	const fieldLayouts = layout.fields || store.layout.fields;
 	if (fieldLayouts?.length) {
 		for (const fieldTemplate of fieldLayouts) {
-			const el = FormItem(store, fieldRenderer, fieldTemplate, options);
+			const el = FormItem(store, fieldRenderer, fieldTemplate, {...options, editable: !fieldTemplate.readonly && options?.editable});
 			if (el) { root.appendChild(el); }
 		}
 	} else {
 		const fields = [...store].map(([, v]) => v);
 		for (const field of fields) {
-			const el = FormField(field, fieldRenderer, field.layout, options);
+			const el = FormField(field, fieldRenderer, field.layout, {...options, editable: !field.layout.readonly && options?.editable});
 			if (el) { root.appendChild(el); }
 		}
 	}

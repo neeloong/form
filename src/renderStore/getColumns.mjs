@@ -30,26 +30,27 @@ export function getColumns(store, layout, actionOptions, createDefault) {
 				if (!actions) { return null; }
 				return { actions };
 			}
-			const { action, actions, render: renderFn, field, placeholder, pattern, width, label, editable } = v;
+			const { action, actions, render: renderFn, field, placeholder, pattern, width, label } = v;
+			const readonly = v.readonly || v.editable === false;
 			const render = typeof renderFn === 'function' ? renderFn : null;
 			if (field) {
 				const define = map.get(field);
 				if (define) {
-					return { field, placeholder, width, label: label || define.label, render, editable };
+					return { field, placeholder, width, label: label || define.label, render, readonly };
 				}
 			} else if (render) {
-				return { placeholder, width, label: label || '', render, editable };
+				return { placeholder, width, label: label || '', render, readonly };
 			}
 			const options = new Set(actionOptions);
 			const allActions = [action, actions].flat().filter(v => v && options.delete(v));
 			if (allActions.length) {
-				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label, editable };
+				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label, readonly };
 			}
 			if (pattern) {
-				return { pattern, placeholder, width, label, editable };
+				return { pattern, placeholder, width, label, readonly };
 			}
 			if (placeholder || width) {
-				return { placeholder, width, label, editable };
+				return { placeholder, width, label, readonly };
 			}
 			return null;
 		});
