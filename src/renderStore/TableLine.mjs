@@ -98,7 +98,7 @@ export default function Line(store, fieldRenderer, layout, {
 					const button = {
 						type, component: 'table', signal: options.signal,
 						get disabled() { return false; },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return false; },
 						get hasChildren() { return false; },
 					};
@@ -113,7 +113,7 @@ export default function Line(store, fieldRenderer, layout, {
 					const button = {
 						type, component: 'table', signal: options.signal,
 						get disabled() { return store.readonly || store.disabled; },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return false; },
 						get hasChildren() { return false; },
 					};
@@ -128,7 +128,7 @@ export default function Line(store, fieldRenderer, layout, {
 					const button = {
 						type, component: 'table', signal: options.signal,
 						get disabled() { return !deletable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return false; },
 						get hasChildren() { return false; },
 					};
@@ -143,7 +143,7 @@ export default function Line(store, fieldRenderer, layout, {
 					const button = {
 						type, component: 'table', signal: options.signal,
 						get disabled() { return !addable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return false; },
 						get hasChildren() { return false; },
 					};

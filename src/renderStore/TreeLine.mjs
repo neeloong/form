@@ -47,6 +47,7 @@ export default function TreeLine(
 
 	root.classList.add('NeeloongForm-tree-item');
 
+	const shown = new Signal.Computed(() => currentStore.get() === store);
 	effect(() => {
 		if (currentStore.get() === store) {
 			root.classList.add('NeeloongForm-tree-current');
@@ -153,7 +154,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						disabled: false,
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -167,7 +168,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						disabled: false,
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -181,7 +182,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return !hasChildren.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -196,7 +197,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return store.readonly || store.disabled; },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -211,7 +212,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return !addable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -226,7 +227,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return !deletable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -241,7 +242,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return !deletable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -256,7 +257,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return !addable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
@@ -271,7 +272,7 @@ export default function TreeLine(
 					const button = {
 						type, component: 'tree', signal: options.signal,
 						get disabled() { return !addable.get(); },
-						get shown() { return false; },
+						get shown() { return shown.get(); },
 						get collapsed() { return collapsed.get(); },
 						get hasChildren() { return hasChildren.get(); },
 					};
