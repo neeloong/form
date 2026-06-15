@@ -273,7 +273,12 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	 * @param {Store} child 
 	 */
 	function remove(child) {
-		store.remove(Number(child.index));
+		const index = Number(child.index);
+		const s = detailsStore.get();
+		if (s && s === store.child(index)) {
+			detailsStore.set(null);
+		}
+		store.remove(index);
 	}
 	/**
 	 * 
@@ -292,7 +297,12 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		let last = index + 1;
 		const level = states[index]?.level ?? 0;
 		for (; (states[last]?.level ?? -1) > level; last++) { }
+		let s = detailsStore.get();
 		for (let i = last - 1; i >= index; i--) {
+			if (s && s === store.child(i)) {
+				detailsStore.set(null);
+				s = null;
+			}
 			store.remove(i);
 		}
 	}
@@ -491,7 +501,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 					drop: drop.bind(null, child),
 				}, {
 					...options,
-				editable: !layout.readonly && options?.editable,
+					editable: !layout.readonly && options?.editable,
 					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
 				});
 				main.insertBefore(el, nextNode);
