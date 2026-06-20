@@ -3,25 +3,9 @@
 import { Signal } from 'signal-polyfill';
 import watch from '../watch.mjs';
 import Line from './TreeLine.mjs';
-import Form from './Form.mjs';
 import { getColumns } from './getColumns.mjs';
 import createButton from './createButton.mjs';
 
-const verticalWritingMode = new Set([
-	'vertical-lr', 'vertical-rl', 'sideways-lr', 'sideways-rl',
-]);
-/**
- *
- * @param {Element} root
- * @returns {[boolean, boolean]}
- */
-function getLayout(root) {
-	const style = getComputedStyle(root);
-	const writingMode = style.writingMode?.toLowerCase();
-	const vertical = verticalWritingMode.has(writingMode);
-	const reverse = style.direction.toLowerCase() === 'rtl' !== (writingMode === 'sideways-lr');
-	return [vertical, reverse];
-}
 
 /**
  * @typedef {object} State
@@ -109,17 +93,22 @@ function createState(store, states, drag, levelKey, index) {
 		get parents() { return parents.get(); },
 	};
 }
+
+
+
+
+
 /**
  *
  * @template T
+ * @param {StoreLayout.InspectorStore<T>} inspector 
  * @param {ArrayStore} store
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Field<T>} layout
  * @param {StoreLayout.Options?} options
- * @returns {HTMLElement?}
+ * @returns {HTMLElement}
  */
-export default function Tree(store, fieldRenderer, layout, options) {
-	if (options?.signal?.aborted) { return null; }
+export default function TreeExplorer(inspector, store, fieldRenderer, layout, options) {
 	const columns = getColumns(
 		store,
 		layout,
@@ -132,119 +121,8 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	);
 
 
+
 	const root = document.createElement('div');
-	root.classList.add('NeeloongForm-tree');
-	const main = root.appendChild(document.createElement('div'));
-	main.classList.add('NeeloongForm-tree-main');
-	const splitter = root.appendChild(document.createElement('div'));
-	splitter.classList.add('NeeloongForm-tree-splitter');
-	const details = root.appendChild(document.createElement('div'));
-	details.classList.add('NeeloongForm-tree-details');
-	splitter.hidden = true;
-	details.hidden = true;
-	/** @type {number?} */
-	let splitterPointerId = null;
-	let splitterOffset = 0;
-	function stopMove() {
-		const pointerId = splitterPointerId;
-		if (pointerId === null) { return; }
-		splitterPointerId = null;
-		splitter.releasePointerCapture(pointerId);
-	}
-
-	splitter.addEventListener('pointerdown', e => {
-		const { pointerId } = e;
-		if (![null, pointerId].includes(splitterPointerId)) { return; }
-		splitterPointerId = pointerId;
-		splitter.setPointerCapture(pointerId);
-		switch (getLayout(splitter).map((v, i) => v ? 2 ** i : 0).reduce((a, b) => a + b)) {
-			case 0: splitterOffset = -e.offsetX; break;
-			case 1: splitterOffset = -e.offsetY; break;
-			case 2: splitterOffset = e.offsetX - splitter.offsetWidth; break;
-			case 3: splitterOffset = e.offsetY - splitter.offsetHeight; break;
-		}
-	});
-	/**
-	 * @param {boolean} vertical
-	 * @returns {number}
-	 */
-	const getSize = vertical => vertical
-		? root.clientHeight - splitter.offsetHeight
-		: root.clientWidth - splitter.offsetWidth;
-	/** @param {PointerEvent} e */
-	const updateMove = e => {
-		const [vertical, reverse] = getLayout(splitter);
-		let os = 0;
-		switch ([vertical, reverse].map((v, i) => v ? 2 ** i : 0).reduce((a, b) => a + b)) {
-			case 0: os = e.clientX - root.getBoundingClientRect().left; break;
-			case 1: os = e.clientY - root.getBoundingClientRect().top; break;
-			case 2: os = root.getBoundingClientRect().right - e.clientX; break;
-			case 3: os = root.getBoundingClientRect().bottom - e.clientY; break;
-		}
-		const value = 1 - Math.max(0, Math.min((os + splitterOffset) / getSize(vertical), 1));
-		details.style.inlineSize = `${value * 100}%`;
-	};
-	splitter.addEventListener('pointermove', e => {
-		const { pointerId } = e;
-		if (!splitter.hasPointerCapture(pointerId)) { return; }
-		updateMove(e);
-	});
-	splitter.addEventListener('pointerup', e => {
-		const { pointerId } = e;
-		if (pointerId !== splitterPointerId) { return; }
-		updateMove(e);
-		stopMove();
-	});
-	splitter.addEventListener('pointercancel', e => {
-		const { pointerId } = e;
-		if (pointerId !== splitterPointerId) { return; }
-		updateMove(e);
-		stopMove();
-	});
-
-
-	/** @type {AbortController?} */
-	let detailAbortController = null;
-	const detailsStore = new Signal.State(/** @type{Store<any, any, any>?}*/(null));
-	/**
-	 * 
-	 * @param {Store<any, any, any>} store 
-	 * @returns 
-	 */
-	function createDetails(store) {
-		if (options?.signal?.aborted) { return () => { }; }
-		if (detailsStore.get() === store && detailAbortController) {
-			const ac = detailAbortController;
-			return () => { ac.abort(); };
-		}
-		detailAbortController?.abort();
-		detailsStore.set(store);
-		const ac = new AbortController();
-		detailAbortController = ac;
-		const signal = options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal;
-		const form = Form(store, fieldRenderer, layout, {
-			...options,
-			editable: !layout.readonly && options?.editable,
-			signal: options?.signal ? AbortSignal.any([options?.signal, signal]) : signal,
-		});
-		signal.addEventListener('abort', () => {
-			detailsStore.set(null);
-			stopMove();
-		}, { once: true });
-		if (form) {
-			details.appendChild(form);
-			details.hidden = false;
-			splitter.hidden = false;
-			signal.addEventListener('abort', () => {
-				form.remove();
-				splitter.hidden = true;
-				details.hidden = true;
-			}, { once: true });
-
-		}
-		return () => { ac.abort(); };
-
-	}
 
 
 	const levelKey = layout.levelKey || 'level';
@@ -274,9 +152,9 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	 */
 	function remove(child) {
 		const index = Number(child.index);
-		const s = detailsStore.get();
+		const s = inspector.get();
 		if (s && s === store.child(index)) {
-			detailsStore.set(null);
+			inspector.close();
 		}
 		store.remove(index);
 	}
@@ -297,10 +175,10 @@ export default function Tree(store, fieldRenderer, layout, options) {
 		let last = index + 1;
 		const level = states[index]?.level ?? 0;
 		for (; (states[last]?.level ?? -1) > level; last++) { }
-		let s = detailsStore.get();
+		let s = inspector.get();
 		for (let i = last - 1; i >= index; i--) {
 			if (s && s === store.child(i)) {
-				detailsStore.set(null);
+				inspector.close();
 				s = null;
 			}
 			store.remove(i);
@@ -395,7 +273,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	function dragstart(child) {
 		dragRow = Number(child.index);
 		drag.set(dragRow);
-		main.classList.add('NeeloongForm-tree-moving');
+		root.classList.add('NeeloongForm-tree-moving');
 
 	}
 	/** @type {HTMLElement?} */
@@ -416,7 +294,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	function dragend() {
 		dragRow = -1;
 		drag.set(dragRow);
-		main.classList.remove('NeeloongForm-tree-moving');
+		root.classList.remove('NeeloongForm-tree-moving');
 		dragenterEl?.classList.remove('NeeloongForm-tree-drag-over');
 		dragenterEl = null;
 
@@ -431,14 +309,14 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			get collapsed() { return false; },
 			get hasChildren() { return false; },
 		};
-		main.appendChild(
+		root.appendChild(
 			options.operation?.(button) || createButton(button)
 		).addEventListener('click', () => addNode(-1));
 
 	}
-	const start = main.appendChild(document.createComment(''));
+	const start = root.appendChild(document.createComment(''));
 	if (options?.editable) {
-		const foot = main.appendChild(document.createElement('div'));
+		const foot = root.appendChild(document.createElement('div'));
 		foot.classList.add('NeeloongForm-tree-foot');
 
 		/** @type {StoreLayout.Operation} */
@@ -486,7 +364,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 			if (!old) {
 				const elState = new Signal.State(state);
 				const ac = new AbortController();
-				const el = Line(child, detailsStore, fieldRenderer, layout, elState, {
+				const el = Line(child, inspector, fieldRenderer, layout, elState, {
 					columns, addable,
 					deletable: new Signal.Computed(() => !store.readonly && !store.disabled && child.removable),
 					remove: remove.bind(null, child),
@@ -497,14 +375,13 @@ export default function Tree(store, fieldRenderer, layout, options) {
 					dragstart: dragstart.bind(null, child),
 					dragend,
 					addNode: () => addNode(Number(child.index)),
-					createDetails,
 					drop: drop.bind(null, child),
 				}, {
 					...options,
 					editable: !layout.readonly && options?.editable,
 					signal: options?.signal ? AbortSignal.any([options?.signal, ac.signal]) : ac.signal,
 				});
-				main.insertBefore(el, nextNode);
+				root.insertBefore(el, nextNode);
 				seMap.set(child, [el, ac, s => elState.set(s)]);
 				continue;
 			}
@@ -515,7 +392,7 @@ export default function Tree(store, fieldRenderer, layout, options) {
 				nextNode = nextNode.nextSibling;
 				continue;
 			}
-			main.insertBefore(old[0], nextNode);
+			root.insertBefore(old[0], nextNode);
 		}
 		states.splice(childrenLength);
 		for (const [el, ac] of oldSeMap.values()) {
@@ -525,4 +402,5 @@ export default function Tree(store, fieldRenderer, layout, options) {
 	}, true, options?.signal);
 
 	return root;
+
 }

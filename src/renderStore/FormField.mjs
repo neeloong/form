@@ -9,7 +9,8 @@ import effect from '../effect.mjs';
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
 import createCell from './createCell.mjs';
-import Tree from './Tree.mjs';
+import TreeExplorer from './Tree.mjs';
+import Detail from './Detail.mjs';
 
 
 /**
@@ -38,11 +39,13 @@ function Html(html, store, fieldRenderer, options, layout) {
  * @returns {HTMLElement?}
  */
 function renderArrayCell(arrayStyle, store, fieldRenderer, layout, options) {
+	if (typeof arrayStyle === 'function') {
+		return Detail(arrayStyle, store, fieldRenderer, layout, options);
+	}
 	switch (arrayStyle) {
-		case 'tree': return Tree(store, fieldRenderer, layout, options);
+		case 'tree': return Detail(TreeExplorer, store, fieldRenderer, layout, options);
 		default: return Table(store, fieldRenderer, layout, options);
 	}
-
 }
 
 /**

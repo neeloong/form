@@ -1,4 +1,4 @@
-/** @import Store from './Store/index.mjs' */
+/** @import Store, { ArrayStore } from './Store/index.mjs' */
 
 
 /**
@@ -59,7 +59,7 @@
  * @property {StoreLayout.Item<T>[]?} [fields]
  * @property {'header' | 'add' | 'none'} [tableFoot]
  * @property {(string | number | StoreLayout.Action[] | StoreLayout.Column<T>)[]} [columns]
- * @property {'tree' | 'table'} [arrayStyle]
+ * @property {'tree' | 'table' | StoreLayout.Explorer<T>} [arrayStyle]
  * @property {'collapse' | 'trigger' | 'open' | 'move'} [mainMethod]
  * @property {string} [levelKey]
  * 
@@ -135,4 +135,25 @@
 /**
  * @template [T=unknown]
  * @typedef {(store: Store<any, any, any>, renderer?: T | string, options?: StoreLayout.Options | null) => Element?} StoreLayout.Renderer
+ */
+
+/**
+ * @template [T=unknown]
+ * @typedef {object} StoreLayout.InspectorStore
+ * @property {() => Store<any, any, any>?} get
+ * @property {(s: Store<any, any, any>) => boolean} is
+ * @property {(s?: Store<any, any, any> | null) => boolean} close
+ * @property {(s: Store<any, any, any>, layout?: StoreLayout.Field<T> | null) => () => void} set
+ */
+
+/**
+ *
+ * @template T
+ * @callback StoreLayout.Explorer
+ * @param {StoreLayout.InspectorStore<T>} inspector 
+ * @param {ArrayStore} store
+ * @param {StoreLayout.Renderer<T>} fieldRenderer 
+ * @param {StoreLayout.Field<T>} layout
+ * @param {StoreLayout.Options?} options
+ * @returns {HTMLElement}
  */

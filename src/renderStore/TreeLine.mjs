@@ -10,7 +10,7 @@ import createButton from './createButton.mjs';
  * 
  * @template T
  * @param {Store<any, any, any>} store 
- * @param {Signal.State<Store<any, any, any>?>} currentStore 
+ * @param {StoreLayout.InspectorStore<T>} inspector 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Field<T>} layout
  * @param {Signal.State<State>} state
@@ -27,16 +27,15 @@ import createButton from './createButton.mjs';
  * @param {() => void} option.dragend 
  * @param {{get(): boolean}} option.deletable 
  * @param {() => void} option.addNode 
- * @param {(store: Store<any, any, any>) => () => void} option.createDetails 
  * @param {StoreLayout.Options & {signal: AbortSignal}} options
  * @returns {HTMLElement}
  */
 export default function TreeLine(
-	store, currentStore, fieldRenderer, layout, state, {
+	store, inspector, fieldRenderer, layout, state, {
 		columns, addable, deletable,
 		remove, removeTree,
 		copy, copyTree,
-		dragenter, dragstart, dragend, addNode, drop, createDetails,
+		dragenter, dragstart, dragend, addNode, drop,
 	}, options) {
 	const root = document.createElement('div');
 	root.addEventListener('dragstart', (event) => {
@@ -47,9 +46,9 @@ export default function TreeLine(
 
 	root.classList.add('NeeloongForm-tree-item');
 
-	const shown = new Signal.Computed(() => currentStore.get() === store);
+	const shown = new Signal.Computed(() => inspector.is(store));
 	effect(() => {
-		if (currentStore.get() === store) {
+		if (inspector.is(store)) {
 			root.classList.add('NeeloongForm-tree-current');
 		} else {
 			root.classList.remove('NeeloongForm-tree-current');
@@ -88,15 +87,12 @@ export default function TreeLine(
 		const s = state.get();
 		s.collapsed = !s.collapsed;
 	}
-	let close = () => { };
 	function open() {
-		close = createDetails(store);
+		inspector.set(store);
 	}
 	function trigger() {
-		if (currentStore.get() === store) {
-			close(); return;
-		}
-		close = createDetails(store);
+		if (inspector.close(store)) { return; }
+		inspector.set(store);
 	}
 	const moveStart = layout.mainMethod === 'move' ? pointerdown : null;
 	const click = moveStart ? null : layout.mainMethod === 'collapse' ? switchCollapsed
