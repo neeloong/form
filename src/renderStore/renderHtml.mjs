@@ -57,7 +57,7 @@ export default function renderHtml(store, fieldRenderer, node, options, layout, 
 					break;
 				}
 				default: {
-					el = fieldRenderer(fieldStore, renderer || layout.renderer, { ...options, editable });
+					el = fieldRenderer(fieldStore, renderer || layout.renderer, { ...options, editable, pattern: null });
 					break;
 				}
 			}

@@ -40,7 +40,7 @@ export default function Line(store, fieldRenderer, layout, {
 
 
 
-	const shown = new Signal.State(false);
+	const shown = new Signal.State(/** @type {boolean | 'until-found'} */(false));
 	let trigger = () => { };
 	if (columns.find(v => v.actions?.includes('trigger'))) {
 		const form = Form(store, fieldRenderer, layout, options);
@@ -78,18 +78,20 @@ export default function Line(store, fieldRenderer, layout, {
 	}
 
 	for (const column of columns) {
-		const { actions, field, pattern, readonly, render } = column;
+		const { actions, field, pattern, readonly, render, align } = column;
 		if (!actions?.length) {
 			const td = head.appendChild(document.createElement('td'));
+			if (align) { td.style.textAlign = align; }
 			const child = field && store.child(field);
 			if (field && !child) { continue; }
 			const el = render
-				? render(child || store, { signal: options.signal })
-				: child && FormFieldInline(child, fieldRenderer, column, { ...options, editable: !readonly && options?.editable });
+				? render(child || store, { pattern, signal: options.signal })
+				: child && FormFieldInline(child, fieldRenderer, column, { ...options, editable: !readonly && options?.editable }, pattern || null);
 			if (el) { td.appendChild(el); }
 			continue;
 		}
 		const handle = head.appendChild(document.createElement('th'));
+		if (align) { handle.style.textAlign = align; }
 		handle.classList.add('NeeloongForm-table-line-handle');
 		for (const type of actions) {
 			switch (type) {

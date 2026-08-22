@@ -30,27 +30,27 @@ export function getColumns(store, layout, actionOptions, createDefault) {
 				if (!actions) { return null; }
 				return { actions };
 			}
-			const { action, actions, render: renderFn, field, placeholder, pattern, width, label } = v;
+			const { action, actions, render: renderFn, field, placeholder, pattern, width, label, ...others } = v;
 			const readonly = v.readonly || v.editable === false;
 			const render = typeof renderFn === 'function' ? renderFn : null;
 			if (field) {
 				const define = map.get(field);
 				if (define) {
-					return { field, placeholder, width, label: label || define.label, render, readonly };
+					return { field, placeholder, width, label: label || define.label, render, readonly, ...others };
 				}
 			} else if (render) {
-				return { placeholder, width, label: label || '', render, readonly };
+				return { placeholder, width, label: label || '', render, readonly, ...others };
 			}
 			const options = new Set(actionOptions);
 			const allActions = [action, actions].flat().filter(v => v && options.delete(v));
 			if (allActions.length) {
-				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label, readonly };
+				return { actions: /** @type {StoreLayout.Action[]} */(allActions), width, label, readonly, ...others };
 			}
 			if (pattern) {
-				return { pattern, placeholder, width, label, readonly };
+				return { pattern, placeholder, width, label, readonly, ...others };
 			}
-			if (placeholder || width) {
-				return { placeholder, width, label, readonly };
+			if (v.placeholder || v.width) {
+				return { placeholder, width, label, readonly, ...others };
 			}
 			return null;
 		});

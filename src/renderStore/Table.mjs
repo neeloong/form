@@ -21,8 +21,9 @@ import createButton from './createButton.mjs';
  */
 function renderHead(type, signal, parent, columns, add, addable, editable, operation) {
 	const tr = parent.appendChild(document.createElement('tr'));
-	for (const { action, actions, width, label } of columns) {
+	for (const { action, actions, width, label, align } of columns) {
 		const th = tr.appendChild(document.createElement('th'));
+		if (align) { th.style.textAlign = align; }
 		if (width) { th.setAttribute('width', `${width}`); }
 		if (![action, actions].flat().includes('add')) {
 			th.innerText = label || '';

@@ -28,12 +28,13 @@
  * @typedef {object} StoreLayout.Column
  * @property {StoreLayout.Action[]} [actions] 操作
  * @property {StoreLayout.Action} [action] 操作
- * @property {((store: Store, options: { signal: AbortSignal }) => Node) | null} [render]
+ * @property {((store: Store, options: { signal: AbortSignal; pattern?: string }) => Node) | null} [render]
  * @property {string} [field] 字段
  * @property {number} [placeholder] 占位符
  * @property {string} [pattern] 模式
  * @property {number} [width] 宽度
  * @property {string} [label] 标签
+ * @property {'start' | 'center' | 'end' | 'justify'} [align] 对齐方式
  * @property {string | ParentNode | null} [html]
  * @property {StoreLayout.Item<T>[]?} [fields]
  * @property {T} [renderer]
@@ -118,7 +119,7 @@
  * @property {StoreLayout.Action | 'footAdd' | 'headAdd'} type
  * @property {boolean} disabled 
  * @property {boolean} collapsed 
- * @property {boolean} shown 
+ * @property {boolean | 'until-found'} shown 
  * @property {boolean} hasChildren
  * @property {'tree' | 'table'} component
  */
@@ -126,6 +127,7 @@
  * @typedef {object} StoreLayout.Options
  * @property {(store: Store, el: Element | StoreLayout.Relatedness) => () => void} [relate]
  * @property {boolean} [editable] 
+ * @property {string?} [pattern] 
  * @property {AbortSignal} [signal] 
  * @property {function(string): string | ParentNode | null} [sanitizeHtml] 
  * @property {((name: string, event: Event, store: Store<any, any, any>, options?: StoreLayout.Options | null) => void)} [call]

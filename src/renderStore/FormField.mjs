@@ -71,7 +71,7 @@ export default function FormField(store, fieldRenderer, layout, options) {
 	/** @type {false | ParentNode | null} */
 	const r =
 		html && Html(html, store, fieldRenderer, options, layout)
-		|| fieldRenderer(store, layout.renderer, options)
+		|| fieldRenderer(store, layout.renderer, {...options, pattern: null})
 		|| store instanceof ArrayStore && renderArrayCell(layout.arrayStyle, store, fieldRenderer, layout, options)
 		|| isObject && Form(store, fieldRenderer, layout, options);
 	if (r) {

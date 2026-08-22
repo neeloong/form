@@ -12,9 +12,10 @@ import getHtmlContent from './getHtmlContent.mjs';
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout<T>} layout
  * @param {StoreLayout.Options?} options
+ * @param {string?} pattern
  * @returns {ParentNode?}
  */
-export default function FormFieldInline(store, fieldRenderer, layout, options) {
+export default function FormFieldInline(store, fieldRenderer, layout, options, pattern) {
 	if (options?.signal?.aborted) { return null; }
 	const html = layout.html;
 	if (html) {
@@ -22,5 +23,5 @@ export default function FormFieldInline(store, fieldRenderer, layout, options) {
 		renderHtml(store, fieldRenderer, content, options, layout);
 		return content;
 	}
-	return fieldRenderer(store, layout.renderer, options);
+	return fieldRenderer(store, layout.renderer, {...options, pattern});
 }
