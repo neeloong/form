@@ -127,7 +127,7 @@
  * @property {(store: Store, el: Element | StoreLayout.Relatedness) => () => void} [relate]
  * @property {boolean} [editable] 
  * @property {AbortSignal} [signal] 
- * @property {function(string): string} [sanitizeHtml] 
+ * @property {function(string): string | ParentNode | null} [sanitizeHtml] 
  * @property {((name: string, event: Event, store: Store<any, any, any>, options?: StoreLayout.Options | null) => void)} [call]
  * @property {(el: Element, store: Store<any, any, any>, options?: StoreLayout.Options | null) => Node | null} [render]
  * @property {(btn: StoreLayout.Operation) => HTMLElement | null} [operation]
