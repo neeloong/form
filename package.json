@@ -21,6 +21,9 @@
     "build": "tsc -p tsconfig.json && node build.mjs"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/plugin-transform-typescript": "^7.29.7",
+    "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",

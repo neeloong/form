@@ -3,6 +3,7 @@ import pathFn from 'node:path';
 
 import { rollup } from 'rollup';
 import dts from 'rollup-plugin-dts';
+import babel from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
 import alias from '@rollup/plugin-alias';
@@ -36,10 +37,22 @@ const umdName = name
 	.replace(/[-/]([a-z])/g, (_, v) => v.toUpperCase())
 	.replace(/@/g, '');
 
+const input = 'src/index.mjs';
+const replacePlugin = replace({
+	preventAssignment: true, values: {
+		__VERSION__: version,
+	}
+});
+const babelPlugin = babel({
+	extensions: ['.ts', '.mts', '.js', '.mjs'],
+	babelHelpers: 'bundled',
+	plugins: ['@babel/plugin-transform-typescript'],
+});
 
 const bundle = await rollup({
-	input: `src/index.mjs`, external, plugins: [
-		replace({ preventAssignment: true, values: { __VERSION__: version } }),
+	input, external, plugins: [
+		replacePlugin,
+		babelPlugin,
 	],
 });
 for (const ext of ['mjs','min.mjs']) {
@@ -56,8 +69,9 @@ for (const ext of ['mjs','min.mjs']) {
 
 
 const bundle2 = await rollup({
-	input: `src/index.mjs`, plugins: [
-		replace({ preventAssignment: true, values: { __VERSION__: version } }),
+	input, plugins: [
+		replacePlugin,
+		babelPlugin,
 		alias({
 			entries: [
 				{ find: 'signal-polyfill', replacement: pathFn.resolve('node_modules/signal-polyfill/dist/index.js') },
