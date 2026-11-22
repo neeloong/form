@@ -37,7 +37,7 @@ const umdName = name
 	.replace(/[-/]([a-z])/g, (_, v) => v.toUpperCase())
 	.replace(/@/g, '');
 
-const input = 'src/index.mjs';
+const input = 'src/index.mts';
 const replacePlugin = replace({
 	preventAssignment: true, values: {
 		__VERSION__: version,
@@ -91,7 +91,7 @@ for (const ext of ['full.js','full.min.mjs', 'full.min.js']) {
 	await fsPromise.writeFile(output, chunk.source || chunk.code || '');
 }
 
-const dtsInput = `typings/index.types.d.mts`;
+const dtsInput = `typings/index.d.mts`;
 const dtsOutput = `dist/index.d.mts`
 console.log(`  生成 ${dtsOutput} ...`);
 const dtsBundle = await rollup({ input: dtsInput, external, plugins: [dts()] });

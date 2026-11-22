@@ -1,7 +1,7 @@
 /** @import { Store, ArrayStore } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 import { Signal } from 'signal-polyfill';
-import watch from '../watch.mjs';
+import watch from './watch.mts';
 import Line from './TableLine.mjs';
 import { getColumns } from './getColumns.mjs';
 import createButton from './createButton.mjs';

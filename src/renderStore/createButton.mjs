@@ -1,4 +1,4 @@
-import effect from '../effect.mjs';
+import effect from './effect.mts';
 
 /**
  * 

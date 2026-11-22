@@ -2,7 +2,7 @@
 /** @import { State } from './Tree.mjs' */
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 import { Signal } from 'signal-polyfill';
-import effect from '../effect.mjs';
+import effect from './effect.mts';
 import FormFieldInline from './FormFieldInline.mjs';
 import createButton from './createButton.mjs';
 

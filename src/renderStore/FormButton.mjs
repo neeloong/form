@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
-import effect from '../effect.mjs';
+import effect from './effect.mts';
 import createCell from './createCell.mjs';
 
 /**

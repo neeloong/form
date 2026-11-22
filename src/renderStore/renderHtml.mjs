@@ -2,8 +2,8 @@
 /** @import { StoreLayout } from '../StoreLayout.types.mjs' */
 import Form from './Form.mjs';
 import { ArrayStore } from '../Store/index.mjs';
-import watch from '../watch.mjs';
-import effect from '../effect.mjs';
+import watch from './watch.mts';
+import effect from './effect.mts';
 
 /**
  * 

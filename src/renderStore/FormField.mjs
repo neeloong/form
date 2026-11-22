@@ -5,7 +5,7 @@ import { ArrayStore } from '../Store/index.mjs';
 
 import Table from './Table.mjs';
 import Form from './Form.mjs';
-import effect from '../effect.mjs';
+import effect from './effect.mts';
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
 import createCell from './createCell.mjs';
