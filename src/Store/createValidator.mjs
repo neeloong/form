@@ -1,6 +1,6 @@
 import { Signal } from 'signal-polyfill';
 /** @import Store from './Store.mjs' */
-/** @import { Schema } from '../Schema.types.mjs' */
+/** @import { Schema } from '../Schema.types.mts' */
 /**
  * 
  * @param {*} v 

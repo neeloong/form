@@ -1,6 +1,6 @@
 
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mts' */
 import { ArrayStore } from '../Store/index.mjs';
 
 import Table from './Table.mjs';

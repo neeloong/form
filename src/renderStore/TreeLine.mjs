@@ -1,6 +1,6 @@
 /** @import { Store } from '../Store/index.mjs' */
 /** @import { State } from './Tree.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mts' */
 import { Signal } from 'signal-polyfill';
 import effect from './effect.mts';
 import FormFieldInline from './FormFieldInline.mjs';

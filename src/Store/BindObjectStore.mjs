@@ -1,6 +1,6 @@
 import create from './create.mjs';
 import Store from './Store.mjs';
-/** @import { Schema } from '../Schema.types.mjs' */
+/** @import { Schema } from '../Schema.types.mts' */
 
 /**
  * @template [T=any]

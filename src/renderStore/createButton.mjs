@@ -2,7 +2,7 @@ import effect from './effect.mts';
 
 /**
  * 
- * @param {import('../StoreLayout.types.mjs').StoreLayout.Operation} options 
+ * @param {import('../StoreLayout.types.mts').StoreLayout.Operation} options 
  */
 export default function createButton(options) {
 	const button = document.createElement('button');

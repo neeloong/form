@@ -7,8 +7,8 @@ import create, { setStore } from './create.mjs';
 import createValidator from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
 /** @import { Ref } from './ref.mjs' */
-/** @import { Schema } from '../Schema.types.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
+/** @import { Schema } from '../Schema.types.mts' */
+/** @import { StoreLayout } from '../StoreLayout.types.mts' */
 
 /**
  * 管理单个表单字段的状态和行为

@@ -1,4 +1,4 @@
-/** @import { Schema } from '../Schema.types.mjs' */
+/** @import { Schema } from '../Schema.types.mts' */
 /** @import ArrayStore from './ArrayStore.mjs' */
 
 import Store from './Store.mjs';

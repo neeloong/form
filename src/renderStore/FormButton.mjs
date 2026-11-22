@@ -1,5 +1,5 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mts' */
 import effect from './effect.mts';
 import createCell from './createCell.mjs';
 

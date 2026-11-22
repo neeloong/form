@@ -1,4 +1,4 @@
-/** @import { StoreLayout } from '../StoreLayout.types.mjs' */
+/** @import { StoreLayout } from '../StoreLayout.types.mts' */
 import effect from './effect.mts';
 import bindGrid from './bindGrid.mjs';
 
