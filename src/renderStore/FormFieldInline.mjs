@@ -1,6 +1,6 @@
 
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 
 import renderHtml from './renderHtml.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
@@ -10,7 +10,7 @@ import getHtmlContent from './getHtmlContent.mjs';
  * @template T
  * @param {Store<any, any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout<T>} layout
+ * @param {StoreLayout.Layout<T>} layout
  * @param {StoreLayout.Options?} options
  * @param {string?} pattern
  * @returns {ParentNode?}

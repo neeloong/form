@@ -1,5 +1,5 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 import FormFieldInline from './FormFieldInline.mjs';
 import Form from './Form.mjs';
 import createButton from './createButton.mjs';

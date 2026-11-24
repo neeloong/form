@@ -1,5 +1,5 @@
 /** @import { Store, ArrayStore } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 import { Signal } from 'signal-polyfill';
 import watch from './watch.mts';
 import Line from './TableLine.mjs';

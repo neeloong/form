@@ -1,5 +1,5 @@
 /** @import { Store, ArrayStore } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 import { Signal } from 'signal-polyfill';
 import Form from './Form.mjs';
 
@@ -157,8 +157,6 @@ export default function Detail(renderer, store, fieldRenderer, layout, options) 
 	splitter.classList.add('NeeloongForm-detail-splitter');
 	inspector.classList.add('NeeloongForm-detail-inspector');
 
-	/** @deprecated */
-	explorer.classList.add('NeeloongForm-tree-main');
 	root.classList.add('NeeloongForm-tree');
 	splitter.classList.add('NeeloongForm-tree-splitter');
 	inspector.classList.add('NeeloongForm-tree-details');

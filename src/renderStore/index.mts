@@ -1,20 +1,18 @@
-/** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+import type { Store } from '../Store/index.mjs';
+import type * as StoreLayout from './types.mts';
 import Form from './Form.mjs';
 import getHtmlContent from './getHtmlContent.mjs';
 import renderHtml from './renderHtml.mjs';
 
-/**
- * 
- * @template T
- * @param {Store} store 
- * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {HTMLElement} root 
- * @param {StoreLayout<T>} layout 
- * @param {StoreLayout.Options & {clone?: boolean} | null} [options]
- * @returns {void}
- */
-export default function renderStore(store, fieldRenderer, root, layout, options) {
+export type * from './types.mts';
+
+export default function renderStore<T>(
+	store: Store, 
+	fieldRenderer: StoreLayout.Renderer<T>, 
+	root: HTMLElement, 
+	layout: StoreLayout.Layout<T>, 
+	options?: (StoreLayout.Options & { clone?: boolean; }) | null,
+): void {
 	if (options?.signal?.aborted) { return; }
 	const storeLayout = layout || store.layout;
 	const html = storeLayout.html;

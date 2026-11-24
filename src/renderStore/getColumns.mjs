@@ -1,5 +1,5 @@
 /** @import { ArrayStore } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 
 /**
  *

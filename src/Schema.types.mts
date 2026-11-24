@@ -1,6 +1,6 @@
 import type { Signal } from 'signal-polyfill';
 import type Store from './Store/index.mjs';
-import type { StoreLayout } from './StoreLayout.types.mts';
+import type * as StoreLayout from './renderStore/types.mts';
 
 export type MaybePromise<T> = PromiseLike<T> | T;
 

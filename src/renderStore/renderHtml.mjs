@@ -1,5 +1,5 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 import Form from './Form.mjs';
 import { ArrayStore } from '../Store/index.mjs';
 import watch from './watch.mts';
@@ -29,7 +29,7 @@ function createFieldFilter(field) {
  * @param {Store} store 
  * @param {Node} node 
  * @param {StoreLayout.Options?} options
- * @param {StoreLayout<T>} layout 
+ * @param {StoreLayout.Layout<T>} layout 
  * @param {Node} [anchor]
  * @param {(child?: Store<any, any, any> | undefined) => void} [dragenter]
  * @returns {void}

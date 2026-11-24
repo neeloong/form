@@ -1,8 +1,9 @@
+/** @import * as StoreLayout from './types.mts' */
 import effect from './effect.mts';
 
 /**
  * 
- * @param {import('../StoreLayout.types.mts').StoreLayout.Operation} options 
+ * @param {StoreLayout.Operation} options 
  */
 export default function createButton(options) {
 	const button = document.createElement('button');

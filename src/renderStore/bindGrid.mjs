@@ -1,4 +1,4 @@
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 
 /**
  *

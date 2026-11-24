@@ -1,5 +1,5 @@
 /** @import { Store } from '../Store/index.mjs' */
-/** @import { StoreLayout } from '../StoreLayout.types.mts' */
+/** @import * as StoreLayout from './types.mts' */
 import FormField from './FormField.mjs';
 import FormButton from './FormButton.mjs';
 import FormHtml from './FormHtml.mjs';
@@ -34,7 +34,7 @@ function FormItem(store, fieldRenderer, item, options) {
  * @template T
  * @param {Store<any, any, any>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
- * @param {StoreLayout<T>} layout
+ * @param {StoreLayout.Layout<T>} layout
  * @param {StoreLayout.Options?} options
  * @param {HTMLElement} [parent]
  * @returns {HTMLElement?}
