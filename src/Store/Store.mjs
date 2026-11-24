@@ -155,20 +155,6 @@ export default class Store {
 			this.#description = store.#description;
 			this.#selfPlaceholder = store.#selfPlaceholder;
 			this.#placeholder = store.#placeholder;
-			this.#selfMin = store.#selfMin;
-			this.#min = store.#min;
-			this.#selfMax = store.#selfMax;
-			this.#max = store.#max;
-			this.#selfStep = store.#selfStep;
-			this.#step = store.#step;
-			this.#selfMinLength = store.#selfMinLength;
-			this.#minLength = store.#minLength;
-			this.#selfMaxLength = store.#selfMaxLength;
-			this.#maxLength = store.#maxLength;
-			this.#selfPattern = store.#selfPattern;
-			this.#pattern = store.#pattern;
-			this.#selfValues = store.#selfValues;
-			this.#values = store.#values;
 			this.#errors = store.#errors;
 			this.#execValidators = store.#execValidators;
 			this.#cancelEventValidator = store.#cancelEventValidator;
@@ -249,14 +235,6 @@ export default class Store {
 		[this.#selfLabel, this.#label] = createState(this, toValues.string, label, schema.label);
 		[this.#selfDescription, this.#description] = createState(this, toValues.string, description, schema.description);
 		[this.#selfPlaceholder, this.#placeholder] = createState(this, toValues.string, placeholder, schema.placeholder);
-		[this.#selfMin, this.#min] = createState(this, toValues.number, min, schema.min);
-		[this.#selfMax, this.#max] = createState(this, toValues.number, max, schema.max);
-		[this.#selfStep, this.#step] = createState(this, toValues.number, step, schema.step);
-		[this.#selfMinLength, this.#minLength] = createState(this, toValues.number, minLength, schema.minLength);
-		[this.#selfMaxLength, this.#maxLength] = createState(this, toValues.number, maxLength, schema.maxLength);
-		[this.#selfPattern, this.#pattern] = createState(this, toValues.regex, pattern, schema.pattern);
-		// @ts-ignore
-		[this.#selfValues, this.#values] = createState(this, toValues.values, values, schema.values);
 
 		[this.#selfRemovable, this.#removable] = createBooleanStates(this, removable, schema.removable ?? true);
 
@@ -482,86 +460,6 @@ export default class Store {
 	get placeholder() { return this.#placeholder.get(); }
 	set placeholder(v) { this.#selfPlaceholder.set(toValues.string(v)); }
 
-
-	/** @readonly @type {Signal.State<number?>} */
-	#selfMin;
-	/** @readonly @type {Signal.Computed<number?>} */
-	#min;
-	/** @deprecated */
-	get selfMin() { return this.#selfMin.get(); }
-	set selfMin(v) { this.#selfMin.set(toValues.number(v)); }
-	/** @deprecated 数值字段的最小值限制 */
-	get min() { return this.#min.get(); }
-	set min(v) { this.#selfMin.set(toValues.number(v)); }
-
-
-	/** @readonly @type {Signal.State<number?>} */
-	#selfMax;
-	/** @readonly @type {Signal.Computed<number?>} */
-	#max;
-	/** @deprecated */
-	get selfMax() { return this.#selfMax.get(); }
-	set selfMax(v) { this.#selfMax.set(toValues.number(v)); }
-	/** @deprecated 数值字段的最大值限制 */
-	get max() { return this.#max.get(); }
-	set max(v) { this.#selfMax.set(toValues.number(v)); }
-
-
-	/** @readonly @type {Signal.State<number?>} */
-	#selfStep;
-	/** @readonly @type {Signal.Computed<number?>} */
-	#step;
-	/** @deprecated */
-	get selfStep() { return this.#selfStep.get(); }
-	set selfStep(v) { this.#selfStep.set(toValues.number(v)); }
-	/** @deprecated 数值字段的步长 */
-	get step() { return this.#step.get(); }
-	set step(v) { this.#selfStep.set(toValues.number(v)); }
-
-	/** @readonly @type {Signal.State<number?>} */
-	#selfMinLength;
-	/** @readonly @type {Signal.Computed<number?>} */
-	#minLength;
-	/** @deprecated */
-	get selfMinLength() { return this.#selfMinLength.get(); }
-	set selfMinLength(v) { this.#selfMinLength.set(toValues.number(v)); }
-	/** @deprecated 最小长度 */
-	get minLength() { return this.#minLength.get(); }
-	set minLength(v) { this.#selfMinLength.set(toValues.number(v)); }
-
-	/** @readonly @type {Signal.State<number?>} */
-	#selfMaxLength;
-	/** @readonly @type {Signal.Computed<number?>} */
-	#maxLength;
-	/** @deprecated */
-	get selfMaxLength() { return this.#selfMaxLength.get(); }
-	set selfMaxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
-	/** @deprecated 最大长度 */
-	get maxLength() { return this.#maxLength.get(); }
-	set maxLength(v) { this.#selfMaxLength.set(toValues.number(v)); }
-
-	/** @readonly @type {Signal.State<RegExp?>} */
-	#selfPattern;
-	/** @readonly @type {Signal.Computed<RegExp?>} */
-	#pattern;
-	/** @deprecated */
-	get selfPattern() { return this.#selfPattern.get(); }
-	set selfPattern(v) { this.#selfPattern.set(toValues.regex(v)); }
-	/** @deprecated 模式 */
-	get pattern() { return this.#pattern.get(); }
-	set pattern(v) { this.#selfPattern.set(toValues.regex(v)); }
-
-
-	/** @readonly @type {Signal.State<(Schema.Value.Group | Schema.Value)[] | null>} */
-	#selfValues;
-	/** @readonly @type {Signal.Computed<(Schema.Value.Group | Schema.Value)[] | null>} */
-	#values;
-	/** @deprecated */
-	get selfValues() { return this.#selfValues.get(); }
-	set selfValues(v) { this.#selfValues.set(toValues.values(v)); }
-	/** @deprecated 可选值列表 */
-	get values() { return this.#values.get(); }
-	set values(v) { this.#selfValues.set(toValues.values(v)); }
 
 
 	/** @type {Signal.Computed<string[]>} */

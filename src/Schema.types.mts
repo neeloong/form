@@ -7,7 +7,7 @@ export type MaybePromise<T> = PromiseLike<T> | T;
 export namespace Schema {
 	export type ValidatorResult = string | string[] | void | null;
 
-	/** @deprecated 同步验证器 */
+	/** 同步验证器 */
 	export interface SyncValidator {
 		/**
 		 * @param store 存储体
@@ -158,24 +158,10 @@ export namespace Schema {
 		description?: string | ((store: Store) => string | null) | null;
 		/** 占位符 */
 		placeholder?: string | ((store: Store) => string | null) | null;
-		/** 日期、时间、数字的最小值 */
-		min?: number | ((store: Store) => number | null) | null;
-		/** 日期、时间、数字的最大值 */
-		max?: number | ((store: Store) => number | null) | null;
-		/** 日期、时间、数字的步长 */
-		step?: number | ((store: Store) => number | null) | null;
-		/** 最小长度 */
-		minLength?: number | ((store: Store) => number | null) | null;
-		/** 最大长度 */
-		maxLength?: number | ((store: Store) => number | null) | null;
-		/** 模式规则 */
-		pattern?: RegExp | ((store: Store) => RegExp | null) | null;
 		/** 数组内是否可添加 */
 		addable?: boolean | ((store: Store) => boolean) | null;
 		/** 数组内是否可移除 */
 		removable?: boolean | ((store: Store) => boolean) | null;
-		/** 可选值 */
-		values?: (Value.Group.Define | Schema.Value.Define)[] | ((store: Store) => (Value.Group.Define | Schema.Value.Define)[]);
 		/** 监听函数 */
 		events?: {[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null) | null};
 		/** 验证器 */
