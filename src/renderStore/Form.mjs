@@ -7,7 +7,7 @@ import FormHtml from './FormHtml.mjs';
 /**
  * 
  * @template T
- * @param {Store<any, any, any>} store 
+ * @param {Store<any, any, any, StoreLayout.Field<any>>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Item<T>} item
  * @param {StoreLayout.Options?} options
@@ -32,7 +32,7 @@ function FormItem(store, fieldRenderer, item, options) {
 /**
  * 
  * @template T
- * @param {Store<any, any, any>} store 
+ * @param {Store<any, any, any, StoreLayout.Field<any>>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Layout<T>} layout
  * @param {StoreLayout.Options?} options
@@ -43,7 +43,7 @@ export default function Form(store, fieldRenderer, layout, options, parent) {
 	if (options?.signal?.aborted) { return null; }
 	const root = parent instanceof HTMLElement ? parent : document.createElement('div');
 	root.classList.add('NeeloongForm');
-	const fieldLayouts = layout.fields || store.layout.fields;
+	const fieldLayouts = layout.fields || store.layout?.fields;
 	if (fieldLayouts?.length) {
 		for (const fieldTemplate of fieldLayouts) {
 			const el = FormItem(store, fieldRenderer, fieldTemplate, {...options, editable: !fieldTemplate.readonly && options?.editable});
@@ -52,7 +52,7 @@ export default function Form(store, fieldRenderer, layout, options, parent) {
 	} else {
 		const fields = [...store].map(([, v]) => v);
 		for (const field of fields) {
-			const el = FormField(field, fieldRenderer, field.layout, {...options, editable: !field.layout.readonly && options?.editable});
+			const el = FormField(field, fieldRenderer, field?.layout || {}, {...options, editable: !field.layout?.readonly && options?.editable});
 			if (el) { root.appendChild(el); }
 		}
 	}

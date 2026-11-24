@@ -1,6 +1,6 @@
-export { default as Store } from './Store.mjs';
-export * from './Store.mjs';
-export { default as ObjectStore } from './ObjectStore.mjs';
-export { default as ArrayStore } from './ArrayStore.mjs';
-export { default } from './Store.mjs';
-export { default as BindObjectStore } from './BindObjectStore.mjs';
+export { default as Store } from './Store.mts';
+export * from './Store.mts';
+export { default as ObjectStore } from './ObjectStore.mts';
+export { default as ArrayStore } from './ArrayStore.mts';
+export { default } from './Store.mts';
+export { default as BindObjectStore } from './BindObjectStore.mts';

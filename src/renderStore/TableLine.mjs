@@ -8,7 +8,7 @@ import { Signal } from 'signal-polyfill';
 /**
  * 
  * @template T
- * @param {Store<any, any, any>} store 
+ * @param {Store<any, any, any, StoreLayout.Field<any>>} store 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Field<T>} layout
  * @param {object} option 

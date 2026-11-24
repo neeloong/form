@@ -98,7 +98,7 @@ export default function Detail(renderer, store, fieldRenderer, layout, options) 
 	});
 	/** @type {AbortController?} */
 	let detailAbortController = null;
-	const currentStore = new Signal.State(/** @type{Store<any, any, any>?}*/(null));
+	const currentStore = new Signal.State(/** @type{Store<any, any, any, StoreLayout.Field<any>>?}*/(null));
 
 	/** @type {StoreLayout.InspectorStore<T>} */
 	const inspectorStore = {

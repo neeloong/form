@@ -1,4 +1,4 @@
-/** @import Store from './Store.mjs' */
+/** @import Store from './Store.mts' */
 
 /**
  * 

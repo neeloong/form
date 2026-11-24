@@ -1,38 +1,32 @@
+import type { Ref } from './ref.mjs'
+import type { Schema } from '../Schema.types.mts'
 import { Signal } from 'signal-polyfill';
 import createBooleanStates from './createBooleanStates.mjs';
 import * as toValues from './toValues.mjs';
 import createState from './createState.mjs';
 import createRef from './ref.mjs';
-import create, { setStore } from './create.mjs';
+import create, { setStore } from './create.mts';
 import createValidator from './createValidator.mjs';
 import makeDefault from './makeDefault.mjs';
-/** @import { Ref } from './ref.mjs' */
-/** @import { Schema } from '../Schema.types.mts' */
-/** @import  * as StoreLayout from '../renderStore/types.mts' */
 
-/**
- * 管理单个表单字段的状态和行为
- * @template [T=any]
- * @template [M=any]
- * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
- */
-export default class Store {
-	/** @type {Store<T, M, S>?} */
-	#originStore = null;
+/** 管理单个表单字段的状态和行为 */
+export default class Store<
+	T = any,
+	M = any,
+	S extends {[k in string & keyof S]: Schema.State} = object,
+	L extends { [k in keyof L]: L[k] } = object,
+> {
+	#originStore: Store<T, M, S, L> | null = null;
 
-	/** @type {Schema.Field<M, S>}  字段的 Schema 定义 */
-	#schema;
+	/** 字段的 Schema 定义 */
+	#schema: Schema.Field<M, S, L>;
 	get schema() { return this.#schema; }
-	/** @type {Map<string, Set<(value: any, store: any) => void | boolean | null>>} */
-	#events = new Map();
-	/**
-	 * 触发事件并通知监听器
-	 * @template {keyof Schema.Events} K
-	 * @param {K} event 
-	 * @param  {Schema.Events[K]} value 
-	 * @returns {boolean}
-	 */
-	emit(event, value) {
+	#events: Map<string, Set<(value: any, store: any) => void | boolean | null>> = new Map();
+	/** 触发事件并通知监听器 */
+	emit<K extends keyof Schema.Events>(
+		event: K,
+		value: Schema.Events[K],
+	): boolean {
 		const originStore = this.#originStore;
 		if (originStore) { return originStore.emit(event, value); }
 		const key = typeof event === 'number' ? String(event) : event;
@@ -43,29 +37,21 @@ export default class Store {
 		}
 		return !canceled;
 	}
-	/**
-	 * 监听事件
-	 * @template {keyof Schema.Events} K
-	 * @overload
-	 * @param {K} event 
-	 * @param  {(this: this, p: Schema.Events[K], store: this) => void | boolean | null} listener
-	 * @returns {() => void}
-	 */
-	/**
-	 * 监听事件
-	 * @template {keyof Schema.Events} K
-	 * @overload
-	 * @param {string} event 
-	 * @param  {(this: this, p: unknown, store: this) => void | boolean | null} listener
-	 * @returns {() => void}
-	 */
-	/**
-	 * 监听事件
-	 * @param {string} event 
-	 * @param  {(this: this, p: unknown, store: this) => void | boolean | null} listener
-	 * @returns {() => void}
-	 */
-	listen(event, listener) {
+	/** 监听事件 */
+	listen<K extends keyof Schema.Events>(
+		event: K,
+		listener: (this: this, p: Schema.Events[K], store: this) => void | boolean | null,
+	): () => void;
+	/** 监听事件 */
+	listen<K extends keyof Schema.Events>(
+		event: string,
+		listener: (this: this, p: unknown, store: this) => void | boolean | null,
+	): () => void;
+	/** 监听事件 */
+	listen(
+		event: string,
+		listener: (this: this, p: unknown, store: this) => void | boolean | null,
+	): () => void {
 		const originStore = this.#originStore;
 		if (originStore) { return originStore.listen(event, p => listener.call(this, p, this)); }
 		const fn = listener.bind(this);
@@ -82,21 +68,19 @@ export default class Store {
 	}
 	/**
 	 * 从数据结构模式创建存储
-	 * @template [M=any]
-	 * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
-	 * @param {Schema<M, S>} schema 数据结构模式
-	 * @param {object} [options] 选项
-	 * @param {boolean} [options.new] 是否为新建环境
+	 * @param schema 数据结构模式
+	 * @param options 选项
+	 * @param options.new 是否为新建环境
 	 */
-	static create(schema, options = {}) {
+	static create<
+		M = any,
+		S extends {[k in string & keyof S]: Schema.State} = object,
+		L extends { [k in keyof L]: L[k] } = object,
+	>(schema: Schema<M, S, L>, options: { new?: boolean; } = {}) {
 		return create({ type: schema }, { ...options, parent: null });
 	}
-	/**
-	 * 设置自定义类型的存储类
-	 * @param {string} type
-	 * @param {{new(...p: ConstructorParameters<typeof Store>): Store}} Class
-	 */
-	static setStore(type, Class) {
+	/** 设置自定义类型的存储类 */
+	static setStore(type: string, Class: { new(...p: ConstructorParameters<typeof Store>): Store; }) {
 		return setStore(type, Class);
 	}
 	#null = false;
@@ -104,14 +88,16 @@ export default class Store {
 	get null() { return this.#null; }
 	/** 存储类类别，继承的自定义类需要设置自定义的此只读属性 */
 	get kind() { return ''; }
-	/** @type {Ref?} */
-	#ref = null;
+	#ref: Ref | null = null;
 	get ref() { return this.#ref || createRef(this); }
 	/**
-	 * @param {Schema.Field<M, S> | Store<T,M,S>} schema 字段的 Schema 定义
-	 * @param {StoreOptions | AbortSignal | null} [options] 可选配置
+	 * @param schema 字段的 Schema 定义
+	 * @param options 可选配置
 	 */
-	constructor(schema, options) {
+	constructor(
+		schema: Schema.Field<M, S, L> | Store<T, M, S, L>,
+		options?: StoreOptions | AbortSignal | null,
+	) {
 		if (schema instanceof Store) {
 			const store = schema.#originStore || schema;
 			this.#originStore = store;
@@ -174,7 +160,7 @@ export default class Store {
 			setValue, convert, onUpdate, states, validator,
 			index, size, new: isNew, parent: parentNode,
 			hidden, clearable, required, disabled, readonly, removable,
-			label, description, placeholder, min, max, step, minLength, maxLength, pattern, values
+			label, description, placeholder,
 		} = !(options instanceof AbortSignal) && options || {};
 		this.#schema = schema;
 		const parent = parentNode instanceof Store ? parentNode : null;
@@ -191,12 +177,11 @@ export default class Store {
 		this.#type = schema.type;
 		this.#meta = schema.meta;
 		this.#component = schema.component;
-		this.#layout = schema.layout || {};
+		this.#layout = schema.layout || null;
 
 		const selfNewState = new Signal.State(Boolean(isNew));
 		this.#selfNew = selfNewState;
-		/** @type {Signal.Computed<boolean>} */
-		const newState = parent
+		const newState: Signal.Computed<boolean> = parent
 			? new Signal.Computed(() => parent.#new.get() || selfNewState.get())
 			: new Signal.Computed(() => selfNewState.get());
 
@@ -208,8 +193,7 @@ export default class Store {
 
 		const readonlyFn = schema.readonly;
 		const selfReadonly = new Signal.State(typeof readonly === 'boolean' ? readonly : null);
-		/** @type {Signal.Computed<boolean>} */
-		let readonlyScript;
+		let readonlyScript: Signal.Computed<boolean>;
 		if (typeof readonlyFn === 'function') {
 			readonlyScript = new Signal.Computed(() => Boolean(readonlyFn(this)));
 		} else {
@@ -238,17 +222,17 @@ export default class Store {
 
 		[this.#selfRemovable, this.#removable] = createBooleanStates(this, removable, schema.removable ?? true);
 
-		const schemaStates = schema.states;
+		const schemaStates = schema.states as { [k in string]: Schema.Stater<any, any>; };
 		this.#states = schemaStates ? Object.defineProperties(Object.create(null),
 			Object.fromEntries(
 				Object.entries(schemaStates).map(([k, { get, set, toState }]) => {
-					const state = new Signal.State(toState?.(states?.[k]));
+					const state = new Signal.State(toState?.(states?.[k as keyof typeof states]));
 					const computed = new Signal.Computed(() => get(this, state));
 					return [k, {
 						configurable: true,
 						enumerable: true,
-						get() { return computed.get(); },
-						set(v) { return set?.(this, state, v); },
+						get: () => computed.get(),
+						set: (v) => set?.(this, state, v),
 					}];
 				})
 			)) : null;
@@ -284,39 +268,23 @@ export default class Store {
 			this.listen(k, f);
 		}
 	}
-	/** @type {S?} */
-	#states;
+	#states: S | null;
 	get states() { return this.#states; }
-	/** @type {StoreLayout.Field<any>} */
-	#layout;
+	#layout: L | null;
 	get layout() { return this.#layout; }
-	/** @type {(value?: any) => unknown} */
-	#createDefault;
-	/** @param {any} [value] @returns {any} */
-	createDefault(value) { return this.#createDefault(value); }
-	/** @type {((value: any) => any)?} */
-	#setValue = null;
-	/** @type {((value: any) => any)?} */
-	#convert = null;
-	/** @type {((value: any, index: any, store: Store) => void)?} */
-	#onUpdate = null;
-	/** @readonly @type {Store?} */
-	#parent = null;
-	/** @readonly @type {Store} */
-	#root = this;
-	/** @readonly @type {any} */
-	#type;
-	/** @readonly @type {M | void} */
-	#meta;
-	/** @readonly @type {any} */
-	#component;
-	/** @type {Signal.State<boolean>?} */
-	#selfLoading = null;
-	/** @type {Signal.State<boolean>} */
-	#loading;
-	get loading() {
-		return this.#loading.get();
-	}
+	#createDefault: (value?: any) => unknown;
+	createDefault(value: any): any { return this.#createDefault(value); }
+	#setValue: ((value: any) => any) | null = null;
+	#convert: ((value: any) => any) | null = null;
+	#onUpdate: ((value: any, index: any, store: Store) => void) | null = null;
+	readonly #parent: Store | null = null;
+	readonly #root: Store = this;
+	readonly #type: any;
+	readonly #meta: M | void;
+	readonly #component: any;
+	#selfLoading: Signal.State<boolean> | null = null;
+	#loading: Signal.State<boolean>;
+	get loading() { return this.#loading.get(); }
 	set loading(loading) {
 		const s = this.#selfLoading;
 		if (!s) { return; }
@@ -335,11 +303,10 @@ export default class Store {
 	/** 自定义渲染组件信息 */
 	get component() { return this.#component; }
 
-	/** @type {Signal.State<number> | Signal.Computed<number>} */
-	#size;
+	#size: Signal.State<number> | Signal.Computed<number>;
 	/** 长度信息 */
 	get size() { return this.#size.get(); }
-	#index = new Signal.State(/** @type {string | number} */(''));
+	#index = new Signal.State<string | number>('');
 	/** 索引信息 */
 	get index() { return this.#index.get(); }
 	set index(v) { this.#index.set(v); }
@@ -357,60 +324,48 @@ export default class Store {
 	/** 值是否不可改变（`$new` 为 `false` 时，字段只读） */
 	get immutable() { return this.#immutable; }
 
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#new;
-	/** @readonly @type {Signal.State<boolean>} */
-	#selfNew;
+	readonly #new: Signal.Computed<boolean>;
+	readonly #selfNew: Signal.State<boolean>;
 	get selfNew() { return this.#selfNew.get(); }
 	set selfNew(v) { this.#selfNew.set(Boolean(v)); }
 	/** 是否新建项 */
 	get new() { return this.#new.get(); }
 	set new(v) { this.#selfNew.set(Boolean(v)); }
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfHidden;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#hidden;
+	readonly #selfHidden: Signal.State<boolean | null>;
+	readonly #hidden: Signal.Computed<boolean>;
 	get selfHidden() { return this.#selfHidden.get(); }
 	set selfHidden(v) { this.#selfHidden.set(typeof v === 'boolean' ? v : null); }
 	/** 是否可隐藏 */
 	get hidden() { return this.#hidden.get(); }
 	set hidden(v) { this.#selfHidden.set(typeof v === 'boolean' ? v : null); }
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfClearable;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#clearable;
+	readonly #selfClearable: Signal.State<boolean | null>;
+	readonly #clearable: Signal.Computed<boolean>;
 	get selfClearable() { return this.#selfClearable.get(); }
 	set selfClearable(v) { this.#selfClearable.set(typeof v === 'boolean' ? v : null); }
 	/** 是否可清除 */
 	get clearable() { return this.#clearable.get(); }
 	set clearable(v) { this.#selfClearable.set(typeof v === 'boolean' ? v : null); }
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfRequired;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#required;
+	readonly #selfRequired: Signal.State<boolean | null>;
+	readonly #required: Signal.Computed<boolean>;
 	get selfRequired() { return this.#selfRequired.get(); }
 	set selfRequired(v) { this.#selfRequired.set(typeof v === 'boolean' ? v : null); }
 	/** 是否必填 */
 	get required() { return this.#required.get(); }
 	set required(v) { this.#selfRequired.set(typeof v === 'boolean' ? v : null); }
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfDisabled;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#disabled;
+	readonly #selfDisabled: Signal.State<boolean | null>;
+	readonly #disabled: Signal.Computed<boolean>;
 	get selfDisabled() { return this.#selfDisabled.get(); }
 	set selfDisabled(v) { this.#selfDisabled.set(typeof v === 'boolean' ? v : null); }
 	/** 是否禁用字段 */
 	get disabled() { return this.#disabled.get(); }
 	set disabled(v) { this.#selfDisabled.set(typeof v === 'boolean' ? v : null); }
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfReadonly;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#readonly;
+	readonly #selfReadonly: Signal.State<boolean | null>;
+	readonly #readonly: Signal.Computed<boolean>;
 	get selfReadonly() { return this.#selfReadonly.get(); }
 	set selfReadonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
 	/** 是否只读 */
@@ -418,10 +373,8 @@ export default class Store {
 	set readonly(v) { this.#selfReadonly.set(typeof v === 'boolean' ? v : null); }
 
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfRemovable;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#removable;
+	readonly #selfRemovable: Signal.State<boolean | null>;
+	readonly #removable: Signal.Computed<boolean>;
 	get selfRemovable() { return this.#selfRemovable.get(); }
 	set selfRemovable(v) { this.#selfRemovable.set(typeof v === 'boolean' ? v : null); }
 	/** 是否只读 */
@@ -429,10 +382,8 @@ export default class Store {
 	set removable(v) { this.#selfRemovable.set(typeof v === 'boolean' ? v : null); }
 
 
-	/** @readonly @type {Signal.State<string?>} */
-	#selfLabel;
-	/** @readonly @type {Signal.Computed<string?>} */
-	#label;
+	readonly #selfLabel: Signal.State<string | null>;
+	readonly #label: Signal.Computed<string | null>;
 	get selfLabel() { return this.#selfLabel.get(); }
 	set selfLabel(v) { this.#selfLabel.set(toValues.string(v)); }
 	/** 字段的标签信息 */
@@ -440,20 +391,16 @@ export default class Store {
 	set label(v) { this.#selfLabel.set(toValues.string(v)); }
 
 
-	/** @readonly @type {Signal.State<string?>} */
-	#selfDescription;
-	/** @readonly @type {Signal.Computed<string?>} */
-	#description;
+	readonly #selfDescription: Signal.State<string | null>;
+	readonly #description: Signal.Computed<string | null>;
 	get selfDescription() { return this.#selfDescription.get(); }
 	set selfDescription(v) { this.#selfDescription.set(toValues.string(v)); }
 	/** 字段的描述信息 */
 	get description() { return this.#description.get(); }
 	set description(v) { this.#selfDescription.set(toValues.string(v)); }
 
-	/** @readonly @type {Signal.State<string?>} */
-	#selfPlaceholder;
-	/** @readonly @type {Signal.Computed<string?>} */
-	#placeholder;
+	readonly #selfPlaceholder: Signal.State<string | null>;
+	readonly #placeholder: Signal.Computed<string | null>;
 	get selfPlaceholder() { return this.#selfPlaceholder.get(); }
 	set selfPlaceholder(v) { this.#selfPlaceholder.set(toValues.string(v)); }
 	/** 字段的占位符信息 */
@@ -462,32 +409,23 @@ export default class Store {
 
 
 
-	/** @type {Signal.Computed<string[]>} */
-	#errors;
-	/** @type {() => Promise<string[]>} */
-	#execValidators;
-	/** @type {() => void} */
-	#cancelEventValidator;
+	#errors: Signal.Computed<string[]>;
+	#execValidators: () => Promise<string[]>;
+	#cancelEventValidator: () => void;
 	/** 所有校验错误列表 */
 	get errors() { return this.#errors.get(); }
 	/** 字段校验错误信息 */
 	get error() { return this.#errors.get()[0]; }
 
-	/** @returns {IterableIterator<[key: string | number, value: Store]>} */
-	*[Symbol.iterator]() { }
-	/**
-	 * 获取子存储
-	 * @param {string | number} key 
-	 * @returns {Store?}
-	 */
-	child(key) { return null; }
+	*[Symbol.iterator](): IterableIterator<[key: string | number, value: Store<any, M, S, L>]> { }
+	/** 获取子存储 */
+	child(key: string | number): Store<any, M, S, L> | null { return null; }
 
 	#set = false;
-	#initValue = new Signal.State(/** @type {T?} */(null));
+	#initValue = new Signal.State(null as T | null);
 	#value = new Signal.State(this.#initValue.get());
 
-	/** @type {Set<Store>} */
-	#subBindStores = new Set();
+	#subBindStores: Set<Store> = new Set();
 
 	/** 内容是否已改变 */
 	get changed() { return !Object.is(this.#value.get(), this.#initValue.get()); }
@@ -516,18 +454,15 @@ export default class Store {
 		});
 	}
 	/** 重置数据 */
-	reset(value = this.#set ? this.#initValue.get() : this.#createDefault(), isNew = this.#selfNew.get()) {
+	reset(
+		value = this.#set ? this.#initValue.get() : this.#createDefault(),
+		isNew = this.#selfNew.get(),
+	) {
 		const originStore = this.#originStore;
 		if (originStore) { originStore.reset(value, isNew); return; }
 		this.#reset(value, Boolean(isNew));
 	}
-	/**
-	 * 
-	 * @param {*} v 
-	 * @param {boolean} isNew 
-	 * @returns 
-	 */
-	#reset(v, isNew) {
+	#reset(v: any, isNew: boolean) {
 		this.#selfNew.set(isNew);
 		const newValue = this.#setValue?.(v);
 		const value = newValue === undefined ? v : newValue;
@@ -544,8 +479,7 @@ export default class Store {
 			this.#onUpdate?.(value, this.#index.get(), this);
 			return value;
 		}
-		/** @type {*} */
-		const newValues = Array.isArray(value) ? [...value] : { ...value };
+		const newValues: any = Array.isArray(value) ? [...value] : { ...value };
 		for (const bind of [this, ...this.#subBindStores]) {
 			for (const [key, field] of bind) {
 				newValues[key] = field.#reset(Object.hasOwn(newValues, key) ? newValues[key] : undefined, false);
@@ -559,29 +493,18 @@ export default class Store {
 
 
 	#needUpdate = false;
-	/**
-	 * 
-	 * @param {T} value 
-	 * @returns 
-	 */
-	#toUpdate(value) {
+	#toUpdate(value: T) {
 		let val = this.#convert?.(value) ?? value;
 		if (val === undefined) { val = value; }
 		if (Object.is(this.#value.get(), val)) { return val; }
 		return this.#runUpdate(val);
 	}
-	/**
-	 * 
-	 * @param {*} val 
-	 * @returns {[any, any]}
-	 */
-	#runUpdate(val) {
+	#runUpdate(val: any): [any, any] {
 		this.#needUpdate = false;
 		let initValue = val;
 		if (val && typeof val === 'object') {
-			/** @type {T} */
 			// @ts-ignore
-			let newValues = Array.isArray(val) ? [...val] : { ...val };
+			let newValues: T = Array.isArray(val) ? [...val] : { ...val };
 			let updated = false;
 			for (const bind of [this, ...this.#subBindStores]) {
 				for (const [key, field] of bind) {
@@ -607,24 +530,20 @@ export default class Store {
 		this.#value.set(val);
 		return val;
 	}
-	/**
-	 * 异步校验
-	 * @overload
-	 * @param {true} [self]
-	 * @returns {Promise<string[] | null>}
-	 */
-	/**
-	 * 异步校验
-	 * @overload
-	 * @param {(string | number)[] | false | null} [path] 到当前层级的路径
-	 * @returns {Promise<{ path: (string | number)[]; store: Store; errors: string[]}[]>}
-	 */
-	/**
-	 * 异步校验
-	 * @param {(string | number)[] | boolean | null} [path] 
-	 * @returns {Promise<string[] | { path: (string | number)[]; store: Store; errors: string[];}[] | null>}
-	 */
-	validate(path) {
+	/** 异步校验 */
+	validate(self: true): Promise<string[] | null>
+	/** 异步校验 @param path 到当前层级的路径 */
+	validate(
+		path?: (string | number)[] | false | null
+	): Promise<{ path: (string | number)[]; store: Store; errors: string[]; }[]>
+	/** 异步校验 */
+	validate(
+		path?: (string | number)[] | boolean | null
+	): Promise<string[] | { path: (string | number)[]; store: Store; errors: string[]; }[] | null>
+	/** 异步校验 */
+	validate(
+		path?: (string | number)[] | boolean | null
+	): Promise<string[] | { path: (string | number)[]; store: Store; errors: string[]; }[] | null> {
 		if (path === true) {
 			if (this.#originStore) { return Promise.resolve(null); }
 			return this.#execValidators().then(errors => errors.length ? errors : null);
@@ -633,7 +552,7 @@ export default class Store {
 		if (!this.#originStore && this.#hidden.get()) { return Promise.resolve([]); }
 		const list = [this.validate(true).then(errors => {
 			if (!errors?.length) { return []; }
-			return [{ path: [...selfPath], store: /** @type {Store} */(this), errors }];
+			return [{ path: [...selfPath], store: this as Store, errors }];
 		})];
 		for (const [key, field] of this) {
 			list.push(field.validate([...selfPath, key]));
@@ -645,41 +564,43 @@ export default class Store {
 	}
 }
 
-/**
- * @template [T=any]
- * @template [M=any]
- * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
- * @typedef {object} StoreOptions
- * @property {Store?} [parent] 
- * @property {Partial<S>?} [states] 
- * @property {((store: Store, value?: any) => any) | object | number | string | boolean | null | undefined} [default]
- * @property {number | string | null} [index] 
- * @property {number | Signal.State<number> | Signal.Computed<number>} [size] 
- * @property {boolean} [null] 
- * @property {boolean} [new] 
- * @property {boolean} [hidden] 
- * @property {boolean} [clearable] 
- * @property {boolean} [required] 
- * @property {boolean} [disabled] 
- * @property {boolean} [readonly] 
- * @property {boolean} [removable] 
- * 
- * @property {string} [label] 字段标签
- * @property {string} [description] 字段描述
- * @property {string} [placeholder] 占位符
- * @property {number} [min] 日期、时间、数字的最小值
- * @property {number} [max] 日期、时间、数字的最大值
- * @property {number} [step] 日期、时间、数字的步长
- * @property {number} [minLength] 
- * @property {number} [maxLength] 
- * @property {RegExp} [pattern] 
- * @property {(Schema.Value.Group | Schema.Value | string | number)[]} [values] 可选值
- * @property {Schema.Validator | Schema.Validator[] | null} [validator]
- * 
- * @property {Ref?} [ref]
- * 
- * @property {((value: any) => any)?} [setValue] 
- * @property {((value: any) => any)?} [convert] 
- * 
- * @property {((value: T?, index: any, store: Store) => void)?} [onUpdate] 
- */
+export interface StoreOptions<
+	T = any,
+	M = any,
+	S extends {[k in string & keyof S]: Schema.State} = object,
+> {
+	parent?: Store | null;
+	states?: Partial<S> | null;
+	default?: ((store: Store, value?: any) => any) | object | number | string | boolean | null | undefined;
+	index?: number | string | null;
+	size?: number | Signal.State<number> | Signal.Computed<number>;
+	null?: boolean;
+	new?: boolean;
+	hidden?: boolean;
+	clearable?: boolean;
+	required?: boolean;
+	disabled?: boolean;
+	readonly?: boolean;
+	removable?: boolean;
+	/** 字段标签 */
+	label?: string;
+	/** 字段描述 */
+	description?: string;
+	/** 占位符 */
+	placeholder?: string;
+	min?: number;
+	max?: number;
+	step?: number;
+	minLength?: number;
+	maxLength?: number;
+	pattern?: RegExp;
+	values?: (Schema.Value.Group | Schema.Value | string | number)[];
+	validator?: Schema.Validator | Schema.Validator[] | null;
+
+	ref?: Ref | null;
+
+	setValue?: (value: any) => any;
+	convert?: (value: any) => any;
+
+	onUpdate?: ((value: T, index: any, store: Store) => void) | null;
+}

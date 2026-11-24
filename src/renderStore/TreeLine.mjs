@@ -9,7 +9,7 @@ import createButton from './createButton.mjs';
 /**
  * 
  * @template T
- * @param {Store<any, any, any>} store 
+ * @param {Store<any, any, any, StoreLayout.Field<any>>} store 
  * @param {StoreLayout.InspectorStore<T>} inspector 
  * @param {StoreLayout.Renderer<T>} fieldRenderer 
  * @param {StoreLayout.Field<T>} layout

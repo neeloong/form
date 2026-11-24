@@ -5,13 +5,10 @@
   ],
   "private": true,
   "type": "module",
-  "main": "./index.mjs",
-  "module": "./index.mjs",
-  "types": "./index.types.mjs",
+  "main": "./index.mts",
+  "module": "./index.mts",
   "exports": {
-    ".": {
-      "default": "./index.mjs",
-      "types": "./index.types.mjs"
-    }
+    ".": "./index.mts",
+    "./html": "./renderStore/index.mts"
   }
 }

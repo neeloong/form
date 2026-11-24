@@ -1,30 +1,21 @@
+import type { Schema } from '../Schema.types.mts';
 import { Signal } from 'signal-polyfill';
-import Store from './Store.mjs';
-import create, { setArrayStore } from './create.mjs';
+import Store from './Store.mts';
+import create, { setArrayStore } from './create.mts';
 import createBooleanStates from './createBooleanStates.mjs';
-/** @import { Schema } from '../Schema.types.mts' */
 
 
-
-/**
- * @template [T=any]
- * @template [M=any]
- * @template {Object.<string, Schema.State>} [S=Object.<string, Schema.State>]
- * @extends {Store<(T | null)[], M, S>}
- */
-export default class ArrayStore extends Store {
-	/** @type {(index: number, isNew?: boolean) => Store} */
-	#create = () => { throw new Error; };
-	/** @type {Signal.State<Store[]>} */
-	#children;
+export default class ArrayStore<
+	T = any,
+	M = any,
+	S extends {[k in string & keyof S]: Schema.State} = object,
+	L extends { [k in keyof L]: L[k] } = object,
+> extends Store<(T | null)[], M, S, L> {
+	#create: (index: number, isNew?: boolean) => Store<any, M, S, L> = () => { throw new Error; };
+	#children: Signal.State<Store<any, M, S, L>[]>;
 	get children() { return [...this.#children.get()]; }
 	*[Symbol.iterator]() { return yield* [...this.#children.get().entries()]; }
-	/**
-	 * 
-	 * @param {string | number} key 
-	 * @returns {Store?}
-	 */
-	child(key) {
+	child(key: string | number): Store<any, M, S, L> | null {
 		const children = this.#children.get();
 		if (typeof key === 'number' && key < 0) {
 			return children[children.length + key] || null;
@@ -32,17 +23,17 @@ export default class ArrayStore extends Store {
 		return children[Number(key)] || null;
 	}
 	get kind() { return 'array'; }
-	/**
-	 * @param {Schema.Field<M, S>} schema
-	 * @param {object} [options] 
-	 * @param {Store?} [options.parent]
-	 * @param {string | number | null} [options.index] 
-	 * @param {boolean} [options.new] 
-	 * @param {boolean} [options.addable] 
-	 * @param {(value: any, index: any, store: Store) => void} [options.onUpdate] 
-	 */
-	constructor(schema, { parent, onUpdate, index, new: isNew, addable } = {}) {
-		const childrenState = new Signal.State(/** @type {Store[]} */([]));
+
+	constructor(
+		schema: Schema.Field<M, S, L>,
+		{ parent, onUpdate, index, new: isNew, addable }: {
+			parent?: Store | null;
+			index?: string | number | null;
+			new?: boolean;
+			addable?: boolean;
+			onUpdate?: (value: any, index: any, store: Store) => void;
+		} = {}) {
+		const childrenState = new Signal.State([] as Store<any, M, S, L>[]);
 		// @ts-ignore
 		const updateChildren = (list) => {
 			const length = Array.isArray(list) && list.length || 0;
@@ -82,8 +73,7 @@ export default class ArrayStore extends Store {
 		this.#children = childrenState;
 		const childCommonOptions = {
 			parent: this,
-			/** @param {*} value @param {*} index @param {Store} store */
-			onUpdate: (value, index, store) => {
+			onUpdate: (value: any, index: any, store: Store) => {
 				if (childrenState.get()[index] !== store) { return; }
 				const val = [...this.value || []];
 				if (val.length < index) {
@@ -94,7 +84,7 @@ export default class ArrayStore extends Store {
 			},
 		};
 		this.#create = (index, isNew) => {
-			const child = create(
+			const child = create<M, S, L>(
 				{ ...schema, creatable: true },
 				{ ...childCommonOptions, index, new: isNew },
 			);
@@ -102,14 +92,11 @@ export default class ArrayStore extends Store {
 			return child;
 		};
 	}
-	/** @returns {never} */
-	bindObject() { throw new Error(`ArrayStore 不支持 bindObject()方法`); }
+	bindObject(): never { throw new Error(`ArrayStore 不支持 bindObject()方法`); }
 
 
-	/** @readonly @type {Signal.State<boolean?>} */
-	#selfAddable;
-	/** @readonly @type {Signal.Computed<boolean>} */
-	#addable;
+	#selfAddable: Signal.State<boolean | null>;
+	#addable: Signal.Computed<boolean>;
 	get selfAddable() { return this.#selfAddable.get(); }
 	set selfAddable(v) { this.#selfAddable.set(typeof v === 'boolean' ? v : null); }
 	/** 是否禁用字段 */
@@ -117,15 +104,7 @@ export default class ArrayStore extends Store {
 	set addable(v) { this.#selfAddable.set(typeof v === 'boolean' ? v : null); }
 
 
-
-	/**
-	 * 
-	 * @param {number} index 
-	 * @param {T?} [value] 
-	 * @param {boolean} [isNew] 
-	 * @returns 
-	 */
-	insert(index, value = null, isNew) {
+	insert(index: number, value: T | null = null, isNew?: boolean) {
 		if (!this.addable) { return false; }
 		const data = this.value || [];
 		if (!Array.isArray(data)) { return false; }
@@ -143,20 +122,10 @@ export default class ArrayStore extends Store {
 		this.value = val;
 		return true;
 	}
-	/**
-	 * 
-	 * @param {T?} [value] 
-	 * @returns 
-	 */
-	add(value = null) {
+	add(value: T | null = null) {
 		return this.insert(this.#children.get().length, value);
 	}
-	/**
-	 * 
-	 * @param {number} index 
-	 * @returns 
-	 */
-	remove(index) {
+	remove(index: number) {
 		const data = this.value;
 		if (!Array.isArray(data)) { return; }
 		const children = [...this.#children.get()];
@@ -173,14 +142,7 @@ export default class ArrayStore extends Store {
 		return value;
 
 	}
-	/**
-	 * 
-	 * @param {number} from 
-	 * @param {number} to 
-	 * @param {number} quantity 
-	 * @returns 
-	 */
-	move(from, to, quantity = 1) {
+	move(from: number, to: number, quantity: number = 1) {
 		const q = Math.floor(quantity);
 		if (q < 1) { return 0; }
 		if (from <= to && from + q > to) { return 0; }
@@ -212,13 +174,7 @@ export default class ArrayStore extends Store {
 		return len;
 
 	}
-	/**
-	 * 
-	 * @param {number} a 
-	 * @param {number} b 
-	 * @returns 
-	 */
-	exchange(a, b) {
+	exchange(a: number, b: number) {
 		const data = this.value;
 		if (!Array.isArray(data)) { return false; }
 		const children = [...this.#children.get()];

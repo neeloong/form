@@ -80,9 +80,9 @@ export interface Button extends Grid {
 	required?: boolean;
 	label?: string;
 	description?: string;
-	disabled?: (store: Store<any, any, any>, options?: Options | null) => boolean;
-	text?: string | ((store: Store<any, any, any>, options?: Options | null) => string);
-	click?: string | ((event: Event, store: Store<any, any, any>, options?: Options | null) => void);
+	disabled?: (store: Store<any, any, any, Field<any>>, options?: Options | null) => boolean;
+	text?: string | ((store: Store<any, any, any, Field<any>>, options?: Options | null) => string);
+	click?: string | ((event: Event, store: Store<any, any, any, Field<any>>, options?: Options | null) => void);
 }
 
 export interface Html extends Grid {
@@ -115,20 +115,20 @@ export interface Options {
 	pattern?: string | null;
 	signal?: AbortSignal;
 	sanitizeHtml?: (name: string) => string | ParentNode | null;
-	call?: (name: string, event: Event, store: Store<any, any, any>, options?: Options | null) => void;
-	render?: (el: Element, store: Store<any, any, any>, options?: Options | null) => Node | null;
+	call?: (name: string, event: Event, store: Store<any, any, any, Field<any>>, options?: Options | null) => void;
+	render?: (el: Element, store: Store<any, any, any, Field<any>>, options?: Options | null) => Node | null;
 	operation?: (btn: Operation) => HTMLElement | null;
 }
 
 export interface Renderer<T = unknown> {
-	(store: Store<any, any, any>, renderer?: T | string, options?: Options | null): Element | null;
+	(store: Store<any, any, any, Field<any>>, renderer?: T | string, options?: Options | null): Element | null;
 }
 
 export interface InspectorStore<T = unknown> {
-	get(): Store<any, any, any> | null;
-	is(s: Store<any, any, any>): boolean;
-	close(s?: Store<any, any, any> | null): boolean;
-	set(s: Store<any, any, any>, layout?: Field<T> | null): () => void;
+	get(): Store<any, any, any, Field<any>> | null;
+	is(s: Store<any, any, any, Field<any>>): boolean;
+	close(s?: Store<any, any, any, Field<any>> | null): boolean;
+	set(s: Store<any, any, any, Field<any>>, layout?: Field<T> | null): () => void;
 }
 
 export interface Explorer<T> {

@@ -14,7 +14,7 @@ export default function renderStore<T>(
 	options?: (StoreLayout.Options & { clone?: boolean; }) | null,
 ): void {
 	if (options?.signal?.aborted) { return; }
-	const storeLayout = layout || store.layout;
+	const storeLayout = layout || store.layout  ||{};
 	const html = storeLayout.html;
 	if (!html) {
 		Form(store, fieldRenderer, storeLayout, options || null, root);

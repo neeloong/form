@@ -1,6 +1,5 @@
 import type { Signal } from 'signal-polyfill';
 import type Store from './Store/index.mjs';
-import type * as StoreLayout from './renderStore/types.mts';
 
 export type MaybePromise<T> = PromiseLike<T> | T;
 
@@ -44,8 +43,9 @@ export namespace Schema {
 	/** 字段定义 */
 	export type Field<
 		M = any,
-		S extends Record<string, State> = Record<string, State>,
-	> = (Object<M, S> | Type) & Attr<M, S>;
+		S extends {[k in string & keyof S]: Schema.State} = object,
+		L extends { [k in keyof L]: L[k] } =  object,
+	> = (Object<M, S, L> | Type) & Attr<M, S, L>;
 
 	export namespace Value {
 
@@ -91,10 +91,11 @@ export namespace Schema {
 	/** 对象类型定义 */
 	export interface Object<
 		M = any,
-		S extends Record<string, State> = Record<string, State>,
+		S extends {[k in string & keyof S]: Schema.State} = object,
+		L extends { [k in keyof L]: L[k] } =  object,
 	> {
 		/** 字段定义 */
-		type: Record<string, Field<M, S>>;
+		type: Record<string, Field<M, S, L>>;
 		/** 是否为数组 */
 		array?: boolean;
 	}
@@ -130,11 +131,12 @@ export namespace Schema {
 
 	export interface Attr<
 		M = any,
-		S extends Record<string, State> = Record<string, State>,
+		S extends {[k in string & keyof S]: Schema.State} = object,
+		L extends { [k in keyof L]: L[k] } =  object,
 	> {
 		/** 元信息 */
 		meta?: M;
-		states?: { [k in keyof S]: Stater<S[k]> };
+		states?: { [k in string & keyof S]: Stater<S[k]> };
 		default?: ((store: Store) => any) | any;
 		/** 自定义组件 */
 		component?: any;
@@ -166,10 +168,14 @@ export namespace Schema {
 		events?: {[k in keyof Schema.Events]?: ((this: Store, value: Schema.Events[k], store: Store) => void | boolean | null) | null};
 		/** 验证器 */
 		validator?: Validator | Validator[] | null;
-		layout?: StoreLayout.Field<any>;
+		layout?: L | null;
 	}
 
 
 	export type State = String | Boolean | Number | globalThis.Object | null;
 }
-export type Schema<M = any, S extends Record<string, Schema.State> = Record<string, Schema.State>> = Record<string, Schema.Field<M, S>>;
+export type Schema<
+		M = any,
+		S extends {[k in string & keyof S]: Schema.State} = object,
+		L extends { [k in keyof L]: L[k] } =  object,
+> = Record<string, Schema.Field<M, S, L>>;
